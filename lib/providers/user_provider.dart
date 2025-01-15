@@ -1,0 +1,71 @@
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import '../models/user.dart';
+
+class UserProvider with ChangeNotifier {
+  User? _user;
+  final String _baseUrl = 'https://api.pitdeck.app/api';
+
+  User? get user => _user;
+
+  Future<void> fetchUserDetails(String userId, String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/users/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final userData = json.decode(response.body);
+        _user = User.fromJson(userData, token: token);
+
+        await DefaultCacheManager().putFile(
+          'user_details',
+          utf8.encode(json.encode(_user!.toJson())),
+        );
+
+        notifyListeners();
+      } else {
+        throw Exception('Failed to fetch user details');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> updateUser(User user) async {
+    _user = user;
+    // Cache the updated user data
+    await DefaultCacheManager().putFile(
+      'user_details',
+      utf8.encode(json.encode(user.toJson())),
+    );
+    notifyListeners();
+  }
+
+  Future<void> loadCachedUser() async {
+    try {
+      final fileInfo =
+          await DefaultCacheManager().getFileFromCache('user_details');
+      if (fileInfo != null) {
+        final userData =
+            json.decode(utf8.decode(await fileInfo.file.readAsBytes()));
+        _user = User.fromJson(userData);
+        notifyListeners();
+      }
+    } catch (e) {
+      print('No cached user details found');
+    }
+  }
+
+  Future<void> clearUser() async {
+    _user = null;
+    await DefaultCacheManager().removeFile('user_details');
+    notifyListeners();
+  }
+}

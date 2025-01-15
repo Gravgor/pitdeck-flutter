@@ -1,0 +1,44 @@
+name: pitdeck
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.5.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  mapbox_maps_flutter: ^2.0.0
+  flutter_svg: ^2.0.10+1
+  geolocator: ^10.0.0
+  permission_handler: ^11.3.1
+  rxdart: ^0.28.0
+  flutter_cache_manager: ^3.4.1
+  provider: ^6.1.2
+  json_annotation: ^4.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  
+  fonts:
+    - family: Orbitron
+      fonts:
+        - asset: fonts/Orbitron-Regular.ttf
+          weight: 400
+        - asset: fonts/Orbitron-Medium.ttf
+          weight: 500
+        - asset: fonts/Orbitron-Bold.ttf
+          weight: 700
+        - asset: fonts/Orbitron-Black.ttf
+          weight: 900
+
+  assets:
+    - assets/map_style.json
+    - assets/markers/
+    - assets/card_images/
