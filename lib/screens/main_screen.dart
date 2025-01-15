@@ -11,6 +11,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
+import 'package:pitdeck/providers/navigation_provider.dart';
 
 void main() {
   MapboxOptions.setAccessToken(MapboxConfig.accessToken);
@@ -167,6 +168,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           _buildEventBanner(),
         ],
       ),
+      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
@@ -359,6 +361,78 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   fontFamily: 'Orbitron',
                   fontWeight: FontWeight.bold,
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigationBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF0A0A1A),
+        border: Border(
+          top: BorderSide(
+            color: Colors.white.withOpacity(0.1),
+            width: 1,
+          ),
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildNavItem(Icons.map, 'Map', true),
+              _buildNavItem(Icons.card_membership, 'Collection', false),
+              _buildNavItem(Icons.store, 'Market', false),
+              _buildNavItem(Icons.person, 'Profile', false),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, String label, bool isSelected) {
+    return GestureDetector(
+      onTap: () {
+        if (!isSelected) {
+          final int index = label == 'Collection'
+              ? 1
+              : label == 'Market'
+                  ? 2
+                  : label == 'Profile'
+                      ? 3
+                      : 0;
+          final navProvider =
+              Provider.of<NavigationProvider>(context, listen: false);
+
+          navProvider.changePage(index);
+        }
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? const Color(0xFF3B82F6) : Colors.grey,
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? const Color(0xFF3B82F6) : Colors.grey,
+                fontSize: 12,
+                fontFamily: 'Orbitron',
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ],

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:pitdeck/screens/auth_screen.dart';
+import 'package:pitdeck/screens/main_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/auth_provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
-import 'widgets/bottom_nav_wrapper.dart';
+import 'package:pitdeck/providers/navigation_provider.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -13,6 +14,7 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => NavigationProvider()),
       ],
       child: MyApp(),
     ),
@@ -40,11 +42,9 @@ class MyApp extends StatelessWidget {
       home: Consumer<AuthProvider>(
         builder: (context, authProvider, _) {
           final user = authProvider.currentUser;
-
           if (user != null) {
-            print('User is logged in');
+            return const MainScreen();
           }
-
           return const AuthScreen();
         },
       ),

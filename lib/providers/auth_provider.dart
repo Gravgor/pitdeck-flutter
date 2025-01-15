@@ -7,7 +7,6 @@ import 'dart:convert';
 import '../models/user.dart';
 import 'package:provider/provider.dart';
 import '../main.dart';
-import '../widgets/bottom_nav_wrapper.dart';
 
 class AuthProvider with ChangeNotifier {
   final _userSubject = BehaviorSubject<User?>();
@@ -80,10 +79,6 @@ class AuthProvider with ChangeNotifier {
               .updateUser(fullUser);
 
           notifyListeners();
-
-            Navigator.of(navigatorKey.currentContext!).pushReplacement(
-            MaterialPageRoute(builder: (context) => const BottomNavWrapper()),
-          );
         } else {
           throw Exception('Failed to fetch user details');
         }

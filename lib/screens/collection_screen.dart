@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
+import '../providers/navigation_provider.dart';
 
-class CollectionScreen extends StatelessWidget {
+class CollectionScreen extends StatefulWidget {
   const CollectionScreen({super.key});
 
+  @override
+  State<CollectionScreen> createState() => _CollectionScreenState();
+}
+
+class _CollectionScreenState extends State<CollectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -17,41 +23,33 @@ class CollectionScreen extends StatelessWidget {
           Expanded(child: _buildCardGrid()),
         ],
       ),
+      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 64, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Collection Overview',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Orbitron',
-                ),
-              ),
-              Row(
-                children: [
-                  _buildActionButton('View Listings', Icons.list),
-                  const SizedBox(width: 8),
-                  _buildActionButton('View Trades', Icons.swap_horiz),
-                ],
-              ),
-            ],
+          const Text(
+            'Collection Overview',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+              letterSpacing: 1,
+            ),
           ),
+          const SizedBox(height: 4),
           const Text(
             'Manage and explore your racing cards',
             style: TextStyle(
               color: Colors.grey,
-              fontSize: 14,
+              fontSize: 12,
+              letterSpacing: 0.5,
             ),
           ),
         ],
@@ -62,15 +60,21 @@ class CollectionScreen extends StatelessWidget {
   Widget _buildStats() {
     return Container(
       padding: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildStatCard(
-              'Total Cards', '194', Icons.card_membership, Colors.blue),
-          _buildStatCard('Legendary', '66', Icons.star, Colors.purple),
-          _buildStatCard('Series', '4', Icons.category, Colors.green),
-          _buildStatCard('Recent', '5', Icons.access_time, Colors.orange),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildStatCard(
+                'Total Cards', '194', Icons.card_membership, Colors.blue),
+            const SizedBox(width: 12),
+            _buildStatCard('Legendary', '66', Icons.star, Colors.purple),
+            const SizedBox(width: 12),
+            _buildStatCard('Series', '4', Icons.category, Colors.green),
+            const SizedBox(width: 12),
+            _buildStatCard('Recent', '5', Icons.access_time, Colors.orange),
+          ],
+        ),
       ),
     );
   }
@@ -211,47 +215,54 @@ class CollectionScreen extends StatelessWidget {
             child: Image.asset(
               image,
               fit: BoxFit.cover,
-              height: 200,
+              height: 140,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: rarityColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    rarity,
-                    style: TextStyle(
-                      color: rarityColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: rarityColor.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      rarity,
+                      style: TextStyle(
+                        color: rarityColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(height: 4),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                Text(
-                  serial,
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
+                  Text(
+                    serial,
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 10,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -278,6 +289,76 @@ class CollectionScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigationBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF0A0A1A),
+        border: Border(
+          top: BorderSide(
+            color: Colors.white.withOpacity(0.1),
+            width: 1,
+          ),
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildNavItem(Icons.map, 'Map', false),
+              _buildNavItem(Icons.card_membership, 'Collection', true),
+              _buildNavItem(Icons.store, 'Market', false),
+              _buildNavItem(Icons.person, 'Profile', false),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, String label, bool isSelected) {
+    return GestureDetector(
+      onTap: () {
+        if (!isSelected) {
+          final int index = label == 'Collection'
+              ? 1
+              : label == 'Market'
+                  ? 2
+                  : label == 'Profile'
+                      ? 3
+                      : 0;
+          Provider.of<NavigationProvider>(context, listen: false)
+              .changePage(index);
+        }
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? const Color(0xFF3B82F6) : Colors.grey,
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? const Color(0xFF3B82F6) : Colors.grey,
+                fontSize: 12,
+                fontFamily: 'Orbitron',
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
