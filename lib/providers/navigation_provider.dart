@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../screens/main_screen.dart';
 import '../screens/collection_screen.dart';
+import '../screens/market_screen.dart';
 import '../screens/profile_screen.dart';
 import '../main.dart';
 
@@ -28,15 +29,7 @@ class NavigationProvider with ChangeNotifier {
         break;
       case 2:
         navigatorKey.currentState?.pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (_) => Scaffold(
-              backgroundColor: const Color(0xFF0A0A1A),
-              body: const Center(
-                child: Text('Market Coming Soon',
-                    style: TextStyle(color: Colors.white)),
-              ),
-            ),
-          ),
+          MaterialPageRoute(builder: (_) => const MarketScreen()),
           (route) => false,
         );
         break;

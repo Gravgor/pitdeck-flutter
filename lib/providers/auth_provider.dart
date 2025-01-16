@@ -28,6 +28,7 @@ class AuthProvider with ChangeNotifier {
 
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
+        print(data);
         final initialUser = User(
           id: data['user']['id'],
           email: data['user']['email'],

@@ -5,6 +5,9 @@ import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/auth_provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
 import 'package:pitdeck/providers/navigation_provider.dart';
+import 'package:pitdeck/providers/card_provider.dart';
+import 'package:pitdeck/providers/listing_provider.dart';
+import 'package:pitdeck/providers/trade_provider.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -15,6 +18,9 @@ void main() {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
+        ChangeNotifierProvider(create: (_) => CardProvider()),
+        ChangeNotifierProvider(create: (_) => ListingProvider()),
+        ChangeNotifierProvider(create: (_) => TradeProvider()),
       ],
       child: MyApp(),
     ),
