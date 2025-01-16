@@ -62,6 +62,10 @@ class TradeProvider with ChangeNotifier {
     }
   }
 
+  List<TradeModel> getUserListings(String userId) {
+    return _trades.where((trade) => trade.senderId == userId).toList();
+  }
+
   Future<void> createTrade({
     required List<String> offeredCardIds,
     required int coinsOffered,
@@ -138,6 +142,78 @@ class TradeProvider with ChangeNotifier {
       } else {
         final errorData = json.decode(response.body);
         throw Exception(errorData['message'] ?? 'Failed to cancel trade');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+    Future<void> acceptTrade(String tradeId) async {
+    try {
+      final userProvider = Provider.of<UserProvider>(
+        navigatorKey.currentContext!,
+        listen: false,
+      );
+      final token = userProvider.user?.token;
+
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/marketplace/listings/trade/$tradeId/accept'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final updatedTrade = TradeModel.fromJson(json.decode(response.body));
+        final index = _trades.indexWhere((trade) => trade.id == tradeId);
+        if (index != -1) {
+          _trades[index] = updatedTrade;
+          notifyListeners();
+        }
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to accept trade');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<void> declineTrade(String tradeId) async {
+    try {
+      final userProvider = Provider.of<UserProvider>(
+        navigatorKey.currentContext!,
+        listen: false,
+      );
+      final token = userProvider.user?.token;
+
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/marketplace/listings/trade/$tradeId/decline'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final updatedTrade = TradeModel.fromJson(json.decode(response.body));
+        final index = _trades.indexWhere((trade) => trade.id == tradeId);
+        if (index != -1) {
+          _trades[index] = updatedTrade;
+          notifyListeners();
+        }
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to decline trade');
       }
     } catch (e) {
       throw Exception('Network error: $e');

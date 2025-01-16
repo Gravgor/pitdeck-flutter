@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:pitdeck/models/trade.dart';
 import '../models/card.dart';
+import 'package:provider/provider.dart';
+import '../providers/trade_provider.dart';
+import '../providers/user_provider.dart';
 
 class TradesScreen extends StatefulWidget {
   const TradesScreen({super.key});
@@ -11,103 +15,6 @@ class TradesScreen extends StatefulWidget {
 class _TradesScreenState extends State<TradesScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-
-  final List<Map<String, dynamic>> _mockMyListings = [
-    {
-      'id': '1',
-      'offeredCards': [
-        CardModel(
-          name: 'Monaco',
-          serialNumber: 'F1-24-L-000526',
-          rarity: 'LEGENDARY',
-          imageUrl: 'https://example.com/monaco.jpg',
-          type: 'TRACK',
-          id: '1',
-          series: 'F1-24-L',
-          isForSale: true,
-        ),
-      ],
-      'wantedCards': ['Any Legendary Driver'],
-      'additionalCoins': 500,
-      'note': 'Looking for legendary drivers only',
-      'status': 'ACTIVE',
-      'createdAt': DateTime.now().subtract(const Duration(hours: 1)),
-    },
-  ];
-
-  final List<Map<String, dynamic>> _mockReceivedOffers = [
-    {
-      'id': '1',
-      'originalTrade': {
-        'offeredCards': [
-          CardModel(
-            name: 'Monaco',
-            serialNumber: 'F1-24-L-000526',
-            rarity: 'LEGENDARY',
-            imageUrl: 'https://example.com/monaco.jpg',
-            type: 'TRACK',
-            id: '1',
-            series: 'F1-24-L',
-            isForSale: true,
-          ),
-        ],
-      },
-      'offeredCards': [
-        CardModel(
-          name: 'Lewis Hamilton',
-          serialNumber: 'F1-24-L-000152',
-          rarity: 'LEGENDARY',
-          imageUrl: 'https://example.com/hamilton.jpg',
-          type: 'DRIVER',
-          id: '1',
-          series: 'F1-24-L',
-          isForSale: true,
-        ),
-      ],
-      'additionalCoins': 0,
-      'note': 'Interested in your Monaco track',
-      'trader': 'User789',
-      'status': 'PENDING',
-      'createdAt': DateTime.now().subtract(const Duration(minutes: 30)),
-    },
-  ];
-
-  final List<Map<String, dynamic>> _mockSentOffers = [
-    {
-      'id': '1',
-      'originalTrade': {
-        'offeredCards': [
-          CardModel(
-            name: 'Spa-Francorchamps',
-            serialNumber: 'F1-24-L-000453',
-            rarity: 'LEGENDARY',
-            imageUrl: 'https://example.com/spa.jpg',
-            type: 'TRACK',
-            id: '1',
-            series: 'F1-24-L',
-            isForSale: true,
-          ),
-        ],
-      },
-      'offeredCards': [
-        CardModel(
-          name: 'Max Verstappen',
-          serialNumber: 'F1-24-L-000103',
-          rarity: 'LEGENDARY',
-          imageUrl: 'https://example.com/verstappen.jpg',
-          type: 'DRIVER',
-          id: '1',
-          series: 'F1-24-L',
-          isForSale: true,
-        ),
-      ],
-      'additionalCoins': 200,
-      'note': 'Great offer for your track',
-      'trader': 'User456',
-      'status': 'PENDING',
-      'createdAt': DateTime.now().subtract(const Duration(hours: 2)),
-    },
-  ];
 
   @override
   void initState() {
@@ -195,105 +102,213 @@ class _TradesScreenState extends State<TradesScreen>
   }
 
   Widget _buildMyListings() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _mockMyListings.length,
-      itemBuilder: (context, index) {
-        final listing = _mockMyListings[index];
-        final offeredCards = listing['offeredCards'] as List<CardModel>;
+    return Consumer<TradeProvider>(
+      builder: (context, tradeProvider, child) {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        final userId = userProvider.user?.id;
 
-        return _buildTradeCard(
-          cards: offeredCards,
-          title: 'Your Trade Listing',
-          subtitle: listing['note'],
-          status: listing['status'],
-          onTap: () => _showTradeDetails(context, listing),
-          trailing: TextButton(
-            onPressed: () {
-              // TODO: Implement cancel listing
-            },
-            child: const Text(
-              'Cancel Listing',
-              style: TextStyle(color: Colors.red),
+        if (userId == null) {
+          return const Center(
+            child: Text(
+              'Please log in to view your listings',
+              style: TextStyle(color: Colors.grey),
             ),
-          ),
+          );
+        }
+
+        final userListings = tradeProvider.getUserListings(userId);
+
+        if (userListings.isEmpty) {
+          return const Center(
+            child: Text(
+              'No active listings',
+              style: TextStyle(color: Colors.grey),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: userListings.length,
+          itemBuilder: (context, index) {
+            final trade = userListings[index];
+            return _buildTradeCard(
+              cards: trade.offeredCards,
+              title: 'Your Trade Listing',
+              subtitle: trade.note ?? 'No note provided',
+              status: trade.status.toString().split('.').last,
+              onTap: () => _showTradeDetails(context, trade),
+              trailing: TextButton(
+                onPressed: () => _cancelTrade(trade.id),
+                child: const Text(
+                  'Cancel Listing',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildReceivedOffers() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _mockReceivedOffers.length,
-      itemBuilder: (context, index) {
-        final offer = _mockReceivedOffers[index];
-        final offeredCards = offer['offeredCards'] as List<CardModel>;
+  void _cancelTrade(String tradeId) {
+    // TODO: Implement cancel trade
+  }
 
-        return _buildTradeCard(
-          cards: offeredCards,
-          title: 'Offer from ${offer['trader']}',
-          subtitle: offer['note'],
-          status: offer['status'],
-          onTap: () => _showOfferDetails(context, offer, isReceived: true),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextButton(
-                onPressed: () {
-                  // TODO: Implement accept offer
-                },
-                child: const Text(
-                  'Accept',
-                  style: TextStyle(color: Colors.green),
-                ),
+  Widget _buildReceivedOffers() {
+    return Consumer<TradeProvider>(
+      builder: (context, tradeProvider, child) {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        final userId = userProvider.user?.id;
+
+        if (userId == null) {
+          return const Center(
+            child: Text(
+              'Please log in to view offers',
+              style: TextStyle(color: Colors.grey),
+            ),
+          );
+        }
+
+        final receivedOffers = tradeProvider.trades
+            .where((trade) =>
+                trade.receivers.any((receiver) => receiver.id == userId) &&
+                trade.status == TradeStatus.PENDING)
+            .toList();
+
+        if (receivedOffers.isEmpty) {
+          return const Center(
+            child: Text(
+              'No received offers',
+              style: TextStyle(color: Colors.grey),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: receivedOffers.length,
+          itemBuilder: (context, index) {
+            final trade = receivedOffers[index];
+
+            return _buildTradeCard(
+              cards: trade.offeredCards,
+              title: 'Offer from ${trade.sender.name}',
+              subtitle: trade.note ?? 'No note provided',
+              status: trade.status.toString().split('.').last,
+              onTap: () => _showOfferDetails(
+                  context,
+                  trade,
+                  isReceived: true),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextButton(
+                    onPressed: () => _acceptOffer(trade.id),
+                    child: const Text(
+                      'Accept',
+                      style: TextStyle(color: Colors.green),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => _declineOffer(trade.id),
+                    child: const Text(
+                      'Decline',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ],
               ),
-              TextButton(
-                onPressed: () {
-                  // TODO: Implement decline offer
-                },
-                child: const Text(
-                  'Decline',
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
   }
 
   Widget _buildSentOffers() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _mockSentOffers.length,
-      itemBuilder: (context, index) {
-        final offer = _mockSentOffers[index];
-        final offeredCards = offer['offeredCards'] as List<CardModel>;
+    return Consumer<TradeProvider>(
+      builder: (context, tradeProvider, child) {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        final userId = userProvider.user?.id;
 
-        return _buildTradeCard(
-          cards: offeredCards,
-          title: 'Your offer to ${offer['trader']}',
-          subtitle: offer['note'],
-          status: offer['status'],
-          onTap: () => _showOfferDetails(context, offer, isReceived: false),
-          trailing: TextButton(
-            onPressed: () {
-              // TODO: Implement cancel offer
-            },
-            child: const Text(
-              'Cancel Offer',
-              style: TextStyle(color: Colors.red),
+        if (userId == null) {
+          return const Center(
+            child: Text(
+              'Please log in to view offers',
+              style: TextStyle(color: Colors.grey),
             ),
-          ),
+          );
+        }
+
+        final sentOffers = tradeProvider.trades
+            .where((trade) =>
+                trade.senderId == userId && trade.status == TradeStatus.PENDING)
+            .toList();
+
+        if (sentOffers.isEmpty) {
+          return const Center(
+            child: Text(
+              'No sent offers',
+              style: TextStyle(color: Colors.grey),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: sentOffers.length,
+          itemBuilder: (context, index) {
+            final trade = sentOffers[index];
+
+            return _buildTradeCard(
+              cards: trade.offeredCards,
+              title: 'Your offer to ${trade.receivers[0].name}',
+              subtitle: trade.note ?? 'No note provided',
+              status: trade.status.toString().split('.').last,
+              onTap: () => _showOfferDetails(
+                  context,
+                  trade,
+                  isReceived: false),
+              trailing: TextButton(
+                onPressed: () => _cancelTrade(trade.id),
+                child: const Text(
+                  'Cancel Offer',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            );
+          },
         );
       },
     );
   }
 
+  Future<void> _acceptOffer(String tradeId) async {
+    try {
+      final tradeProvider = Provider.of<TradeProvider>(context, listen: false);
+      await tradeProvider.acceptTrade(tradeId);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error accepting offer: $e')),
+      );
+    }
+  }
+
+  Future<void> _declineOffer(String tradeId) async {
+    try {
+      final tradeProvider = Provider.of<TradeProvider>(context, listen: false);
+      await tradeProvider.declineTrade(tradeId);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error declining offer: $e')),
+      );
+    }
+  }
+
   Widget _buildTradeCard({
-    required List<CardModel> cards,
+    required List<CardDetailModel> cards,
     required String title,
     required String subtitle,
     required String status,
@@ -430,7 +445,7 @@ class _TradesScreenState extends State<TradesScreen>
     }
   }
 
-  void _showTradeDetails(BuildContext context, Map<String, dynamic> trade) {
+  void _showTradeDetails(BuildContext context, TradeModel trade) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -485,7 +500,7 @@ class _TradesScreenState extends State<TradesScreen>
     );
   }
 
-  void _showOfferDetails(BuildContext context, Map<String, dynamic> offer,
+  void _showOfferDetails(BuildContext context, TradeModel offer,
       {required bool isReceived}) {
     showDialog(
       context: context,
@@ -574,12 +589,12 @@ class _TradesScreenState extends State<TradesScreen>
     );
   }
 
-  Widget _buildTradeCardDetails(Map<String, dynamic> trade) {
-    final offeredCards = trade['offeredCards'] as List<CardModel>;
-    final wantedCards = trade['wantedCards'] as List<String>;
-    final additionalCoins = trade['additionalCoins'] as int;
-    final note = trade['note'] as String;
-    final status = trade['status'] as String;
+  Widget _buildTradeCardDetails(TradeModel trade) {
+    final offeredCards = trade.offeredCards;
+    final wantedCards = trade.wantedCards;
+    final additionalCoins = trade.coinsOffered;
+    final note = trade.note ?? '';
+    final status = trade.status;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -677,8 +692,8 @@ class _TradesScreenState extends State<TradesScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Note:',
+              Text(
+                '${trade.note ?? 'No note provided'}',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 14,
@@ -705,13 +720,13 @@ class _TradesScreenState extends State<TradesScreen>
                 vertical: 6,
               ),
               decoration: BoxDecoration(
-                color: _getStatusColor(status).withOpacity(0.2),
+                color: _getStatusColor(status.toString()).withOpacity(0.2),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
-                status,
+                status.toString(),
                 style: TextStyle(
-                  color: _getStatusColor(status),
+                  color: _getStatusColor(status.toString()),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -722,14 +737,13 @@ class _TradesScreenState extends State<TradesScreen>
     );
   }
 
-  Widget _buildOfferCardDetails(Map<String, dynamic> offer, bool isReceived) {
-    final offeredCards = offer['offeredCards'] as List<CardModel>;
-    final originalTrade = offer['originalTrade'] as Map<String, dynamic>;
-    final originalCards = originalTrade['offeredCards'] as List<CardModel>;
-    final additionalCoins = offer['additionalCoins'] as int;
-    final note = offer['note'] as String;
-    final status = offer['status'] as String;
-    final trader = offer['trader'] as String;
+  Widget _buildOfferCardDetails(TradeModel offer, bool isReceived) {
+    final offeredCards = offer.offeredCards;
+    final originalCards = offer.wantedCards;
+    final additionalCoins = offer.coinsOffered;
+    final note = offer.note ?? '';
+    final status = offer.status.toString();
+    final trader = offer.receivers[0].name;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -821,7 +835,7 @@ class _TradesScreenState extends State<TradesScreen>
     );
   }
 
-  Widget _buildCardsList(List<CardModel> cards) {
+  Widget _buildCardsList(List<CardDetailModel> cards) {
     return SizedBox(
       height: 120,
       child: ListView.builder(

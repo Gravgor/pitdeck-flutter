@@ -84,4 +84,22 @@ class CardDetailModel {
       isForTrade: json['isForTrade'] ?? false,
     );
   }
+  factory CardDetailModel.fromCardModel(CardModel card) {
+    return CardDetailModel(
+      id: card.id,
+      name: card.name,
+      type: card.type,
+      rarity: card.rarity,
+      imageUrl: card.imageUrl,
+      series: card.series,
+      serialNumber: card.serialNumber,
+      isForSale: card.isForSale,
+      description: '',
+      edition: '',
+      stats: {},
+      year: 0,
+      isExclusive: false,
+      isForTrade: false,
+    );
+  }
 }

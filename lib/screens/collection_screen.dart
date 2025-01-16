@@ -720,13 +720,15 @@ class _CollectionScreenState extends State<CollectionScreen> {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 12, vertical: 6),
                                     decoration: BoxDecoration(
-                                      color: Colors.purple.withOpacity(0.2),
+                                      color: _getRarityColor(cardDetails.rarity)
+                                          .withOpacity(0.2),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Text(
                                       cardDetails.rarity,
-                                      style: const TextStyle(
-                                        color: Colors.purple,
+                                      style: TextStyle(
+                                        color: _getRarityColor(
+                                            cardDetails.rarity),
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
