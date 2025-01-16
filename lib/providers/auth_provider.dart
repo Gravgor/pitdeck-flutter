@@ -28,7 +28,6 @@ class AuthProvider with ChangeNotifier {
 
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
-        // Create initial user with minimal data from login response
         final initialUser = User(
           id: data['user']['id'],
           email: data['user']['email'],
@@ -42,6 +41,7 @@ class AuthProvider with ChangeNotifier {
           xp: data['user']['xp'] ?? 0,
           totalXp: data['user']['totalXp'] ?? 0,
           image: data['user']['image'],
+          bio: data['user']['bio'] ?? '',
         );
 
         // First store basic user data
@@ -58,6 +58,7 @@ class AuthProvider with ChangeNotifier {
 
         if (detailsResponse.statusCode == 200) {
           final userDetails = json.decode(detailsResponse.body);
+          print(userDetails);
           final fullUser = User(
             id: userDetails['id'],
             name: userDetails['name'],
@@ -66,13 +67,13 @@ class AuthProvider with ChangeNotifier {
             coins: userDetails['coins'],
             totalXp: userDetails['totalXp'],
             level: userDetails['level'],
+            bio: userDetails['bio'],
             xp: userDetails['xp'],
             createdAt: DateTime.parse(userDetails['createdAt']),
             updatedAt: DateTime.now(),
             token: initialUser.token,
           );
 
-          // Update both providers with complete user data
           _userSubject.add(fullUser);
           await Provider.of<UserProvider>(navigatorKey.currentContext!,
                   listen: false)
@@ -113,10 +114,8 @@ class AuthProvider with ChangeNotifier {
         final data = json.decode(response.body);
         final initialUser = User.fromJson(data['user'], token: data['token']);
 
-        // First store basic user data
         _userSubject.add(initialUser);
 
-        // Then fetch detailed user info
         final detailsResponse = await http.get(
           Uri.parse('$_baseUrl/users/${initialUser.id}'),
           headers: {
@@ -129,7 +128,6 @@ class AuthProvider with ChangeNotifier {
           final userDetails = json.decode(detailsResponse.body);
           final fullUser = User.fromJson(userDetails, token: initialUser.token);
 
-          // Update both providers with complete user data
           _userSubject.add(fullUser);
           await Provider.of<UserProvider>(navigatorKey.currentContext!,
                   listen: false)

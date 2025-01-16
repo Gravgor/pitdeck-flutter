@@ -56,8 +56,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     try {
       geo.Position position = await geo.Geolocator.getCurrentPosition(
           desiredAccuracy: geo.LocationAccuracy.high);
-      print('Position: ${position.latitude}, ${position.longitude}');
-
       if (!mounted) return;
 
       setState(() {
