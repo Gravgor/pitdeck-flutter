@@ -96,5 +96,9 @@ class CardProvider with ChangeNotifier {
       throw Exception('Network error: $e');
     }
   }
+
+  Future<void> revalidateUserCards() async {
+    await fetchUserCards();
+  }
 }
 

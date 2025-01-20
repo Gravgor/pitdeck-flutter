@@ -1,69 +1,83 @@
 import 'package:pitdeck/models/card.dart';
 import 'package:pitdeck/models/user.dart';
 
-enum TradeStatus { PENDING, ACCEPTED, REJECTED, CANCELLED, EXPIRED }
+enum TradeStatus { PENDING, ACCEPTED, DECLINED, CANCELLED, EXPIRED, REJECTED }
 
 class TradeModel {
   final String id;
-  final User sender;
+  final DateTime createdAt;
+  final DateTime updatedAt;
   final String senderId;
   final TradeStatus status;
   final bool isOpenTrade;
   final String? note;
   final DateTime? expiresAt;
-  final List<CardDetailModel> offeredCards;
   final int coinsOffered;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final List<User> receivers;
-  final List<CardDetailModel> wantedCards;
+  final List<CardDetailModel> offeredCards;
+  final UserModel sender;
 
   TradeModel({
     required this.id,
-    required this.sender,
+    required this.createdAt,
+    required this.updatedAt,
     required this.senderId,
     required this.status,
     required this.isOpenTrade,
     this.note,
     this.expiresAt,
-    required this.offeredCards,
     required this.coinsOffered,
-    required this.createdAt,
-    required this.updatedAt,
-    List<User>? receivers,
-    List<CardDetailModel>? wantedCards,
-  })  : receivers = receivers ?? [],
-        wantedCards = wantedCards ?? [];
+    required this.offeredCards,
+    required this.sender,
+  });
 
   factory TradeModel.fromJson(Map<String, dynamic> json) {
-    return TradeModel(
-      id: json['id'],
-      sender: User.fromJson(json['sender']),
-      senderId: json['senderId'],
-      status: TradeStatus.values.firstWhere(
-        (e) => e.toString() == 'TradeStatus.${json['status']}',
-        orElse: () => TradeStatus.PENDING,
-      ),
-      isOpenTrade: json['isOpenTrade'] ?? false,
-      note: json['note'],
-      expiresAt:
-          json['expiresAt'] != null ? DateTime.parse(json['expiresAt']) : null,
-      offeredCards: (json['offeredCards'] as List<dynamic>)
-          .map((card) => CardDetailModel.fromJson(card))
-          .toList(),
-      coinsOffered: json['coinsOffered'] ?? 0,
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
-      receivers: json['receivers'] != null
-          ? (json['receivers'] as List<dynamic>)
-              .map((user) => User.fromJson(user))
-              .toList()
-          : [],
-      wantedCards: json['wantedCards'] != null
-          ? (json['wantedCards'] as List<dynamic>)
-              .map((card) => CardDetailModel.fromJson(card))
-              .toList()
-          : [],
+    try {
+      return TradeModel(
+        id: json['id'] as String? ?? '',
+        createdAt: DateTime.parse(json['createdAt'] as String? ?? ''),
+        updatedAt: DateTime.parse(json['updatedAt'] as String? ?? ''),
+        senderId: json['senderId'] as String? ?? '',
+        status: TradeStatus.values.firstWhere(
+          (e) =>
+              e.toString().split('.').last ==
+              (json['status'] as String? ?? 'PENDING'),
+          orElse: () => TradeStatus.PENDING,
+        ),
+        isOpenTrade: json['isOpenTrade'] as bool? ?? true,
+        note: json['note'] as String?,
+        expiresAt: json['expiresAt'] != null
+            ? DateTime.parse(json['expiresAt'] as String)
+            : null,
+        coinsOffered: json['coinsOffered'] as int? ?? 0,
+        offeredCards: (json['offeredCards'] as List<dynamic>? ?? [])
+            .map((cardJson) =>
+                CardDetailModel.fromJson(cardJson as Map<String, dynamic>))
+            .toList(),
+        sender: UserModel.fromJson(json['sender'] as Map<String, dynamic>? ?? {}),
+      );
+    } catch (e, stackTrace) {
+      print('Error parsing TradeModel: $e');
+      print('Stack trace: $stackTrace');
+      print('JSON data: $json');
+      rethrow;
+    }
+  }
+}
+
+class UserModel {
+  final String id;
+  final String name;
+  final String? image;
+  final int level;
+
+  UserModel({required this.id, required this.name, this.image, required this.level});
+
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      image: json['image'] as String?,
+      level: json['level'] as int? ?? 0,
     );
   }
 }

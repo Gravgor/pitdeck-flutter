@@ -49,8 +49,8 @@ class _TradesScreenState extends State<TradesScreen>
               controller: _tabController,
               children: [
                 _buildMyListings(),
-                _buildReceivedOffers(),
-                _buildSentOffers(),
+                //_buildReceivedOffers(),
+                //_buildSentOffers(),
               ],
             ),
           ),
@@ -156,7 +156,7 @@ class _TradesScreenState extends State<TradesScreen>
     // TODO: Implement cancel trade
   }
 
-  Widget _buildReceivedOffers() {
+ /* Widget _buildReceivedOffers() {
     return Consumer<TradeProvider>(
       builder: (context, tradeProvider, child) {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -283,7 +283,7 @@ class _TradesScreenState extends State<TradesScreen>
         );
       },
     );
-  }
+  }*/
 
   Future<void> _acceptOffer(String tradeId) async {
     try {
@@ -591,7 +591,7 @@ class _TradesScreenState extends State<TradesScreen>
 
   Widget _buildTradeCardDetails(TradeModel trade) {
     final offeredCards = trade.offeredCards;
-    final wantedCards = trade.wantedCards;
+    //final wantedCards = trade.wantedCards;
     final additionalCoins = trade.coinsOffered;
     final note = trade.note ?? '';
     final status = trade.status;
@@ -658,7 +658,7 @@ class _TradesScreenState extends State<TradesScreen>
         const SizedBox(height: 8),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: wantedCards
+          children: offeredCards
               .map((card) => Padding(
                     padding: const EdgeInsets.only(bottom: 4),
                     child: Text(
@@ -739,11 +739,11 @@ class _TradesScreenState extends State<TradesScreen>
 
   Widget _buildOfferCardDetails(TradeModel offer, bool isReceived) {
     final offeredCards = offer.offeredCards;
-    final originalCards = offer.wantedCards;
+    //final originalCards = offer.wantedCards;
     final additionalCoins = offer.coinsOffered;
     final note = offer.note ?? '';
     final status = offer.status.toString();
-    final trader = offer.receivers[0].name;
+    final trader = offer.sender.name;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -768,7 +768,7 @@ class _TradesScreenState extends State<TradesScreen>
           ),
         ),
         const SizedBox(height: 8),
-        _buildCardsList(originalCards),
+        //_buildCardsList(originalCards),
         if (additionalCoins > 0) ...[
           const SizedBox(height: 16),
           Text(

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:pitdeck/models/card.dart';
+import 'package:pitdeck/screens/packs_screen.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/card_provider.dart';
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class CollectionScreen extends StatefulWidget {
   const CollectionScreen({super.key});
@@ -22,6 +25,8 @@ class _CollectionScreenState extends State<CollectionScreen> {
   List<CardModel> _filteredCards = [];
   final Set<String> _selectedRarities = {};
   final Set<String> _selectedTypes = {};
+  String _searchQuery = '';
+  String _selectedFilter = 'all';
 
   @override
   void initState() {
@@ -81,7 +86,10 @@ class _CollectionScreenState extends State<CollectionScreen> {
           _buildHeader(),
           _buildStats(),
           _buildSearchBar(),
+          _buildFilterChips(),
+          const SizedBox(height: 8),
           Expanded(child: _buildCardGrid()),
+          _buildControlCenter(),
         ],
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
@@ -308,14 +316,135 @@ class _CollectionScreenState extends State<CollectionScreen> {
     });
   }
 
+  Widget _buildFilterChips() {
+    return Container(
+      margin: const EdgeInsets.only(top: 16, bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildFilterChip(
+              label: 'All',
+              value: 'all',
+              count: _cards
+                  .where((card) => !card.isForTrade && !card.isForSale)
+                  .length,
+            ),
+            const SizedBox(width: 12),
+            _buildFilterChip(
+              label: 'In Trade',
+              value: 'trade',
+              count: _cards.where((card) => card.isForTrade).length,
+            ),
+            const SizedBox(width: 12),
+            _buildFilterChip(
+              label: 'Listed',
+              value: 'market',
+              count: _cards.where((card) => card.isForSale).length,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChip({
+    required String label,
+    required String value,
+    required int count,
+  }) {
+    final isSelected = _selectedFilter == value;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      decoration: BoxDecoration(
+        color: isSelected ? const Color(0xFF3B82F6) : const Color(0xFF1A1A2E),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: isSelected ? const Color(0xFF3B82F6) : Colors.white24,
+          width: 1,
+        ),
+        boxShadow: isSelected
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF3B82F6).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                )
+              ]
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => setState(() => _selectedFilter = value),
+          borderRadius: BorderRadius.circular(30),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.white70,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Colors.white.withOpacity(0.2)
+                        : const Color(0xFF0A0A1A),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    count.toString(),
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : Colors.white70,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildCardGrid() {
-    if (_isLoading && _cards.isEmpty) {
+    var filteredCards = _cards.where((card) {
+      if (_searchQuery.isNotEmpty) {
+        final query = _searchQuery.toLowerCase();
+        return card.name.toLowerCase().contains(query) ||
+            card.type.toLowerCase().contains(query) ||
+            card.rarity.toLowerCase().contains(query) ||
+            card.serialNumber!.toLowerCase().contains(query);
+      }
+      return true;
+    }).toList();
+
+    if (_selectedFilter == 'trade') {
+      filteredCards = filteredCards.where((card) => card.isForTrade).toList();
+    } else if (_selectedFilter == 'market') {
+      filteredCards = filteredCards.where((card) => card.isForSale).toList();
+    }
+
+    if (_isLoading && filteredCards.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: Color(0xFF3B82F6)),
       );
     }
 
-    if (_error != null && _cards.isEmpty) {
+    if (_error != null && filteredCards.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -349,147 +478,146 @@ class _CollectionScreenState extends State<CollectionScreen> {
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
         ),
-        itemCount:
-            _filteredCards.isEmpty ? _cards.length : _filteredCards.length,
+        itemCount: filteredCards.length,
         itemBuilder: (context, index) {
-          final card =
-              _filteredCards.isEmpty ? _cards[index] : _filteredCards[index];
-          return _buildCard(
-            id: card.id,
-            type: card.type,
-            name: card.name,
-            serialNumber: card.serialNumber,
-            rarity: card.rarity,
-            imageUrl: card.imageUrl,
+          final card = filteredCards[index];
+          return Stack(
+            children: [
+              GestureDetector(
+                onTap: () => _showCardDetails(context, card.id),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A2E),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _getRarityColor(card.rarity).withOpacity(0.5),
+                      width: 2,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12),
+                            ),
+                            child: Image.network(
+                              card.imageUrl,
+                              height: 140,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          Container(
+                            height: 140,
+                            decoration: BoxDecoration(
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(12),
+                              ),
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  _getRarityColor(card.rarity).withOpacity(0.3),
+                                  _getRarityColor(card.rarity).withOpacity(0.1),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _getRarityColor(card.rarity)
+                                        .withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: _getRarityColor(card.rarity)
+                                          .withOpacity(0.5),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    card.rarity,
+                                    style: TextStyle(
+                                      color: _getRarityColor(card.rarity),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                const Spacer(),
+                                if (card.isForTrade || card.isForSale)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: card.isForTrade
+                                          ? const Color(0xFF3B82F6)
+                                          : const Color(0xFF10B981),
+                                      borderRadius: BorderRadius.circular(8),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.2),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Text(
+                                      card.isForTrade ? 'Trade' : 'Listed',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              card.name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '#${card.serialNumber}',
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildCard({
-    required String id,
-    required String type,
-    required String name,
-    required String serialNumber,
-    required String rarity,
-    required String imageUrl,
-  }) {
-    Color rarityColor;
-    switch (rarity) {
-      case 'EPIC':
-        rarityColor = Colors.purple;
-        break;
-      case 'LEGENDARY':
-        rarityColor = Colors.orange;
-        break;
-      case 'RARE':
-        rarityColor = Colors.blue;
-        break;
-      default:
-        rarityColor = Colors.grey;
-    }
-
-    return GestureDetector(
-      onTap: () => _showCardDetails(context, id),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A2E),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: rarityColor.withOpacity(0.5)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(16)),
-              child: SizedBox(
-                width: double.infinity,
-                height: 140,
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  height: 140,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      width: double.infinity,
-                      height: 140,
-                      color: const Color(0xFF1A1A2E),
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFF3B82F6),
-                        ),
-                      ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: double.infinity,
-                      height: 140,
-                      color: const Color(0xFF1A1A2E),
-                      child: const Center(
-                        child: Icon(
-                          Icons.broken_image,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: rarityColor.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        rarity,
-                        style: TextStyle(
-                          color: rarityColor,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      serialNumber,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 10,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -727,8 +855,8 @@ class _CollectionScreenState extends State<CollectionScreen> {
                                     child: Text(
                                       cardDetails.rarity,
                                       style: TextStyle(
-                                        color: _getRarityColor(
-                                            cardDetails.rarity),
+                                        color:
+                                            _getRarityColor(cardDetails.rarity),
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -1547,7 +1675,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
   void _showListForTradeModal(CardDetailModel selectedCard) {
     final TextEditingController coinsController = TextEditingController();
     final TextEditingController noteController = TextEditingController();
-    final selectedCardIds = <String>{selectedCard.serialNumber!};
+    final selectedCardIds = <String>{selectedCard.id!};
+    bool isLoading = false;
+    final cardProvider = Provider.of<CardProvider>(context, listen: false);
 
     showModalBottomSheet(
       context: context,
@@ -1556,10 +1686,11 @@ class _CollectionScreenState extends State<CollectionScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => Container(
           height: MediaQuery.of(context).size.height * 0.9,
-          padding: const EdgeInsets.all(16),
-          decoration: const BoxDecoration(
-            color: Color(0xFF1A1A2E),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0A0A1B),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+            border: Border.all(color: Colors.white10),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1583,13 +1714,11 @@ class _CollectionScreenState extends State<CollectionScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-
-              // Selected cards section with serial numbers
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0A0A1A),
-                  borderRadius: BorderRadius.circular(12),
+                  color: const Color(0xFF1A1A2E),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: Colors.white10),
                 ),
                 child: Column(
@@ -1601,11 +1730,12 @@ class _CollectionScreenState extends State<CollectionScreen> {
                         const Text(
                           'You\'re offering:',
                           style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 14,
+                            color: Colors.white70,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                        TextButton(
+                        TextButton.icon(
                           onPressed: () {
                             _showCardSelectionModal(selectedCardIds,
                                 (newSelection) {
@@ -1615,115 +1745,160 @@ class _CollectionScreenState extends State<CollectionScreen> {
                               });
                             });
                           },
-                          child: const Text(
-                            'Add Cards',
-                            style: TextStyle(
-                              color: Colors.blue,
-                              fontSize: 14,
-                            ),
+                          icon: const Icon(Icons.add_circle_outline, size: 18),
+                          label: const Text('Add Cards'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF3B82F6),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: selectedCardIds.map((serialNumber) {
-                        final card = _cards.firstWhere(
-                          (card) => card.serialNumber == serialNumber,
-                        );
-                        return Container(
-                          width: 80,
-                          height: 110,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.white10),
+                    const SizedBox(height: 12),
+                    if (selectedCardIds.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'No cards selected',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 14,
+                            ),
                           ),
-                          child: Column(
-                            children: [
-                              ClipRRect(
-                                borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(8),
-                                ),
-                                child: Image.network(
-                                  card.imageUrl,
-                                  height: 70,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
+                        ),
+                      )
+                    else
+                      SizedBox(
+                        height: 120,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: selectedCardIds.length,
+                          itemBuilder: (context, index) {
+                            final cardId = selectedCardIds.elementAt(index);
+                            final cardDetail = cardProvider.cardDetails[cardId];
+                            if (cardDetail == null)
+                              return const SizedBox.shrink();
+
+                            return Container(
+                              width: 90,
+                              margin: const EdgeInsets.only(right: 12),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: _getRarityColor(cardDetail.rarity)
+                                      .withOpacity(0.5),
                                 ),
                               ),
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
+                              child: Stack(
+                                children: [
+                                  Column(
                                     children: [
-                                      Text(
-                                        card.name,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.bold,
+                                      ClipRRect(
+                                        borderRadius:
+                                            const BorderRadius.vertical(
+                                          top: Radius.circular(12),
                                         ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        textAlign: TextAlign.center,
+                                        child: Image.network(
+                                          cardDetail.imageUrl,
+                                          height: 80,
+                                          width: double.infinity,
+                                          fit: BoxFit.cover,
+                                        ),
                                       ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        '#${card.serialNumber}',
-                                        style: const TextStyle(
-                                          color: Colors.grey,
-                                          fontSize: 8,
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              cardDetail.name,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            Text(
+                                              '#${cardDetail.serialNumber}',
+                                              style: TextStyle(
+                                                color: Colors.white
+                                                    .withOpacity(0.5),
+                                                fontSize: 9,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
                                   ),
-                                ),
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: GestureDetector(
+                                      onTap: () => setState(() {
+                                        selectedCardIds.remove(cardId);
+                                      }),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black54,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: const Icon(
+                                          Icons.close,
+                                          color: Colors.white,
+                                          size: 14,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
+                            );
+                          },
+                        ),
+                      ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Coins input
+              const SizedBox(height: 24),
               TextField(
                 controller: coinsController,
                 style: const TextStyle(color: Colors.white),
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   hintText: 'Add coins to trade (optional)',
-                  hintStyle: const TextStyle(color: Colors.grey),
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
                   filled: true,
-                  fillColor: const Color(0xFF0A0A1A),
+                  fillColor: const Color(0xFF1A1A2E),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
                   ),
-                  prefixIcon: const Icon(
+                  prefixIcon: Icon(
                     Icons.monetization_on,
-                    color: Colors.grey,
+                    color: Colors.white.withOpacity(0.5),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Note input
               TextField(
                 controller: noteController,
                 style: const TextStyle(color: Colors.white),
                 maxLines: 3,
                 decoration: InputDecoration(
                   hintText: 'Add a note to your trade offer (optional)',
-                  hintStyle: const TextStyle(color: Colors.grey),
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
                   filled: true,
-                  fillColor: const Color(0xFF0A0A1A),
+                  fillColor: const Color(0xFF1A1A2E),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -1731,15 +1906,13 @@ class _CollectionScreenState extends State<CollectionScreen> {
                 ),
               ),
               const Spacer(),
-
-              // Action buttons
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey.withOpacity(0.2),
+                        backgroundColor: Colors.white.withOpacity(0.1),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -1757,15 +1930,69 @@ class _CollectionScreenState extends State<CollectionScreen> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Trade offer created successfully!'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      },
+                      onPressed: isLoading
+                          ? null
+                          : () async {
+                              if (selectedCardIds.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content:
+                                        Text('Please select at least one card'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              setState(() => isLoading = true);
+
+                              try {
+                                final auth = Provider.of<UserProvider>(
+                                  context,
+                                  listen: false,
+                                );
+                                final cardProvider = Provider.of<CardProvider>(
+                                  context,
+                                  listen: false,
+                                );
+
+                                final response = await http.post(
+                                  Uri.parse(
+                                      'https://api.pitdeck.app/api/marketplace/trades'),
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization':
+                                        'Bearer ${auth.user?.token}',
+                                  },
+                                  body: json.encode({
+                                    'offeredCardIds': selectedCardIds.toList(),
+                                    'coinsOffered':
+                                        int.tryParse(coinsController.text) ?? 0,
+                                    'note': noteController.text.isEmpty
+                                        ? null
+                                        : noteController.text,
+                                  }),
+                                );
+
+                                if (response.statusCode == 201) {
+                                  await cardProvider.revalidateUserCards();
+                                  Navigator.pop(context);
+                                } else {
+                                  final errorData = json.decode(response.body);
+                                  throw Exception(errorData['message'] ??
+                                      'Failed to create trade');
+                                }
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error creating trade: $e'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              } finally {
+                                setState(() => isLoading = false);
+                              }
+                            },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF3B82F6),
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -1773,13 +2000,22 @@ class _CollectionScreenState extends State<CollectionScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
-                        'Create Trade',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Create Trade',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
                 ],
@@ -1792,13 +2028,17 @@ class _CollectionScreenState extends State<CollectionScreen> {
   }
 
   Color _getRarityColor(String rarity) {
-    switch (rarity) {
-      case 'LEGENDARY':
-        return Colors.orange;
-      case 'EPIC':
-        return Colors.purple;
+    switch (rarity.toUpperCase()) {
+      case 'COMMON':
+        return Colors.grey;
+      case 'UNCOMMON':
+        return Colors.green;
       case 'RARE':
         return Colors.blue;
+      case 'EPIC':
+        return Colors.purple;
+      case 'LEGENDARY':
+        return Colors.orange;
       default:
         return Colors.grey;
     }
@@ -1870,21 +2110,19 @@ class _CollectionScreenState extends State<CollectionScreen> {
                     hintText: 'Search by name, type, or serial...',
                     hintStyle: TextStyle(color: Colors.grey),
                     border: InputBorder.none,
-                    icon: Icon(Icons.search, color: Colors.grey),
                   ),
-                  onChanged: (query) {
+                  onChanged: (value) {
                     setModalState(() {
-                      if (query.isEmpty) {
+                      if (value.isEmpty) {
                         filteredCards = List<CardModel>.from(_cards);
                       } else {
                         filteredCards = _cards.where((card) {
-                          final searchLower = query.toLowerCase();
+                          final searchLower = value.toLowerCase();
                           return card.name
                                   .toLowerCase()
                                   .contains(searchLower) ||
                               card.type.toLowerCase().contains(searchLower) ||
-                              card.rarity.toLowerCase().contains(searchLower) ||
-                              card.serialNumber
+                              card.serialNumber!
                                   .toLowerCase()
                                   .contains(searchLower);
                         }).toList();
@@ -1897,50 +2135,50 @@ class _CollectionScreenState extends State<CollectionScreen> {
               Expanded(
                 child: GridView.builder(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.75,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
+                    crossAxisCount: 3,
+                    childAspectRatio: 0.7,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
                   ),
                   itemCount: filteredCards.length,
                   itemBuilder: (context, index) {
                     final card = filteredCards[index];
-                    final isSelected =
-                        localSelectedCards.contains(card.serialNumber);
-
+                    final isSelected = localSelectedCards.contains(card.id);
                     return GestureDetector(
                       onTap: () {
-                        setModalState(() {
-                          if (isSelected) {
-                            localSelectedCards.remove(card.serialNumber);
-                          } else if (localSelectedCards.length < 8) {
-                            localSelectedCards.add(card.serialNumber);
-                          }
-                        });
+                        if (isSelected) {
+                          setModalState(() {
+                            localSelectedCards.remove(card.id);
+                          });
+                        } else if (localSelectedCards.length < 8) {
+                          setModalState(() {
+                            localSelectedCards.add(card.id);
+                          });
+                        }
                       },
                       child: Container(
                         decoration: BoxDecoration(
-                          color: isSelected
-                              ? Colors.blue.withOpacity(0.2)
-                              : const Color(0xFF0A0A1A),
-                          borderRadius: BorderRadius.circular(12),
+                          color: const Color(0xFF0A0A1A),
+                          borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: isSelected ? Colors.blue : Colors.white10,
+                            color: isSelected
+                                ? const Color(0xFF3B82F6)
+                                : Colors.white10,
+                            width: isSelected ? 2 : 1,
                           ),
                         ),
                         child: Stack(
                           children: [
                             Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 ClipRRect(
                                   borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(12),
+                                    top: Radius.circular(8),
                                   ),
                                   child: Image.network(
                                     card.imageUrl,
-                                    height: 140,
-                                    width: double.infinity,
+                                    height: 100,
                                     fit: BoxFit.cover,
                                   ),
                                 ),
@@ -1954,39 +2192,17 @@ class _CollectionScreenState extends State<CollectionScreen> {
                                         card.name,
                                         style: const TextStyle(
                                           color: Colors.white,
-                                          fontSize: 14,
+                                          fontSize: 12,
                                           fontWeight: FontWeight.bold,
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      const SizedBox(height: 4),
                                       Text(
                                         '#${card.serialNumber}',
                                         style: const TextStyle(
                                           color: Colors.grey,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: _getRarityColor(card.rarity)
-                                              .withOpacity(0.2),
-                                          borderRadius:
-                                              BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          card.rarity,
-                                          style: TextStyle(
-                                            color: _getRarityColor(card.rarity),
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                          fontSize: 10,
                                         ),
                                       ),
                                     ],
@@ -1996,18 +2212,18 @@ class _CollectionScreenState extends State<CollectionScreen> {
                             ),
                             if (isSelected)
                               Positioned(
-                                right: 8,
                                 top: 8,
+                                right: 8,
                                 child: Container(
                                   padding: const EdgeInsets.all(4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue,
-                                    borderRadius: BorderRadius.circular(12),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF3B82F6),
+                                    shape: BoxShape.circle,
                                   ),
                                   child: const Icon(
                                     Icons.check,
                                     color: Colors.white,
-                                    size: 16,
+                                    size: 12,
                                   ),
                                 ),
                               ),
@@ -2025,7 +2241,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey.withOpacity(0.2),
+                        backgroundColor: Colors.white.withOpacity(0.1),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -2055,7 +2271,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
                         ),
                       ),
                       child: const Text(
-                        'Confirm Selection',
+                        'Confirm',
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -2116,9 +2332,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: selectedCardIds.map((serialNumber) {
+            children: selectedCardIds.map((id) {
               final card = _cards.firstWhere(
-                (card) => card.serialNumber == serialNumber,
+                (card) => card.id == id,
               );
               return Container(
                 width: 80,
@@ -2175,6 +2391,285 @@ class _CollectionScreenState extends State<CollectionScreen> {
             }).toList(),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildControlCenter() {
+    return Positioned(
+      right: 16,
+      bottom: 100,
+      child: FloatingActionButton(
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => Container(
+              height: MediaQuery.of(context).size.height * 0.9,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0xFF0A0A1A).withOpacity(0.98),
+                    const Color(0xFF1A1A2E).withOpacity(0.98),
+                  ],
+                ),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(30)),
+                border:
+                    Border.all(color: const Color(0xFF3B82F6).withOpacity(0.3)),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 16),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ShaderMask(
+                    shaderCallback: (bounds) => const LinearGradient(
+                      colors: [
+                        Color(0xFF3B82F6),
+                        Color(0xFF60A5FA),
+                        Color(0xFF3B82F6),
+                      ],
+                    ).createShader(bounds),
+                    child: const Text(
+                      'Control Center',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Orbitron',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: GridView.count(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 16,
+                              crossAxisSpacing: 16,
+                              childAspectRatio: 1,
+                              children: [
+                                _buildControlTile(
+                                  icon: Icons.card_giftcard,
+                                  label: 'Packs',
+                                  description: 'Open new card packs',
+                                  gradient: const [
+                                    Color(0xFFEF4444),
+                                    Color(0xFFF97316)
+                                  ],
+                                  glowColor: const Color(0xFFEF4444),
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const PacksScreen()),
+                                    );
+                                  },
+                                ),
+                                _buildControlTile(
+                                  icon: Icons.star_rounded,
+                                  label: 'Quests',
+                                  description: 'Complete challenges',
+                                  gradient: const [
+                                    Color(0xFFFFB800),
+                                    Color(0xFFFF9500)
+                                  ],
+                                  glowColor: const Color(0xFFFFB800),
+                                  onTap: () {
+                                    // TODO: Navigate to quests
+                                  },
+                                ),
+                                _buildControlTile(
+                                  icon: Icons.flag_rounded,
+                                  label: 'Races',
+                                  description: 'Join competitions',
+                                  gradient: const [
+                                    Color(0xFF10B981),
+                                    Color(0xFF059669)
+                                  ],
+                                  glowColor: const Color(0xFF10B981),
+                                  onTap: () {
+                                    // TODO: Navigate to races
+                                  },
+                                ),
+                                _buildControlTile(
+                                  icon: Icons.leaderboard_rounded,
+                                  label: 'Leaderboard',
+                                  description: 'View rankings',
+                                  gradient: const [
+                                    Color(0xFF8B5CF6),
+                                    Color(0xFF6D28D9)
+                                  ],
+                                  glowColor: const Color(0xFF8B5CF6),
+                                  onTap: () {
+                                    // TODO: Navigate to leaderboard
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 24),
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  const Color(0xFF1A1A2E).withOpacity(0.5),
+                                  const Color(0xFF2A2A3F).withOpacity(0.5),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: const Color(0xFF3B82F6).withOpacity(0.3),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ShaderMask(
+                                  shaderCallback: (bounds) =>
+                                      const LinearGradient(
+                                    colors: [Colors.white, Color(0xFF60A5FA)],
+                                  ).createShader(bounds),
+                                  child: const Text(
+                                    'Coming Soon',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 24,
+                                      fontFamily: 'Orbitron',
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Stay tuned for exciting new features and content!',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontSize: 16,
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+        backgroundColor: const Color(0xFF1A1A2E),
+        child: const Icon(Icons.dashboard_customize, color: Color(0xFF3B82F6)),
+      ),
+    );
+  }
+
+  Widget _buildControlTile({
+    required IconData icon,
+    required String label,
+    required String description,
+    required List<Color> gradient,
+    required Color glowColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              gradient[0].withOpacity(0.1),
+              gradient[1].withOpacity(0.15),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: gradient[0].withOpacity(0.3),
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: glowColor.withOpacity(0.15),
+              blurRadius: 20,
+              spreadRadius: -5,
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: gradient),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: glowColor.withOpacity(0.5),
+                      blurRadius: 20,
+                      spreadRadius: -5,
+                    ),
+                  ],
+                ),
+                child: Icon(icon, color: Colors.white, size: 32),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontFamily: 'Orbitron',
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 12,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

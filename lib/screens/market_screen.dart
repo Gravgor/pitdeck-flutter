@@ -150,7 +150,7 @@ class _MarketScreenState extends State<MarketScreen>
   Widget _buildMarketplace() {
     return Consumer<ListingProvider>(
       builder: (context, listingProvider, child) {
-        final listings = listingProvider.activeListings;
+        final listings = listingProvider.listings;
 
         if (isLoading) {
           return const Center(
@@ -626,7 +626,9 @@ class _MarketScreenState extends State<MarketScreen>
         return Colors.grey;
       case TradeStatus.EXPIRED:
         return Colors.grey;
-    }
+      case TradeStatus.DECLINED:
+        return Colors.red;
+    } 
   }
 
   void _showAddListingModal(BuildContext context) {

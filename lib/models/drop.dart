@@ -1,4 +1,4 @@
-enum DropType { STANDARD, SPECIAL, EVENT }
+enum DropType { STANDARD, SPECIAL, EVENT, CARD }
 
 enum DropRarity { COMMON, UNCOMMON, RARE, EPIC, LEGENDARY }
 

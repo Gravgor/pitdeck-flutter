@@ -7,6 +7,7 @@ class CardModel {
   final String imageUrl;
   final String rarity;
   final bool isForSale;
+  final bool isForTrade;
 
   CardModel({
     required this.id,
@@ -17,6 +18,7 @@ class CardModel {
     required this.imageUrl,
     required this.rarity,
     required this.isForSale,
+    required this.isForTrade,
   });
 
   factory CardModel.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class CardModel {
       imageUrl: json['imageUrl'] ?? '',
       rarity: json['rarity'] ?? '',
       isForSale: json['isForSale'] ?? false,
+      isForTrade: json['isForTrade'] ?? false,
     );
   }
 }

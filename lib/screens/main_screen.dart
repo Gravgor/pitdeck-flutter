@@ -8,6 +8,9 @@ import 'dart:async';
 import 'package:pitdeck/config/mapbox_config.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:pitdeck/screens/collection_screen.dart';
+import 'package:pitdeck/screens/market_screen.dart';
+import 'package:pitdeck/screens/packs_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
 import 'package:pitdeck/providers/navigation_provider.dart';
@@ -33,8 +36,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   geo.Position? _userLocation;
   Timer? _locationTimer;
   CircleAnnotationManager? _circleAnnotationManager;
+  bool _isLoading = false;
+  final baseUrl = 'https://api.pitdeck.app/api';
+  final developerUrl = 'http://192.168.1.105:3000/api'; // TODO: Remove this
   geo.Position? _lastLocation;
-  final double _minDistanceChange = 10.0;
 
   @override
   void initState() {
@@ -68,14 +73,18 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         _userLocation = position;
       });
 
-      await _updateUserLocation(position);
+      if (_lastLocation == null) {
+        await _getNearbyDrops(position);
+      }
 
-      _mapboxMap?.flyTo(
+      await _updateRangeCircle(position);
+
+      await _mapboxMap?.flyTo(
         CameraOptions(
           center: Point(
             coordinates: Position(position.longitude, position.latitude),
           ),
-          zoom: 12.0,
+          zoom: 15.0,
         ),
         MapAnimationOptions(duration: 2000),
       );
@@ -84,53 +93,38 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _updateUserLocation(geo.Position position) async {
+  Future<void> _getNearbyDrops(geo.Position position) async {
     if (_markerManager == null) {
       print('Marker manager not ready');
       return;
     }
 
-    // Skip update if location hasn't changed significantly
-    if (_lastLocation != null &&
-        geo.Geolocator.distanceBetween(
-              _lastLocation!.latitude,
-              _lastLocation!.longitude,
-              position.latitude,
-              position.longitude,
-            ) <
-            _minDistanceChange) {
-      return;
-    }
-
     try {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final token = userProvider.user?.token;
-
-      if (token == null) return;
-
-      await _updateRangeCircle(position);
-
-      final response = await http.post(
-        Uri.parse('https://api.pitdeck.app/api/users/location/update'),
+      final auth = Provider.of<UserProvider>(context, listen: false);
+      final response = await http.get(
+        Uri.parse(
+            '$baseUrl/drops?lat=${position.latitude}&lng=${position.longitude}&radius=11000'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
+          'Authorization': 'Bearer ${auth.user?.token}',
         },
-        body: json.encode({
-          'latitude': position.latitude,
-          'longitude': position.longitude,
-        }),
       );
 
-      if (response.statusCode == 201) {
+      if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['drops'] != null) {
-          await _markerManager?.clearAllMarkers();
-          for (var drop in responseData['drops']) {
-            print('Adding marker for drop: ${drop.toString()}');
-            await _markerManager?.addDropMarker(drop);
+          final List<dynamic> newDrops = responseData['drops'];
+          final List<String> newDropIds =
+              newDrops.map<String>((drop) => drop['id'].toString()).toList();
+          final List<String> currentDropIds =
+              _markerManager!.getCurrentDropIds();
+
+          if (!_areListsEqual(newDropIds, currentDropIds)) {
+            await _markerManager?.clearAllMarkers();
+            for (var drop in newDrops) {
+              await _markerManager?.addDropMarker(drop);
+            }
           }
-          _lastLocation = position;
         }
       }
     } catch (e) {
@@ -138,21 +132,30 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     }
   }
 
+  bool _areListsEqual(List<String> list1, List<String> list2) {
+    if (list1.length != list2.length) return false;
+    for (int i = 0; i < list1.length; i++) {
+      if (!list2.contains(list1[i])) return false;
+    }
+    return true;
+  }
+
   Future<void> _updateRangeCircle(geo.Position position) async {
     await _circleAnnotationManager?.deleteAll();
+
+    final isPremium = false;
+    final maxRange =
+        isPremium ? 1500.0 : 100.0; // 1500m for premium, 100m for non-premium
 
     // Get current zoom level
     final zoom =
         await _mapboxMap?.getCameraState().then((state) => state.zoom) ?? 15.0;
 
-    final radiusScale = pow(2, zoom - 15).toDouble();
-    final radiusPixels = 100.0 / radiusScale;
-
     final options = CircleAnnotationOptions(
       geometry: Point(
         coordinates: Position(position.longitude, position.latitude),
       ),
-      circleRadius: 20,
+      circleRadius: 100, // Size of circle
       circleColor: Colors.blue.value,
       circleOpacity: 0.2,
       circleStrokeWidth: 2.0,
@@ -164,13 +167,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _startLocationUpdates() async {
-    // Cancel any existing timer
     _locationTimer?.cancel();
-
-    // Get initial location immediately
-    await _getCurrentLocation();
-
-    // Start periodic updates
     _locationTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
       if (mounted) {
         _getCurrentLocation();
@@ -202,140 +199,178 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     _circleAnnotationManager =
         await mapboxMap.annotations.createCircleAnnotationManager();
     if (_userLocation != null) {
-      await _updateUserLocation(_userLocation!);
+      await _getNearbyDrops(_userLocation!);
     } else {
       await _getCurrentLocation();
     }
   }
 
   void _showDropModal(DropModel drop) {
-    final distance = _calculateDistance(drop);
-    final isInRange = distance <= 100; // 100 meters range
+    final newDrop = _markerManager?.getDropForId(drop.id);
+    final distance = _calculateDistance(newDrop!);
+    final isPremium = false;
+    final maxRange = isPremium ? 1500.0 : 100.0;
+    final isInRange = distance <= maxRange;
 
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        margin: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A2E),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _getRarityColor(drop.rarity).withOpacity(0.3),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: _getRarityColor(drop.rarity).withOpacity(0.1),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 500),
+          tween: Tween(begin: 1.0, end: 0.0),
+          curve: Curves.easeOutBack,
+          builder: (context, value, child) => Transform.translate(
+            offset: Offset(0, 50 * value),
+            child: Opacity(
+              opacity: (1 - value).clamp(0.0, 1.0),
+              child: Container(
+                margin: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A2E),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _getRarityColor(newDrop.rarity).withOpacity(0.3),
+                  ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getRarityColor(drop.rarity).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      drop.rarity.toString().split('.').last,
-                      style: TextStyle(
-                        color: _getRarityColor(drop.rarity),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    '${distance.toStringAsFixed(0)}m away',
-                    style: TextStyle(
-                      color: isInRange ? Colors.green : Colors.red,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              height: 200,
-              margin: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: _getRarityColor(drop.rarity).withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: _getRarityColor(drop.rarity).withOpacity(0.1),
-                ),
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                      child: Container(
-                        color: Colors.transparent,
-                      ),
-                    ),
-                  ),
-                  Icon(
-                    Icons.help_outline,
-                    size: 80,
-                    color: _getRarityColor(drop.rarity).withOpacity(0.3),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: isInRange ? () => _openDrop(drop) : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isInRange
-                            ? _getRarityColor(drop.rarity)
-                            : Colors.grey,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: _getRarityColor(newDrop.rarity).withOpacity(0.1),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(16),
                         ),
                       ),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            isInRange ? Icons.lock_open : Icons.lock,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            isInRange ? 'Open Drop' : 'Too Far Away',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                          TweenAnimationBuilder<double>(
+                            duration: const Duration(milliseconds: 800),
+                            tween: Tween(begin: 0.0, end: 1.0),
+                            curve: Curves.elasticOut,
+                            builder: (context, value, child) => Transform.scale(
+                              scale: value,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _getRarityColor(newDrop.rarity)
+                                      .withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  newDrop.rarity.toString().split('.').last,
+                                  style: TextStyle(
+                                    color: _getRarityColor(newDrop.rarity),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
                             ),
+                          ),
+                          const Spacer(),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                '${distance.toStringAsFixed(0)}m away',
+                                style: TextStyle(
+                                  color: isInRange ? Colors.green : Colors.red,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              if (!isPremium &&
+                                  distance > 100 &&
+                                  distance <= 1500) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Get Premium to reach this drop!',
+                                  style: TextStyle(
+                                    color: Colors.amber.shade300,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
+                    TweenAnimationBuilder<double>(
+                      duration: const Duration(milliseconds: 800),
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      curve: Curves.elasticOut,
+                      builder: (context, value, child) => Transform.scale(
+                        scale: value,
+                        child: Container(
+                          height: 200,
+                          margin: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: _getRarityColor(newDrop.rarity)
+                                .withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: _getRarityColor(newDrop.rarity)
+                                  .withOpacity(0.1),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: TweenAnimationBuilder<double>(
+                        duration: const Duration(milliseconds: 600),
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, value, child) => Transform.scale(
+                          scale: value,
+                          child: ElevatedButton(
+                            onPressed:
+                                isInRange ? () => _openDrop(newDrop) : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isInRange
+                                  ? _getRarityColor(newDrop.rarity)
+                                  : Colors.grey,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  isInRange ? Icons.lock_open : Icons.lock,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  isInRange ? 'Open Drop' : 'Too Far Away',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -349,24 +384,257 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       _userLocation!.longitude,
       drop.latitude,
       drop.longitude,
-    ).roundToDouble(); // This function already returns meters
+    ).roundToDouble();
   }
 
   Future<void> _openDrop(DropModel drop) async {
-    print('Opening drop:');
-    print('- ID: ${drop.id}');
-    print('- Type: ${drop.type}');
-    print('- Rarity: ${drop.rarity}');
-    print('- Distance: ${_calculateDistance(drop)}m');
-    print('- Rewards: ${drop.rewards.length}');
-    for (var reward in drop.rewards) {
-      print(
-          '  * ${reward.type}: ${reward.amount} (ID: ${reward.cardId ?? "N/A"})');
-    }
-    print('- Expires: ${drop.expiresAt}');
+    try {
+      if (_userLocation == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unable to get your location')),
+        );
+        return;
+      }
 
-    // TODO: Implement drop opening logic
-    Navigator.pop(context);
+      final auth = Provider.of<UserProvider>(context, listen: false);
+      final response = await http.post(
+        Uri.parse('$baseUrl/drops/claim'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${auth.user?.token}',
+        },
+        body: json.encode({
+          'dropId': drop.id,
+          'latitude': _userLocation!.latitude,
+          'longitude': _userLocation!.longitude,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        final rewards = json.decode(response.body);
+        print(rewards);
+        Navigator.pop(context); // Close modal
+        _showRewardsDialog(rewards, drop.rarity);
+      } else if (response.statusCode == 403) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You are too far away from this drop')),
+        );
+      } else {
+        throw Exception('Failed to claim drop');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error claiming drop: $e')),
+      );
+    }
+  }
+
+  void _showRewardsDialog(Map<String, dynamic> rewards, DropRarity rarity) {
+    final List<dynamic> rewardsList = rewards['rewards'] ?? [];
+    print(rewardsList);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A2E),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: _getRarityColor(rarity).withOpacity(0.3),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: _getRarityColor(rarity).withOpacity(0.2),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: ShaderMask(
+                      shaderCallback: (bounds) => LinearGradient(
+                        colors: [
+                          _getRarityColor(rarity),
+                          _getRarityColor(rarity).withOpacity(0.6),
+                        ],
+                      ).createShader(bounds),
+                      child: const Text(
+                        '🎉 Drop Claimed!',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (rewardsList.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: _getRarityColor(rarity).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _getRarityColor(rarity).withOpacity(0.2),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (rewardsList[0]['type'] == 'CARD') ...[
+                              ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(12),
+                                ),
+                                child: Image.network(
+                                  rewardsList[0]['card']['imageUrl'] ?? '',
+                                  width: double.infinity,
+                                  height: 200,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      rewardsList[0]['card']['name'] ??
+                                          'Unknown Card',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '#${rewardsList[0]['card']['serialNumber'] ?? 'N/A'}',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.7),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      alignment: WrapAlignment.center,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: _getRarityColor(rarity)
+                                                .withOpacity(0.2),
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            rewardsList[0]['card']['rarity'] ??
+                                                'Unknown',
+                                            style: TextStyle(
+                                              color: _getRarityColor(rarity),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.withOpacity(0.2),
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            rewardsList[0]['card']['series'] ??
+                                                'Unknown Series',
+                                            style: const TextStyle(
+                                              color: Colors.blue,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color:
+                                                Colors.orange.withOpacity(0.2),
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            rewardsList[0]['card']['year']
+                                                    ?.toString() ??
+                                                'Unknown Year',
+                                            style: const TextStyle(
+                                              color: Colors.orange,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            const Color(0xFF3B82F6), // Bright blue background
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Awesome!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Color _getRarityColor(DropRarity rarity) {
@@ -384,14 +652,60 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     }
   }
 
+  Color _getRarityColorString(String rarity) {
+    switch (rarity) {
+      case 'COMMON':
+        return Colors.grey;
+      case 'UNCOMMON':
+        return Colors.green;
+      case 'RARE':
+        return Colors.blue;
+      case 'EPIC':
+        return Colors.purple;
+      case 'LEGENDARY':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  void _testRewardsDialog() {
+    final mockRewards = {
+      "rewards": [
+        {
+          "type": "CARD",
+          "card": {
+            "id": "test123",
+            "name": "Test Driver Card",
+            "imageUrl": "https://picsum.photos/400/300",
+            "serialNumber": "123/999",
+            "rarity": "LEGENDARY",
+            "series": "2024 Season",
+            "year": "2024"
+          }
+        }
+      ]
+    };
+
+    _showRewardsDialog(mockRewards, DropRarity.LEGENDARY);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
           _buildMap(),
+          if (_isLoading)
+            Container(
+              color: Colors.black54,
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
           _buildTopBar(),
-          _buildARButton(),
+          _buildControlCenter(),
+          _buildRefreshButton(),
           _buildEventBanner(),
         ],
       ),
@@ -495,14 +809,408 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildARButton() {
+  Widget _buildControlCenter() {
     return Positioned(
       right: 16,
       bottom: 100,
       child: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: const Color(0xFF3B82F6),
-        child: const Icon(Icons.view_in_ar, color: Colors.white),
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => TweenAnimationBuilder<double>(
+              duration: const Duration(milliseconds: 500),
+              tween: Tween(begin: 1.0, end: 0.0),
+              curve: Curves.easeOutExpo,
+              builder: (context, value, child) => Transform.translate(
+                offset: Offset(0, 100 * value),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    height: MediaQuery.of(context).size.height * 0.93,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          const Color(0xFF0A0A1A).withOpacity(0.98),
+                          const Color(0xFF1A1A2E).withOpacity(0.98),
+                        ],
+                      ),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(30),
+                      ),
+                      border: Border.all(
+                        color: const Color(0xFF3B82F6).withOpacity(0.3),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 16),
+                        Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ShaderMask(
+                          shaderCallback: (bounds) => const LinearGradient(
+                            colors: [
+                              Color(0xFF3B82F6),
+                              Color(0xFF60A5FA),
+                              Color(0xFF3B82F6),
+                            ],
+                          ).createShader(bounds),
+                          child: const Text(
+                            'Control Center',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Orbitron',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: GridView.count(
+                            shrinkWrap: true,
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 16,
+                            crossAxisSpacing: 16,
+                            children: [
+                              _buildControlTile(
+                                icon: Icons.card_giftcard,
+                                label: 'Packs',
+                                description: 'Open new card packs',
+                                gradient: const [
+                                  Color(0xFFEF4444),
+                                  Color(0xFFF97316)
+                                ],
+                                glowColor: const Color(0xFFEF4444),
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const PacksScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _buildControlTile(
+                                icon: Icons.star_rounded,
+                                label: 'Quests',
+                                description: 'Complete challenges',
+                                gradient: const [
+                                  Color(0xFFFFB800),
+                                  Color(0xFFFF9500)
+                                ],
+                                glowColor: const Color(0xFFFFB800),
+                                onTap: () {
+                                  // TODO: Navigate to quests
+                                },
+                              ),
+                              _buildControlTile(
+                                icon: Icons.flag_rounded,
+                                label: 'Races',
+                                description: 'Join competitions',
+                                gradient: const [
+                                  Color(0xFF10B981),
+                                  Color(0xFF059669)
+                                ],
+                                glowColor: const Color(0xFF10B981),
+                                onTap: () {
+                                  // TODO: Navigate to races
+                                },
+                              ),
+                              _buildControlTile(
+                                icon: Icons.leaderboard_rounded,
+                                label: 'Leaderboard',
+                                description: 'View rankings',
+                                gradient: const [
+                                  Color(0xFF8B5CF6),
+                                  Color(0xFF6D28D9)
+                                ],
+                                glowColor: const Color(0xFF8B5CF6),
+                                onTap: () {
+                                  // TODO: Navigate to leaderboard
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 32,
+                          ),
+                          child: Divider(
+                            color: Color(0xFF2A2A3F),
+                            thickness: 2,
+                          ),
+                        ),
+                        Expanded(
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 24),
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  const Color(0xFF1A1A2E).withOpacity(0.5),
+                                  const Color(0xFF2A2A3F).withOpacity(0.5),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: const Color(0xFF3B82F6).withOpacity(0.3),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      const Color(0xFF3B82F6).withOpacity(0.1),
+                                  blurRadius: 20,
+                                  spreadRadius: -5,
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ShaderMask(
+                                  shaderCallback: (bounds) =>
+                                      const LinearGradient(
+                                    colors: [Colors.white, Color(0xFF60A5FA)],
+                                  ).createShader(bounds),
+                                  child: const Text(
+                                    'Coming Soon',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 24,
+                                      fontFamily: 'Orbitron',
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Stay tuned for exciting new features and content!',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontSize: 16,
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+        backgroundColor: const Color(0xFF1A1A2E),
+        child: const Icon(Icons.dashboard_customize, color: Color(0xFF3B82F6)),
+      ),
+    );
+  }
+
+  Widget _buildControlTile({
+    required IconData icon,
+    required String label,
+    required String description,
+    required List<Color> gradient,
+    required Color glowColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              gradient[0].withOpacity(0.1),
+              gradient[1].withOpacity(0.15),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: gradient[0].withOpacity(0.3),
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: glowColor.withOpacity(0.15),
+              blurRadius: 20,
+              spreadRadius: -5,
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: gradient),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: glowColor.withOpacity(0.5),
+                          blurRadius: 20,
+                          spreadRadius: -5,
+                        ),
+                      ],
+                    ),
+                    child: Icon(icon, color: Colors.white, size: 32),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontFamily: 'Orbitron',
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRefreshButton() {
+    return Positioned(
+      right: 16,
+      bottom: 160,
+      child: FloatingActionButton(
+        onPressed: () async {
+          if (_userLocation != null) {
+            // Show scanning animation
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              barrierColor: Colors.black.withOpacity(0.5),
+              builder: (context) => BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                child: Center(
+                  child: Container(
+                    width: 200,
+                    height: 200,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Outer rotating circle
+                        TweenAnimationBuilder<double>(
+                          duration: const Duration(seconds: 2),
+                          tween: Tween(begin: 0, end: 4 * 3.14159),
+                          curve: Curves.linear,
+                          builder: (context, value, child) => Transform.rotate(
+                            angle: value,
+                            child: Container(
+                              width: 200,
+                              height: 200,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color:
+                                      const Color(0xFF3B82F6).withOpacity(0.5),
+                                  width: 2,
+                                ),
+                                gradient: SweepGradient(
+                                  colors: [
+                                    const Color(0xFF3B82F6).withOpacity(0.1),
+                                    const Color(0xFF3B82F6).withOpacity(0.5),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Inner scanning line
+                        TweenAnimationBuilder<double>(
+                          duration: const Duration(seconds: 2),
+                          tween: Tween(begin: -1, end: 1),
+                          curve: Curves.easeInOut,
+                          builder: (context, value, child) =>
+                              Transform.translate(
+                            offset: Offset(0, 100 * value),
+                            child: Container(
+                              width: 150,
+                              height: 2,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.blue.withOpacity(0),
+                                    Colors.blue.withOpacity(0.8),
+                                    Colors.blue.withOpacity(0),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Center dot
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF3B82F6),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+
+            // Perform the actual refresh
+            await _getNearbyDrops(_userLocation!);
+            _lastLocation = _userLocation;
+
+            // Close the scanning animation
+            if (mounted) {
+              Navigator.of(context).pop();
+            }
+          }
+        },
+        backgroundColor: const Color(0xFF1A1A2E),
+        child: const Icon(Icons.refresh, color: Color(0xFF3B82F6)),
       ),
     );
   }
@@ -660,17 +1368,20 @@ extension on Position? {
 class MarkerManager {
   final Map<String, DropModel> _markerDrops = {};
   final Map<String, PointAnnotation> _dropMarkers = {};
+  final Map<String, String> _annotationToDropId = {};
   final PointAnnotationManager _pointAnnotationManager;
   final Function(DropModel) _onDropTap;
 
   MarkerManager(this._pointAnnotationManager, this._onDropTap);
 
-  DropModel? getDropForAnnotation(String annotationId) {
-    print('Getting drop for annotation: $annotationId');
-    print('Available markers: ${_markerDrops.keys.join(', ')}');
-    final drop = _markerDrops[annotationId];
-    print('Found drop: ${drop?.toString()}');
-    return drop;
+  DropModel? getDropForId(String id) {
+    return _markerDrops[id];
+  }
+
+  DropModel? getDropByAnnotationId(String annotationId) {
+    final dropId = _annotationToDropId[annotationId];
+    print('Drop ID: $dropId');
+    return dropId != null ? _markerDrops[dropId] : null;
   }
 
   Future<void> addDropMarker(Map<String, dynamic> dropData) async {
@@ -692,8 +1403,9 @@ class MarkerManager {
       );
 
       final annotation = await _pointAnnotationManager.create(options);
-      _markerDrops[annotation.id] = drop;
+      _markerDrops[drop.id] = drop;
       _dropMarkers[drop.id] = annotation;
+      _annotationToDropId[annotation.id] = drop.id;
 
       _pointAnnotationManager.addOnPointAnnotationClickListener(
         PointAnnotationClickListener(drop, _onDropTap, this),
@@ -707,6 +1419,7 @@ class MarkerManager {
     await _pointAnnotationManager.deleteAll();
     _markerDrops.clear();
     _dropMarkers.clear();
+    _annotationToDropId.clear();
   }
 
   String _getMarkerAssetPath(DropRarity rarity) {
@@ -723,6 +1436,10 @@ class MarkerManager {
         return 'assets/markers/legendary.png';
     }
   }
+
+  List<String> getCurrentDropIds() {
+    return _markerDrops.keys.toList();
+  }
 }
 
 class PointAnnotationClickListener extends OnPointAnnotationClickListener {
@@ -734,7 +1451,10 @@ class PointAnnotationClickListener extends OnPointAnnotationClickListener {
 
   @override
   bool onPointAnnotationClick(PointAnnotation annotation) {
-    onTap(drop);
+    final clickedDrop = markerManager.getDropByAnnotationId(annotation.id);
+    if (clickedDrop != null) {
+      onTap(clickedDrop);
+    }
     return true;
   }
 }

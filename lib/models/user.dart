@@ -11,6 +11,7 @@ class User {
   final int level;
   final int xp;
   final int totalXp;
+  final String? role;
   final String bio;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -29,6 +30,7 @@ class User {
     this.xp = 0,
     this.totalXp = 0,
     this.bio = '',
+    this.role = 'user',
     required this.createdAt,
     required this.updatedAt,
     this.lastLogin,
@@ -50,6 +52,7 @@ class User {
       xp: json['xp'] ?? 0,
       totalXp: json['totalXp'] ?? 0,
       bio: json['bio'] ?? '',
+      role: json['role'] ?? 'user',
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
       lastLogin:

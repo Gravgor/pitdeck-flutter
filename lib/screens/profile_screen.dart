@@ -31,20 +31,7 @@ class ProfileScreen extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFF3B82F6), width: 2),
-              gradient: const LinearGradient(
-                colors: [Color(0xFFEF4444), Color(0xFF3B82F6)],
-              ),
-            ),
-            child: const Center(
-              child: Icon(Icons.person, size: 48, color: Colors.white),
-            ),
-          ),
+          _buildProfilePhoto(context),
           const SizedBox(height: 16),
           Consumer<UserProvider>(
             builder: (context, userProvider, _) => Text(
@@ -107,15 +94,13 @@ class ProfileScreen extends StatelessWidget {
                   builder: (context, userProvider, _) => Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildSocialStat('Followers',
-                          _formatNumber( 0)),
+                      _buildSocialStat('Followers', _formatNumber(0)),
                       Container(
                         width: 1,
                         height: 24,
                         color: Colors.white10,
                       ),
-                      _buildSocialStat('Following',
-                          _formatNumber( 0)),
+                      _buildSocialStat('Following', _formatNumber(0)),
                       Container(
                         width: 1,
                         height: 24,
@@ -128,6 +113,104 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfilePhoto(BuildContext context) {
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, _) => Stack(
+        children: [
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFF3B82F6), width: 2),
+            ),
+            child: ClipOval(
+              child: Stack(
+                children: [
+                  if (userProvider.user?.image != null)
+                    Image.network(
+                      userProvider.user!.image!,
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.person,
+                        size: 48,
+                        color: Colors.white,
+                      ),
+                    )
+                  else
+                    const Icon(
+                      Icons.person,
+                      size: 48,
+                      color: Colors.white,
+                    ),
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          const Color(0xFFEF4444).withOpacity(0.3),
+                          const Color(0xFF3B82F6).withOpacity(0.3),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (userProvider.user?.role == 'PITDECK_TEAM')
+            Positioned(
+              bottom: -5,
+              left: 50,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFEF4444), Color(0xFF3B82F6)],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF3B82F6).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.verified,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'PITDECK TEAM',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Orbitron',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
