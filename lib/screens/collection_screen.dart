@@ -89,7 +89,6 @@ class _CollectionScreenState extends State<CollectionScreen> {
           _buildFilterChips(),
           const SizedBox(height: 8),
           Expanded(child: _buildCardGrid()),
-          _buildControlCenter(),
         ],
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
@@ -99,10 +98,10 @@ class _CollectionScreenState extends State<CollectionScreen> {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 64, 16, 16),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Collection Overview',
             style: TextStyle(
               color: Colors.white,
@@ -112,8 +111,8 @@ class _CollectionScreenState extends State<CollectionScreen> {
               letterSpacing: 1,
             ),
           ),
-          const SizedBox(height: 4),
-          const Text(
+          SizedBox(height: 4),
+          Text(
             'Manage and explore your racing cards',
             style: TextStyle(
               color: Colors.grey,
@@ -275,44 +274,47 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
   void _handleSearch(String query) {
     setState(() {
-      if (query.isEmpty) {
-        _filteredCards = _cards;
-      } else {
-        _filteredCards = _cards.where((card) {
-          final searchLower = query.toLowerCase();
-          return card.name.toLowerCase().contains(searchLower) ||
-              card.type.toLowerCase().contains(searchLower) ||
-              card.series.toLowerCase().contains(searchLower);
-        }).toList();
-      }
+      _searchQuery = query;
       _applyFilters();
     });
   }
 
   void _applyFilters() {
     setState(() {
-      var filtered = _cards;
-
-      if (_searchController.text.isNotEmpty) {
-        final searchLower = _searchController.text.toLowerCase();
-        filtered = filtered.where((card) {
-          return card.name.toLowerCase().contains(searchLower) ||
+      _filteredCards = _cards.where((card) {
+        // Apply search filter
+        if (_searchQuery.isNotEmpty) {
+          final searchLower = _searchQuery.toLowerCase();
+          final matchesSearch = card.name.toLowerCase().contains(searchLower) ||
               card.type.toLowerCase().contains(searchLower) ||
-              card.series.toLowerCase().contains(searchLower);
-        }).toList();
-      }
+              card.series.toLowerCase().contains(searchLower) ||
+              card.rarity.toLowerCase().contains(searchLower) ||
+              card.serialNumber!.toLowerCase().contains(searchLower);
+          if (!matchesSearch) return false;
+        }
 
-      if (_selectedRarities.isNotEmpty || _selectedTypes.isNotEmpty) {
-        filtered = filtered.where((card) {
-          final matchesRarity = _selectedRarities.isEmpty ||
-              _selectedRarities.contains(card.rarity);
-          final matchesType =
-              _selectedTypes.isEmpty || _selectedTypes.contains(card.type);
-          return matchesRarity && matchesType;
-        }).toList();
-      }
+        // Apply rarity filter
+        if (_selectedRarities.isNotEmpty &&
+            !_selectedRarities.contains(card.rarity)) {
+          return false;
+        }
 
-      _filteredCards = filtered;
+        // Apply type filter
+        if (_selectedTypes.isNotEmpty && !_selectedTypes.contains(card.type)) {
+          return false;
+        }
+
+        // Apply status filter
+        switch (_selectedFilter) {
+          case 'trade':
+            return card.isForTrade;
+          case 'market':
+            return card.isForSale;
+          case 'all':
+          default:
+            return true;
+        }
+      }).toList();
     });
   }
 
@@ -430,7 +432,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
             card.serialNumber!.toLowerCase().contains(query);
       }
       return true;
-    }).toList();
+    }).toList()
+      ..sort((a, b) => (b.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0))
+          .compareTo(a.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0)));
 
     if (_selectedFilter == 'trade') {
       filteredCards = filteredCards.where((card) => card.isForTrade).toList();
@@ -622,25 +626,16 @@ class _CollectionScreenState extends State<CollectionScreen> {
     );
   }
 
-  Widget _buildActionButton(String text, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.white, size: 16),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-            ),
-          ),
-        ],
+  Widget _buildActionButton(IconData icon, VoidCallback onPressed) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: Colors.white, size: 20),
       ),
     );
   }
@@ -730,225 +725,223 @@ class _CollectionScreenState extends State<CollectionScreen> {
             backgroundColor: const Color(0xFF0A0A1A),
             body: Stack(
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Stack(
-                      children: [
-                        Image.network(
-                          cardDetails.imageUrl,
-                          height: 300,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
-                              height: 300,
-                              color: const Color(0xFF1A1A2E),
-                              child: const Center(
-                                child: CircularProgressIndicator(
-                                  color: Color(0xFF3B82F6),
-                                ),
+                SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Stack(
+                        children: [
+                          Container(
+                            height: 360,
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: NetworkImage(cardDetails.imageUrl),
+                                fit: BoxFit.cover,
                               ),
-                            );
-                          },
-                        ),
-                        // Action buttons (close, favorite, share)
-                        Positioned(
-                          top: MediaQuery.of(context).padding.top + 8,
-                          right: 16,
-                          child: Row(
-                            children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  color:
-                                      const Color(0xFF1A1A2E).withOpacity(0.8),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(Icons.favorite_border,
-                                      color: Colors.white),
-                                  onPressed: () {},
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color:
-                                      const Color(0xFF1A1A2E).withOpacity(0.8),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(Icons.share,
-                                      color: Colors.white),
-                                  onPressed: () {},
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color:
-                                      const Color(0xFF1A1A2E).withOpacity(0.8),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(Icons.close,
-                                      color: Colors.white, size: 24),
-                                  onPressed: () => Navigator.pop(context),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Card title and rarity
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          cardDetails.name,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold,
-                                            fontFamily: 'Orbitron',
-                                          ),
-                                        ),
-                                        if (cardDetails.serialNumber != null)
-                                          Padding(
-                                            padding:
-                                                const EdgeInsets.only(top: 4),
-                                            child: Text(
-                                              '#${cardDetails.serialNumber}',
-                                              style: const TextStyle(
-                                                color: Colors.grey,
-                                                fontSize: 14,
-                                                fontFamily: 'Orbitron',
-                                              ),
-                                            ),
-                                          ),
-                                      ],
+                          Container(
+                            height: 360,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  const Color(0xFF0A0A1A).withOpacity(0.8),
+                                  const Color(0xFF0A0A1A),
+                                ],
+                                stops: const [0.4, 0.8, 1.0],
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: MediaQuery.of(context).padding.top + 8,
+                            left: 16,
+                            right: 16,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                _buildActionButton(
+                                  Icons.close,
+                                  () => Navigator.pop(context),
+                                ),
+                                Row(
+                                  children: [
+                                    _buildActionButton(
+                                      Icons.favorite_border,
+                                      () => {},
                                     ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: _getRarityColor(cardDetails.rarity)
-                                          .withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Text(
-                                      cardDetails.rarity,
-                                      style: TextStyle(
+                                    const SizedBox(width: 8),
+                                    _buildActionButton(Icons.share, () {}),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 20,
+                            left: 20,
+                            right: 20,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
                                         color:
-                                            _getRarityColor(cardDetails.rarity),
-                                        fontWeight: FontWeight.bold,
+                                            _getRarityColor(cardDetails.rarity)
+                                                .withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: _getRarityColor(
+                                              cardDetails.rarity),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        cardDetails.rarity,
+                                        style: TextStyle(
+                                          color: _getRarityColor(
+                                              cardDetails.rarity),
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              if (cardDetails.description != null)
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '#${cardDetails.serialNumber}',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 14,
+                                        fontFamily: 'Orbitron',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
                                 Text(
-                                  cardDetails.description!,
+                                  cardDetails.name,
                                   style: const TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 16,
+                                    color: Colors.white,
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Orbitron',
                                   ),
                                 ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (cardDetails.description != null) ...[
+                              Text(
+                                cardDetails.description!,
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: 16,
+                                  height: 1.5,
+                                ),
+                              ),
                               const SizedBox(height: 24),
-                              // Card details grid
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
+                            ],
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1A1A2E),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.white10),
+                              ),
+                              child: Column(
                                 children: [
-                                  _buildDetailItem('Type', cardDetails.type),
-                                  _buildDetailItem(
-                                      'Series', cardDetails.series),
-                                  _buildDetailItem(
-                                      'Year', cardDetails.year.toString()),
-                                  if (cardDetails.edition != null)
-                                    _buildDetailItem(
-                                        'Edition', cardDetails.edition!),
+                                  _buildDetailRow(
+                                      'Type', cardDetails.type, Icons.category),
+                                  const Divider(
+                                      color: Colors.white10, height: 24),
+                                  _buildDetailRow('Series', cardDetails.series,
+                                      Icons.sports_motorsports),
+                                  const Divider(
+                                      color: Colors.white10, height: 24),
+                                  _buildDetailRow(
+                                      'Year',
+                                      cardDetails.year.toString(),
+                                      Icons.calendar_today),
+                                  if (cardDetails.edition != null) ...[
+                                    const Divider(
+                                        color: Colors.white10, height: 24),
+                                    _buildDetailRow('Edition',
+                                        cardDetails.edition!, Icons.stars),
+                                  ],
                                 ],
                               ),
-                              // Stats section
-                              if (cardDetails.stats != null)
-                                _buildCardStats(cardDetails.stats),
-                              // ... rest of the details ...
-                              Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: ElevatedButton(
-                                  onPressed: () =>
-                                      _showListForSaleModal(cardDetails),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF3B82F6),
-                                    minimumSize:
-                                        const Size(double.infinity, 56),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
+                            ),
+                            if (cardDetails.stats != null) ...[
+                              const SizedBox(height: 24),
+                              _buildCardStats(cardDetails.stats!),
+                            ],
+                            const SizedBox(height: 32),
+                            if (!cardDetails.isForSale)
+                              ElevatedButton(
+                                onPressed: () =>
+                                    _showListForSaleModal(cardDetails),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF3B82F6),
+                                  minimumSize: const Size(double.infinity, 56),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: const Text(
-                                    'List on Marketplace',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      fontFamily: 'Orbitron',
-                                    ),
+                                ),
+                                child: const Text(
+                                  'List on Marketplace',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ),
+                            if (!cardDetails.isForTrade)
                               Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 16),
-                                child: ElevatedButton(
+                                padding: const EdgeInsets.only(top: 12),
+                                child: OutlinedButton(
                                   onPressed: () =>
                                       _showListForTradeModal(cardDetails),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF1A1A2E),
+                                  style: OutlinedButton.styleFrom(
                                     minimumSize:
                                         const Size(double.infinity, 56),
+                                    side: const BorderSide(
+                                      color: Color(0xFF3B82F6),
+                                      width: 2,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    side: const BorderSide(
-                                        color: Color(0xFF3B82F6)),
                                   ),
                                   child: const Text(
                                     'List for Trade',
                                     style: TextStyle(
-                                      color: Colors.white,
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
-                                      fontFamily: 'Orbitron',
+                                      color: Color(0xFF3B82F6),
                                     ),
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -965,208 +958,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
     }
   }
 
-  Widget _buildStatBar(String label, int value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(color: Colors.grey),
-            ),
-            Text(
-              value.toString(),
-              style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        LinearProgressIndicator(
-          value: value / 100,
-          backgroundColor: Colors.grey.withOpacity(0.2),
-          valueColor: const AlwaysStoppedAnimation<Color>(Colors.purple),
-          borderRadius: BorderRadius.circular(4),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDetailItem(String label, String value) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0A0A1A),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showListingModal(BuildContext context, String name) {
-    final TextEditingController priceController = TextEditingController();
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(
-            color: Color(0xFF1A1A2E),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'List $name on Marketplace',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Orbitron',
-                ),
-              ),
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0A0A1A),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white10),
-                ),
-                child: TextField(
-                  controller: priceController,
-                  keyboardType: TextInputType.number,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    hintText: 'Enter price in Racecoins',
-                    hintStyle: TextStyle(color: Colors.grey),
-                    prefixIcon: Icon(Icons.attach_money, color: Colors.grey),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'Cancel',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Orbitron',
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        // Handle listing confirmation
-                        Navigator.pop(context, priceController.text);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF3B82F6),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'Confirm',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Orbitron',
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAchievementCard(String title, String value, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: const Color(0xFF3B82F6), size: 24),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMarketDataRow(String label, String value) {
+  Widget _buildDetailRow(String label, String value, IconData icon) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -1273,192 +1065,6 @@ class _CollectionScreenState extends State<CollectionScreen> {
     if (value >= 70) return Colors.green;
     if (value >= 60) return Colors.yellow;
     return Colors.red;
-  }
-
-  void _showFilterModal() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => Container(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-            top: 16,
-            left: 16,
-            right: 16,
-          ),
-          decoration: const BoxDecoration(
-            color: Color(0xFF1A1A2E),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Filter Cards',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Orbitron',
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // Rarity Filter
-              const Text(
-                'Rarity',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  'COMMON',
-                  'RARE',
-                  'EPIC',
-                  'LEGENDARY',
-                ]
-                    .map((rarity) => FilterChip(
-                          selected: _selectedRarities.contains(rarity),
-                          label: Text(rarity),
-                          onSelected: (selected) {
-                            setState(() {
-                              if (selected) {
-                                _selectedRarities.add(rarity);
-                              } else {
-                                _selectedRarities.remove(rarity);
-                              }
-                            });
-                          },
-                          backgroundColor: const Color(0xFF0A0A1A),
-                          selectedColor: Colors.purple.withOpacity(0.2),
-                          checkmarkColor: Colors.purple,
-                          labelStyle: TextStyle(
-                            color: _selectedRarities.contains(rarity)
-                                ? Colors.purple
-                                : Colors.grey,
-                          ),
-                        ))
-                    .toList(),
-              ),
-              const SizedBox(height: 16),
-              // Type Filter
-              const Text(
-                'Type',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  'DRIVER',
-                  'CAR',
-                  'TRACK',
-                  'TEAM',
-                ]
-                    .map((type) => FilterChip(
-                          selected: _selectedTypes.contains(type),
-                          label: Text(type),
-                          onSelected: (selected) {
-                            setState(() {
-                              if (selected) {
-                                _selectedTypes.add(type);
-                              } else {
-                                _selectedTypes.remove(type);
-                              }
-                            });
-                          },
-                          backgroundColor: const Color(0xFF0A0A1A),
-                          selectedColor: Colors.blue.withOpacity(0.2),
-                          checkmarkColor: Colors.blue,
-                          labelStyle: TextStyle(
-                            color: _selectedTypes.contains(type)
-                                ? Colors.blue
-                                : Colors.grey,
-                          ),
-                        ))
-                    .toList(),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedRarities.clear();
-                          _selectedTypes.clear();
-                        });
-                        _applyFilters();
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey.withOpacity(0.2),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Reset',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Orbitron',
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        _applyFilters();
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3B82F6),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Apply',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Orbitron',
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   void _showListForSaleModal(CardDetailModel card) {
@@ -1676,6 +1282,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
     final TextEditingController coinsController = TextEditingController();
     final TextEditingController noteController = TextEditingController();
     final selectedCardIds = <String>{selectedCard.id!};
+
     bool isLoading = false;
     final cardProvider = Provider.of<CardProvider>(context, listen: false);
 
@@ -2436,11 +2043,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
                   const SizedBox(height: 24),
                   ShaderMask(
                     shaderCallback: (bounds) => const LinearGradient(
-                      colors: [
-                        Color(0xFF3B82F6),
-                        Color(0xFF60A5FA),
-                        Color(0xFF3B82F6),
-                      ],
+                      colors: [Colors.white, Color(0xFF60A5FA)],
                     ).createShader(bounds),
                     child: const Text(
                       'Control Center',
@@ -2666,6 +2269,203 @@ class _CollectionScreenState extends State<CollectionScreen> {
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showFilterModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1A1A2E),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => Container(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            MediaQuery.of(context).padding.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Filter Collection',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Orbitron',
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: Colors.white),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Rarity',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: ['LEGENDARY', 'EPIC', 'RARE', 'UNCOMMON', 'COMMON']
+                    .map((rarity) => FilterChip(
+                          selected: _selectedRarities.contains(rarity),
+                          onSelected: (selected) {
+                            setState(() {
+                              if (selected) {
+                                _selectedRarities.add(rarity);
+                              } else {
+                                _selectedRarities.remove(rarity);
+                              }
+                            });
+                            _applyFilters();
+                          },
+                          backgroundColor: const Color(0xFF0A0A1A),
+                          selectedColor:
+                              _getRarityColor(rarity).withOpacity(0.2),
+                          checkmarkColor: _getRarityColor(rarity),
+                          side: BorderSide(
+                            color: _selectedRarities.contains(rarity)
+                                ? _getRarityColor(rarity)
+                                : Colors.white24,
+                          ),
+                          label: Text(
+                            rarity,
+                            style: TextStyle(
+                              color: _selectedRarities.contains(rarity)
+                                  ? _getRarityColor(rarity)
+                                  : Colors.white70,
+                              fontWeight: _selectedRarities.contains(rarity)
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ))
+                    .toList(),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Type',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: ['F1_DRIVER', 'F1_TEAM', 'F1_TRACK', 'F1_MOMENT']
+                    .map((type) => FilterChip(
+                          selected: _selectedTypes.contains(type),
+                          onSelected: (selected) {
+                            setState(() {
+                              if (selected) {
+                                _selectedTypes.add(type);
+                              } else {
+                                _selectedTypes.remove(type);
+                              }
+                            });
+                            _applyFilters();
+                          },
+                          backgroundColor: const Color(0xFF0A0A1A),
+                          selectedColor:
+                              const Color(0xFF3B82F6).withOpacity(0.2),
+                          checkmarkColor: const Color(0xFF3B82F6),
+                          side: BorderSide(
+                            color: _selectedTypes.contains(type)
+                                ? const Color(0xFF3B82F6)
+                                : Colors.white24,
+                          ),
+                          label: Text(
+                            type.replaceAll('_', ' '),
+                            style: TextStyle(
+                              color: _selectedTypes.contains(type)
+                                  ? Colors.white
+                                  : Colors.white70,
+                              fontWeight: _selectedTypes.contains(type)
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ))
+                    .toList(),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        setState(() {
+                          _selectedRarities.clear();
+                          _selectedTypes.clear();
+                        });
+                        _applyFilters();
+                        Navigator.pop(context);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: const BorderSide(color: Color(0xFF3B82F6)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Clear All',
+                        style: TextStyle(
+                          color: Color(0xFF3B82F6),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        _applyFilters();
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3B82F6),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Apply Filters',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

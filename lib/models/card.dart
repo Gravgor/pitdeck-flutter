@@ -8,6 +8,7 @@ class CardModel {
   final String rarity;
   final bool isForSale;
   final bool isForTrade;
+  final DateTime? updatedAt;
 
   CardModel({
     required this.id,
@@ -19,6 +20,7 @@ class CardModel {
     required this.rarity,
     required this.isForSale,
     required this.isForTrade,
+    required this.updatedAt,
   });
 
   factory CardModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +34,9 @@ class CardModel {
       rarity: json['rarity'] ?? '',
       isForSale: json['isForSale'] ?? false,
       isForTrade: json['isForTrade'] ?? false,
+      updatedAt: json['updatedAt'] != null
+        ? DateTime.parse(json['updatedAt'])
+        : null,
     );
   }
 }
@@ -51,6 +56,7 @@ class CardDetailModel {
   final bool isExclusive;
   final bool isForSale;
   final bool isForTrade;
+  final DateTime? updatedAt;
 
   CardDetailModel({
     required this.id,
@@ -67,6 +73,7 @@ class CardDetailModel {
     required this.isExclusive,
     required this.isForSale,
     required this.isForTrade,
+    required this.updatedAt,
   });
 
   factory CardDetailModel.fromJson(Map<String, dynamic> json) {
@@ -85,6 +92,9 @@ class CardDetailModel {
       isExclusive: json['isExclusive'] ?? false,
       isForSale: json['isForSale'] ?? false,
       isForTrade: json['isForTrade'] ?? false,
+      updatedAt: json['updatedAt'] != null
+        ? DateTime.parse(json['updatedAt'])
+        : null,
     );
   }
   factory CardDetailModel.fromCardModel(CardModel card) {
@@ -103,6 +113,7 @@ class CardDetailModel {
       year: 0,
       isExclusive: false,
       isForTrade: false,
+      updatedAt: null,
     );
   }
 }

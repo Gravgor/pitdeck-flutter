@@ -119,9 +119,18 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           final List<String> currentDropIds =
               _markerManager!.getCurrentDropIds();
 
-          if (!_areListsEqual(newDropIds, currentDropIds)) {
-            await _markerManager?.clearAllMarkers();
-            for (var drop in newDrops) {
+          final Set<String> newDropSet = Set.from(newDropIds);
+          final Set<String> currentDropSet = Set.from(currentDropIds);
+
+          final dropsToRemove = currentDropSet.difference(newDropSet);
+          final dropsToAdd = newDropSet.difference(currentDropSet);
+
+          for (var dropId in dropsToRemove) {
+            await _markerManager?.removeMarker(dropId);
+          }
+
+          for (var drop in newDrops) {
+            if (dropsToAdd.contains(drop['id'].toString())) {
               await _markerManager?.addDropMarker(drop);
             }
           }
@@ -143,11 +152,9 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   Future<void> _updateRangeCircle(geo.Position position) async {
     await _circleAnnotationManager?.deleteAll();
 
-    final isPremium = false;
-    final maxRange =
-        isPremium ? 1500.0 : 100.0; // 1500m for premium, 100m for non-premium
+    final auth = Provider.of<UserProvider>(context, listen: false);
+    final isPremium = auth.user?.isPremium ?? false;
 
-    // Get current zoom level
     final zoom =
         await _mapboxMap?.getCameraState().then((state) => state.zoom) ?? 15.0;
 
@@ -155,12 +162,13 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       geometry: Point(
         coordinates: Position(position.longitude, position.latitude),
       ),
-      circleRadius: 100, // Size of circle
+      circleRadius: isPremium ? 5000 / zoom : 1000 / zoom,
       circleColor: Colors.blue.value,
       circleOpacity: 0.2,
       circleStrokeWidth: 2.0,
       circleStrokeColor: Colors.blue.value,
       circleStrokeOpacity: 0.5,
+      circleBlur: 1.0,
     );
 
     await _circleAnnotationManager?.create(options);
@@ -196,8 +204,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     final pointAnnotationManager =
         await mapboxMap.annotations.createPointAnnotationManager();
     _markerManager = MarkerManager(pointAnnotationManager, _showDropModal);
-    _circleAnnotationManager =
-        await mapboxMap.annotations.createCircleAnnotationManager();
+    // _circleAnnotationManager =
+    //     await mapboxMap.annotations.createCircleAnnotationManager();
     if (_userLocation != null) {
       await _getNearbyDrops(_userLocation!);
     } else {
@@ -208,8 +216,9 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   void _showDropModal(DropModel drop) {
     final newDrop = _markerManager?.getDropForId(drop.id);
     final distance = _calculateDistance(newDrop!);
-    final isPremium = false;
-    final maxRange = isPremium ? 1500.0 : 100.0;
+    final auth = Provider.of<UserProvider>(context, listen: false);
+    final isPremium = auth.user?.isPremium ?? false;
+    final maxRange = isPremium ? 500.0 : 100.0;
     final isInRange = distance <= maxRange;
 
     showModalBottomSheet(
@@ -388,6 +397,11 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _openDrop(DropModel drop) async {
+    if (!mounted) return;
+
+    final auth = Provider.of<UserProvider>(context, listen: false);
+    final token = auth.user?.token;
+
     try {
       if (_userLocation == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -396,12 +410,11 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         return;
       }
 
-      final auth = Provider.of<UserProvider>(context, listen: false);
       final response = await http.post(
         Uri.parse('$baseUrl/drops/claim'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${auth.user?.token}',
+          'Authorization': 'Bearer $token',
         },
         body: json.encode({
           'dropId': drop.id,
@@ -410,19 +423,24 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         }),
       );
 
+      if (!mounted) return;
+
       if (response.statusCode == 201) {
         final rewards = json.decode(response.body);
-        print(rewards);
-        Navigator.pop(context); // Close modal
+        Navigator.pop(context);
+        _markerManager?.removeMarker(drop.id);
         _showRewardsDialog(rewards, drop.rarity);
       } else if (response.statusCode == 403) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('You are too far away from this drop')),
         );
+      
       } else {
+        print(response.body);
         throw Exception('Failed to claim drop');
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error claiming drop: $e')),
       );
@@ -431,208 +449,380 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   void _showRewardsDialog(Map<String, dynamic> rewards, DropRarity rarity) {
     final List<dynamic> rewardsList = rewards['rewards'] ?? [];
-    print(rewardsList);
 
     showDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.5),
-      builder: (context) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Dialog(
-          backgroundColor: Colors.transparent,
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 400),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1A2E),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: _getRarityColor(rarity).withOpacity(0.3),
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: _getRarityColor(rarity).withOpacity(0.2),
-                  blurRadius: 20,
-                  spreadRadius: 5,
+      barrierColor: Colors.black.withOpacity(0.95),
+      builder: (context) => TweenAnimationBuilder<double>(
+        duration: const Duration(milliseconds: 500),
+        tween: Tween(begin: 0, end: 1),
+        builder: (context, value, child) => BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8 * value, sigmaY: 8 * value),
+          child: Dialog.fullscreen(
+            backgroundColor: Colors.transparent,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0xFF1A1A2E),
+                    _getRarityColor(rarity).withOpacity(0.1),
+                    const Color(0xFF1A1A2E),
+                  ],
                 ),
-              ],
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: ShaderMask(
-                      shaderCallback: (bounds) => LinearGradient(
-                        colors: [
-                          _getRarityColor(rarity),
-                          _getRarityColor(rarity).withOpacity(0.6),
-                        ],
-                      ).createShader(bounds),
-                      child: const Text(
-                        '🎉 Drop Claimed!',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (rewardsList.isNotEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: _getRarityColor(rarity).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: _getRarityColor(rarity).withOpacity(0.2),
+              ),
+              child: Center(
+                child: TweenAnimationBuilder<double>(
+                  duration: const Duration(milliseconds: 2000),
+                  tween: Tween(begin: 0, end: 1),
+                  builder: (context, value, child) {
+                    return Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Outer rotating circles
+                        Transform.rotate(
+                          angle: value * 4 * pi,
+                          child: Container(
+                            width: 200,
+                            height: 200,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: SweepGradient(
+                                colors: [
+                                  _getRarityColor(rarity).withOpacity(0),
+                                  _getRarityColor(rarity),
+                                  _getRarityColor(rarity).withOpacity(0),
+                                ],
+                                stops: [0, value, 1],
+                              ),
+                            ),
                           ),
                         ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (rewardsList[0]['type'] == 'CARD') ...[
-                              ClipRRect(
-                                borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(12),
+                        // Inner pulsing circle
+                        Transform.scale(
+                          scale: 1 + (0.2 * sin(value * 3 * pi)),
+                          child: Container(
+                            width: 160,
+                            height: 160,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: const Color(0xFF1A1A2E),
+                              border: Border.all(
+                                color: _getRarityColor(rarity),
+                                width: 2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      _getRarityColor(rarity).withOpacity(0.5),
+                                  blurRadius: 20,
+                                  spreadRadius: value * 5,
                                 ),
-                                child: Image.network(
-                                  rewardsList[0]['card']['imageUrl'] ?? '',
-                                  width: double.infinity,
-                                  height: 200,
-                                  fit: BoxFit.cover,
+                              ],
+                            ),
+                          ),
+                        ),
+                        // Center icon
+                        TweenAnimationBuilder<double>(
+                          duration: const Duration(milliseconds: 1500),
+                          tween: Tween(begin: 0, end: 1),
+                          curve: Curves.elasticOut,
+                          builder: (context, scaleValue, child) =>
+                              Transform.scale(
+                            scale: scaleValue,
+                            child: Icon(
+                              Icons.card_giftcard,
+                              size: 50 + (20 * sin(value * 6 * pi)),
+                              color: _getRarityColor(rarity),
+                            ),
+                          ),
+                        ),
+                        // Particles
+                        ...List.generate(12, (index) {
+                          final angle = (index / 12) * 2 * pi;
+                          final radius = 150 * value;
+                          return Positioned(
+                            left: cos(angle) * radius + 100,
+                            top: sin(angle) * radius + 100,
+                            child: Transform.scale(
+                              scale: (1 - value) * 2,
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: _getRarityColor(rarity),
                                 ),
                               ),
-                              Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      rewardsList[0]['card']['name'] ??
-                                          'Unknown Card',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '#${rewardsList[0]['card']['serialNumber'] ?? 'N/A'}',
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.7),
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Wrap(
-                                      spacing: 8,
-                                      runSpacing: 8,
-                                      alignment: WrapAlignment.center,
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: _getRarityColor(rarity)
-                                                .withOpacity(0.2),
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                          child: Text(
-                                            rewardsList[0]['card']['rarity'] ??
-                                                'Unknown',
-                                            style: TextStyle(
-                                              color: _getRarityColor(rarity),
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.blue.withOpacity(0.2),
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                          child: Text(
-                                            rewardsList[0]['card']['series'] ??
-                                                'Unknown Series',
-                                            style: const TextStyle(
-                                              color: Colors.blue,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Colors.orange.withOpacity(0.2),
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                          child: Text(
-                                            rewardsList[0]['card']['year']
-                                                    ?.toString() ??
-                                                'Unknown Year',
-                                            style: const TextStyle(
-                                              color: Colors.orange,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
+                            ),
+                          );
+                        }),
+                      ],
+                    );
+                  },
+                  onEnd: () {
+                    Navigator.of(context).pushReplacement(
+                      PageRouteBuilder(
+                        transitionDuration: const Duration(milliseconds: 500),
+                        pageBuilder: (context, animation, secondaryAnimation) {
+                          return FadeTransition(
+                            opacity: animation,
+                            child: _buildFinalReward(rewardsList, rarity),
+                          );
+                        },
                       ),
-                    ),
-                  ],
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color(0xFF3B82F6), // Bright blue background
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Awesome!',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                    );
+                  },
+                ),
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildFinalReward(List<dynamic> rewardsList, DropRarity rarity) {
+    return Dialog.fullscreen(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFF1A1A2E),
+              _getRarityColor(rarity).withOpacity(0.1),
+              const Color(0xFF1A1A2E),
+            ],
+          ),
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: rewardsList.map((reward) {
+                    if (reward['type'] == 'CARD') {
+                      final card = reward['card'];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 40),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.auto_awesome,
+                                  color: _getRarityColor(rarity),
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'New Drop Unlocked!',
+                                  style: TextStyle(
+                                    color: _getRarityColor(rarity),
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Orbitron',
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 32),
+                            Text(
+                              card['name'],
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Orbitron',
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _getRarityColor(rarity).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color:
+                                      _getRarityColor(rarity).withOpacity(0.3),
+                                ),
+                              ),
+                              child: Text(
+                                '#${card['serialNumber']}',
+                                style: TextStyle(
+                                  color: _getRarityColor(rarity),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 40),
+                            Container(
+                              height: 400,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(24),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: _getRarityColor(rarity)
+                                        .withOpacity(0.3),
+                                    blurRadius: 20,
+                                    spreadRadius: 5,
+                                  ),
+                                ],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(24),
+                                child: Image.network(
+                                  card['imageUrl'],
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 40),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildCardDetail(
+                                  Icons.calendar_today,
+                                  'Year',
+                                  card['year'].toString(),
+                                ),
+                                const SizedBox(width: 12),
+                                _buildCardDetail(
+                                  Icons.category,
+                                  'Series',
+                                  card['series'],
+                                ),
+                                const SizedBox(width: 12),
+                                _buildCardDetail(
+                                  Icons.auto_awesome,
+                                  'Rarity',
+                                  card['rarity'],
+                                  color: _getRarityColor(rarity),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  }).toList(),
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.3),
+                border: Border(
+                  top: BorderSide(
+                    color: Colors.white.withOpacity(0.1),
+                  ),
+                ),
+              ),
+              child: Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3B82F6),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Confirm',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          // TODO: Navigate to trade creation
+                        },
+                        icon: const Icon(
+                          Icons.swap_horiz,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 40),
+                      IconButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          // TODO: Navigate to market listing
+                        },
+                        icon: const Icon(
+                          Icons.sell,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardDetail(IconData icon, String label, String value,
+      {Color? color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.1),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: color ?? Colors.white.withOpacity(0.7),
+            size: 14,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            value,
+            style: TextStyle(
+              color: color ?? Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -669,14 +859,14 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     }
   }
 
-  void _testRewardsDialog() {
+  void _testDropAnimation() {
     final mockRewards = {
       "rewards": [
         {
           "type": "CARD",
           "card": {
             "id": "test123",
-            "name": "Test Driver Card",
+            "name": "Lewis Hamilton",
             "imageUrl": "https://picsum.photos/400/300",
             "serialNumber": "123/999",
             "rarity": "LEGENDARY",
@@ -1116,101 +1306,115 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     return Positioned(
       right: 16,
       bottom: 160,
-      child: FloatingActionButton(
-        onPressed: () async {
-          if (_userLocation != null) {
-            // Show scanning animation
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              barrierColor: Colors.black.withOpacity(0.5),
-              builder: (context) => BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                child: Center(
-                  child: Container(
-                    width: 200,
-                    height: 200,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Outer rotating circle
-                        TweenAnimationBuilder<double>(
-                          duration: const Duration(seconds: 2),
-                          tween: Tween(begin: 0, end: 4 * 3.14159),
-                          curve: Curves.linear,
-                          builder: (context, value, child) => Transform.rotate(
-                            angle: value,
-                            child: Container(
-                              width: 200,
-                              height: 200,
-                              decoration: BoxDecoration(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            onPressed: () async {
+              if (_userLocation != null) {
+                // Show scanning animation
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  barrierColor: Colors.black.withOpacity(0.5),
+                  builder: (context) => BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                    child: Center(
+                      child: Container(
+                        width: 200,
+                        height: 200,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Outer rotating circle
+                            TweenAnimationBuilder<double>(
+                              duration: const Duration(seconds: 2),
+                              tween: Tween(begin: 0, end: 4 * 3.14159),
+                              curve: Curves.linear,
+                              builder: (context, value, child) =>
+                                  Transform.rotate(
+                                angle: value,
+                                child: Container(
+                                  width: 200,
+                                  height: 200,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: const Color(0xFF3B82F6)
+                                          .withOpacity(0.5),
+                                      width: 2,
+                                    ),
+                                    gradient: SweepGradient(
+                                      colors: [
+                                        const Color(0xFF3B82F6)
+                                            .withOpacity(0.1),
+                                        const Color(0xFF3B82F6)
+                                            .withOpacity(0.5),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // Inner scanning line
+                            TweenAnimationBuilder<double>(
+                              duration: const Duration(seconds: 2),
+                              tween: Tween(begin: -1, end: 1),
+                              curve: Curves.easeInOut,
+                              builder: (context, value, child) =>
+                                  Transform.translate(
+                                offset: Offset(0, 100 * value),
+                                child: Container(
+                                  width: 150,
+                                  height: 2,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Colors.blue.withOpacity(0),
+                                        Colors.blue.withOpacity(0.8),
+                                        Colors.blue.withOpacity(0),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // Center dot
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF3B82F6),
                                 shape: BoxShape.circle,
-                                border: Border.all(
-                                  color:
-                                      const Color(0xFF3B82F6).withOpacity(0.5),
-                                  width: 2,
-                                ),
-                                gradient: SweepGradient(
-                                  colors: [
-                                    const Color(0xFF3B82F6).withOpacity(0.1),
-                                    const Color(0xFF3B82F6).withOpacity(0.5),
-                                  ],
-                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                        // Inner scanning line
-                        TweenAnimationBuilder<double>(
-                          duration: const Duration(seconds: 2),
-                          tween: Tween(begin: -1, end: 1),
-                          curve: Curves.easeInOut,
-                          builder: (context, value, child) =>
-                              Transform.translate(
-                            offset: Offset(0, 100 * value),
-                            child: Container(
-                              width: 150,
-                              height: 2,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.blue.withOpacity(0),
-                                    Colors.blue.withOpacity(0.8),
-                                    Colors.blue.withOpacity(0),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        // Center dot
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF3B82F6),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ),
-            );
+                );
 
-            // Perform the actual refresh
-            await _getNearbyDrops(_userLocation!);
-            _lastLocation = _userLocation;
+                // Perform the actual refresh
+                await _getNearbyDrops(_userLocation!);
+                _lastLocation = _userLocation;
 
-            // Close the scanning animation
-            if (mounted) {
-              Navigator.of(context).pop();
-            }
-          }
-        },
-        backgroundColor: const Color(0xFF1A1A2E),
-        child: const Icon(Icons.refresh, color: Color(0xFF3B82F6)),
+                // Close the scanning animation
+                if (mounted) {
+                  Navigator.of(context).pop();
+                }
+              }
+            },
+            backgroundColor: const Color(0xFF1A1A2E),
+            child: const Icon(Icons.refresh, color: Color(0xFF3B82F6)),
+          ),
+          const SizedBox(height: 16),
+          /*FloatingActionButton(
+            onPressed: _testDropAnimation,
+            backgroundColor: const Color(0xFF1A1A2E),
+            child: const Icon(Icons.play_arrow, color: Color(0xFF3B82F6)),
+          ),*/
+        ],
       ),
     );
   }
@@ -1415,10 +1619,18 @@ class MarkerManager {
     }
   }
 
+  Future<void> removeMarker(String dropId) async {
+    if (_dropMarkers.containsKey(dropId)) {
+      await _pointAnnotationManager.delete(_dropMarkers[dropId]!);
+      _dropMarkers.remove(dropId);
+      _markerDrops.remove(dropId);
+    }
+  }
+
   Future<void> clearAllMarkers() async {
     await _pointAnnotationManager.deleteAll();
-    _markerDrops.clear();
     _dropMarkers.clear();
+    _markerDrops.clear();
     _annotationToDropId.clear();
   }
 

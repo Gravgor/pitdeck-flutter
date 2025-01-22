@@ -13,6 +13,7 @@ class User {
   final int totalXp;
   final String? role;
   final String bio;
+  final bool isPremium;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? lastLogin;
@@ -30,6 +31,7 @@ class User {
     this.xp = 0,
     this.totalXp = 0,
     this.bio = '',
+    this.isPremium = false,
     this.role = 'user',
     required this.createdAt,
     required this.updatedAt,
@@ -53,6 +55,7 @@ class User {
       totalXp: json['totalXp'] ?? 0,
       bio: json['bio'] ?? '',
       role: json['role'] ?? 'user',
+      isPremium: json['isPremium'] ?? false,
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
       lastLogin:
@@ -76,6 +79,7 @@ class User {
       'xp': xp,
       'totalXp': totalXp,
       'bio': bio,
+      'isPremium': isPremium,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'lastLogin': lastLogin?.toIso8601String(),

@@ -77,13 +77,38 @@ class _MarketScreenState extends State<MarketScreen>
       body: Column(
         children: [
           _buildHeader(),
-          TabBar(
-            controller: _tabController,
-            indicatorColor: Colors.blue,
-            tabs: const [
-              Tab(text: 'MARKETPLACE'),
-              Tab(text: 'TRADES'),
-            ],
+          Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0A0A1A),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                color: const Color(0xFF3B82F6),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              indicatorPadding: const EdgeInsets.all(4),
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white.withOpacity(0.5),
+              labelStyle: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Orbitron',
+                letterSpacing: 1,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 14,
+                fontFamily: 'Orbitron',
+                letterSpacing: 1,
+              ),
+              padding: const EdgeInsets.all(4),
+              tabs: const [
+                Tab(text: 'MARKETPLACE'),
+                Tab(text: 'TRADES'),
+              ],
+            ),
           ),
           Expanded(
             child: TabBarView(
@@ -628,7 +653,7 @@ class _MarketScreenState extends State<MarketScreen>
         return Colors.grey;
       case TradeStatus.DECLINED:
         return Colors.red;
-    } 
+    }
   }
 
   void _showAddListingModal(BuildContext context) {

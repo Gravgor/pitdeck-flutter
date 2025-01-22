@@ -28,7 +28,6 @@ class AuthProvider with ChangeNotifier {
 
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
-        print(data);
         final initialUser = User(
           id: data['user']['id'],
           email: data['user']['email'],
@@ -43,6 +42,7 @@ class AuthProvider with ChangeNotifier {
           totalXp: data['user']['totalXp'] ?? 0,
           image: data['user']['image'],
           bio: data['user']['bio'] ?? '',
+          isPremium: data['user']['isPremium'] ?? false,
         );
 
         // First store basic user data
@@ -59,7 +59,6 @@ class AuthProvider with ChangeNotifier {
 
         if (detailsResponse.statusCode == 200) {
           final userDetails = json.decode(detailsResponse.body);
-          print(userDetails);
           final fullUser = User(
             id: userDetails['id'],
             name: userDetails['name'],
@@ -72,6 +71,7 @@ class AuthProvider with ChangeNotifier {
             xp: userDetails['xp'],
             createdAt: DateTime.parse(userDetails['createdAt']),
             updatedAt: DateTime.now(),
+            isPremium: userDetails['isPremium'],
             token: initialUser.token,
           );
 
