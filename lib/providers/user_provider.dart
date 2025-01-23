@@ -1,14 +1,63 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../models/user.dart';
 
 class UserProvider with ChangeNotifier {
   User? _user;
   final String _baseUrl = 'https://api.pitdeck.app/api';
+  IO.Socket? _socket;
+  bool isSocketConnected = false;
 
   User? get user => _user;
+
+  Future<void> connectUserSocket() async {
+    if (_user?.token == null) return;
+
+    _socket?.dispose();
+    _socket = IO.io(
+        'https://api.pitdeck.app/users',
+        IO.OptionBuilder()
+            .setTransports(['websocket'])
+            .setExtraHeaders({'Authorization': 'Bearer ${_user!.token}'})
+            .enableForceNew()
+            .build());
+
+    _setupSocketListeners();
+    _socket?.connect();
+    print('Manual socket connection attempt...');
+  }
+
+  void _setupSocketListeners() {
+    _socket?.onConnect((_) {
+      isSocketConnected = true;
+      notifyListeners();
+      print('Users Socket connected');
+    });
+
+    _socket?.onDisconnect((_) {
+      isSocketConnected = false;
+      notifyListeners();
+      print('Users Socket disconnected');
+    });
+
+    _socket?.on('user:update', (data) {
+      if (_user != null) {
+        _user = _user!.copyWith(
+          name: data['name'] ?? _user!.name,
+          image: data['image'] ?? _user!.image,
+          bio: data['bio'] ?? _user!.bio,
+          isPremium: data['isPremium'] ?? _user!.isPremium,
+          coins: data['coins'] ?? _user!.coins,
+          level: data['level'] ?? _user!.level,
+        );
+        notifyListeners();
+      }
+    });
+  }
 
   Future<void> fetchUserDetails(String userId, String token) async {
     try {
@@ -23,7 +72,6 @@ class UserProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         final userData = json.decode(response.body);
         _user = User.fromJson(userData, token: token);
-
         await DefaultCacheManager().putFile(
           'user_details',
           utf8.encode(json.encode(_user!.toJson())),
@@ -40,7 +88,6 @@ class UserProvider with ChangeNotifier {
 
   Future<void> updateUser(User user) async {
     _user = user;
-    // Cache the updated user data
     await DefaultCacheManager().putFile(
       'user_details',
       utf8.encode(json.encode(user.toJson())),
@@ -56,6 +103,9 @@ class UserProvider with ChangeNotifier {
         final userData =
             json.decode(utf8.decode(await fileInfo.file.readAsBytes()));
         _user = User.fromJson(userData);
+        if (_user?.token != null) {
+          await connectUserSocket();
+        }
         notifyListeners();
       }
     } catch (e) {
@@ -64,8 +114,15 @@ class UserProvider with ChangeNotifier {
   }
 
   Future<void> clearUser() async {
+    _socket?.dispose();
     _user = null;
     await DefaultCacheManager().removeFile('user_details');
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _socket?.dispose();
+    super.dispose();
   }
 }

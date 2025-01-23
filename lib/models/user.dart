@@ -1,6 +1,47 @@
 import 'package:json_annotation/json_annotation.dart';
 
 @JsonSerializable()
+class UserLocation {
+  final String id;
+  final String userId;
+  final double latitude;
+  final double longitude;
+  final DateTime updatedAt;
+  final DateTime createdAt;
+
+  UserLocation({
+    required this.id,
+    required this.userId,
+    required this.latitude,
+    required this.longitude,
+    required this.updatedAt,
+    required this.createdAt,
+  });
+
+  factory UserLocation.fromJson(Map<String, dynamic> json) {
+    return UserLocation(
+      id: json['id'],
+      userId: json['userId'],
+      latitude: json['latitude'].toDouble(),
+      longitude: json['longitude'].toDouble(),
+      updatedAt: DateTime.parse(json['updatedAt']),
+      createdAt: DateTime.parse(json['createdAt']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'userId': userId,
+      'latitude': latitude,
+      'longitude': longitude,
+      'updatedAt': updatedAt.toIso8601String(),
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+}
+
+@JsonSerializable()
 class User {
   final String id;
   final String? name;
@@ -19,6 +60,7 @@ class User {
   final DateTime? lastLogin;
   final DateTime? lastActive;
   final String token;
+  final List<UserLocation> locations;
 
   User({
     required this.id,
@@ -38,6 +80,7 @@ class User {
     this.lastLogin,
     this.lastActive,
     required this.token,
+    this.locations = const [],
   });
 
   factory User.fromJson(Map<String, dynamic> json, {String? token}) {
@@ -64,6 +107,10 @@ class User {
           ? DateTime.parse(json['lastActive'])
           : null,
       token: token ?? json['token'] ?? '',
+      locations: (json['locations'] as List<dynamic>?)
+              ?.map((loc) => UserLocation.fromJson(loc))
+              .toList() ??
+          [],
     );
   }
 
@@ -85,6 +132,34 @@ class User {
       'lastLogin': lastLogin?.toIso8601String(),
       'lastActive': lastActive?.toIso8601String(),
       'token': token,
+      'locations': locations.map((loc) => loc.toJson()).toList(),
     };
   }
+
+  User copyWith({
+    String? name,
+    String? image,
+    bool? isPremium,
+    int? coins,
+    int? level,
+    String? bio,
+    String? token,
+  }) {
+    return User(
+      id: id,
+      name: name ?? this.name,
+      image: image ?? this.image,
+      isPremium: isPremium ?? this.isPremium,
+      bio: bio ?? this.bio,
+      coins: coins ?? this.coins,
+      level: level ?? this.level,
+      token: token ?? this.token,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
+
+  UserLocation? get lastLocation => locations.isNotEmpty
+      ? locations.reduce((a, b) => a.updatedAt.isAfter(b.updatedAt) ? a : b)
+      : null;
 }
