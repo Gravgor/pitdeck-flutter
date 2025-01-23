@@ -58,8 +58,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     super.initState();
     _loadCachedState();
     _requestLocationPermission();
-    _initializeSocket();
-    _initializeUserSocket();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeSocket();
+      _initializeUserSocket();
+    });
     print('Current cached drops: ${_cachedDrops.length}');
   }
 
@@ -97,13 +99,14 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     try {
       final auth = Provider.of<UserProvider>(context, listen: false);
       final lastLocation = auth.user?.lastLocation;
-      
+
       if (lastLocation != null) {
         print('Last location: ${lastLocation.toJson()}');
         await _mapboxMap?.flyTo(
           CameraOptions(
             center: Point(
-              coordinates: Position(lastLocation.longitude, lastLocation.latitude),
+              coordinates:
+                  Position(lastLocation.longitude, lastLocation.latitude),
             ),
             zoom: 15.0,
           ),
@@ -337,7 +340,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     final distance = _calculateDistance(newDrop!);
     final auth = Provider.of<UserProvider>(context, listen: false);
     final isPremium = auth.user?.isPremium ?? false;
-    final maxRange = isPremium ? 500.0 : 100.0;
+    final maxRange = isPremium ? 1500.0 : 100.0;
     final isInRange = distance <= maxRange;
 
     showModalBottomSheet(
@@ -575,6 +578,19 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       builder: (context) => TweenAnimationBuilder<double>(
         duration: const Duration(milliseconds: 500),
         tween: Tween(begin: 0, end: 1),
+        onEnd: () {
+          Navigator.of(context).pushReplacement(
+            PageRouteBuilder(
+              transitionDuration: const Duration(milliseconds: 500),
+              pageBuilder: (context, animation, secondaryAnimation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: _buildFinalReward(rewardsList, rarity),
+                );
+              },
+            ),
+          );
+        },
         builder: (context, value, child) => BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 8 * value, sigmaY: 8 * value),
           child: Dialog.fullscreen(

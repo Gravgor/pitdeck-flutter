@@ -46,15 +46,17 @@ class UserProvider with ChangeNotifier {
 
     _socket?.on('user:update', (data) {
       if (_user != null) {
-        _user = _user!.copyWith(
-          name: data['name'] ?? _user!.name,
-          image: data['image'] ?? _user!.image,
-          bio: data['bio'] ?? _user!.bio,
-          isPremium: data['isPremium'] ?? _user!.isPremium,
-          coins: data['coins'] ?? _user!.coins,
-          level: data['level'] ?? _user!.level,
-        );
-        notifyListeners();
+        if (data is Map<String, dynamic>) {
+          _user = _user!.copyWith(
+            name: data['name'] ?? _user!.name,
+            image: data['image'] ?? _user!.image,
+            bio: data['bio'] ?? _user!.bio,
+            isPremium: data['isPremium'] ?? _user!.isPremium,
+            coins: data['coins'] ?? _user!.coins,
+            level: data['level'] ?? _user!.level,
+          );
+          notifyListeners();
+        }
       }
     });
   }

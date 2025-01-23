@@ -388,7 +388,7 @@ class ControlCenter extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '23:45:12',
+                      _formatTimeRemaining(),
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.9),
                         fontSize: 12,
@@ -662,5 +662,12 @@ class ControlCenter extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatTimeRemaining() {
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day + 1);
+    final remaining = tomorrow.difference(now);
+    return '${remaining.inHours.toString().padLeft(2, '0')}:${(remaining.inMinutes % 60).toString().padLeft(2, '0')}:${(remaining.inSeconds % 60).toString().padLeft(2, '0')}';
   }
 }
