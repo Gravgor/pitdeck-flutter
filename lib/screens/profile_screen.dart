@@ -4,8 +4,24 @@ import 'package:pitdeck/providers/user_provider.dart';
 import 'package:pitdeck/providers/navigation_provider.dart';
 import 'package:pitdeck/providers/card_provider.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _initializeUserSocket();
+  }
+
+  Future<void> _initializeUserSocket() async {
+    final auth = Provider.of<UserProvider>(context, listen: false);
+    await auth.connectUserSocket();
+  }
 
   @override
   Widget build(BuildContext context) {
