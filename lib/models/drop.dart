@@ -60,6 +60,16 @@ class DropModel {
   String toString() {
     return 'Drop(id: $id, type: $type, rarity: $rarity, rewards: ${rewards.length}, annotationId: $annotationId)';
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'latitude': latitude,
+      'longitude': longitude,
+      'rarity': rarity,
+      // ... other properties
+    };
+  }
 }
 
 class DropReward {

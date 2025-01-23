@@ -11,6 +11,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:pitdeck/screens/collection_screen.dart';
 import 'package:pitdeck/screens/market_screen.dart';
 import 'package:pitdeck/screens/packs_screen.dart';
+import 'package:pitdeck/services/socket_service.dart';
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
 import 'package:pitdeck/providers/navigation_provider.dart';
@@ -18,6 +19,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:pitdeck/models/drop.dart';
 import 'dart:math';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 void main() {
   MapboxOptions.setAccessToken(MapboxConfig.accessToken);
@@ -37,19 +39,32 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   Timer? _locationTimer;
   CircleAnnotationManager? _circleAnnotationManager;
   bool _isLoading = false;
+  geo.Position? _lastLocation;
+  IO.Socket? _socket;
+  Timer? _socketReconnectTimer;
+  bool _isSocketConnecting = false;
+  final _retryDelays = [2, 5, 10, 30];
+  int _retryAttempt = 0;
+
   final baseUrl = 'https://api.pitdeck.app/api';
   final developerUrl = 'http://192.168.1.105:3000/api'; // TODO: Remove this
-  geo.Position? _lastLocation;
+
+  final Map<String, DropModel> _cachedDrops = {};
+  bool _isInitialLoad = true;
 
   @override
   void initState() {
     super.initState();
     _requestLocationPermission();
+    _initializeSocket();
   }
 
   @override
   void dispose() {
     _locationTimer?.cancel();
+    _socketReconnectTimer?.cancel();
+    _socket?.disconnect();
+    _socket?.dispose();
     super.dispose();
   }
 
@@ -72,13 +87,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       setState(() {
         _userLocation = position;
       });
-
-      if (_lastLocation == null) {
-        await _getNearbyDrops(position);
-      }
-
-      await _updateRangeCircle(position);
-
+      _socket?.emit('location:update', {
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+      });
       await _mapboxMap?.flyTo(
         CameraOptions(
           center: Point(
@@ -93,51 +105,127 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _getNearbyDrops(geo.Position position) async {
-    if (_markerManager == null) {
-      print('Marker manager not ready');
-      return;
-    }
+  Future<void> _initializeSocket() async {
+    if (_isSocketConnecting) return;
+    _isSocketConnecting = true;
 
-    try {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = Provider.of<UserProvider>(context, listen: false);
-      final response = await http.get(
-        Uri.parse(
-            '$baseUrl/drops?lat=${position.latitude}&lng=${position.longitude}&radius=11000'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${auth.user?.token}',
-        },
-      );
+      final token = auth.user?.token;
 
-      if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        if (responseData['drops'] != null) {
-          final List<dynamic> newDrops = responseData['drops'];
-          final List<String> newDropIds =
-              newDrops.map<String>((drop) => drop['id'].toString()).toList();
-          final List<String> currentDropIds =
-              _markerManager!.getCurrentDropIds();
+      print('Initializing socket with token: ${token?.substring(0, 10)}...');
 
-          final Set<String> newDropSet = Set.from(newDropIds);
-          final Set<String> currentDropSet = Set.from(currentDropIds);
+      if (token == null) {
+        print('Socket error: No auth token');
+        return;
+      }
 
-          final dropsToRemove = currentDropSet.difference(newDropSet);
-          final dropsToAdd = newDropSet.difference(currentDropSet);
+      try {
+        _socket = IO.io(
+          'https://api.pitdeck.app/drops',
+          IO.OptionBuilder()
+              .setTransports(['websocket'])
+              .setExtraHeaders({'Authorization': 'Bearer $token'})
+              .enableAutoConnect()
+              .build(),
+        );
 
-          for (var dropId in dropsToRemove) {
-            await _markerManager?.removeMarker(dropId);
-          }
+        _setupSocketListeners();
+        _socket?.connect();
+        print('Socket attempting connection...');
+      } catch (e) {
+        print('Socket init error: $e');
+        _scheduleReconnect();
+      }
+    });
+  }
 
-          for (var drop in newDrops) {
-            if (dropsToAdd.contains(drop['id'].toString())) {
-              await _markerManager?.addDropMarker(drop);
-            }
+  void _setupSocketListeners() {
+    _socket?.onConnect((_) {
+      print('Socket connected');
+      _isSocketConnecting = false;
+      _retryAttempt = 0;
+      _socketReconnectTimer?.cancel();
+    });
+
+    _socket?.onDisconnect((_) {
+      print('Socket disconnected');
+      _scheduleReconnect();
+    });
+
+    _socket?.on('drops:nearby', (data) {
+      print('Received drops: $data');
+      if (data != null) {
+        try {
+          final drops =
+              (data as List).map((d) => DropModel.fromJson(d)).toList();
+          _updateDrops(drops);
+        } catch (e) {
+          print('Error parsing drops: $e');
+        }
+      }
+    });
+
+    _socket?.onError((error) => print('Socket error: $error'));
+    _socket?.onConnectError((error) => print('Connect error: $error'));
+  }
+
+  void _scheduleReconnect() {
+    if (_socketReconnectTimer?.isActive ?? false) return;
+    if (_retryAttempt >= _retryDelays.length) return;
+
+    final delay = _retryDelays[_retryAttempt];
+    print('Reconnecting in ${delay}s');
+
+    _socketReconnectTimer = Timer(Duration(seconds: delay), () {
+      _retryAttempt++;
+      _isSocketConnecting = false;
+      _initializeSocket();
+    });
+  }
+
+  Future<void> _updateDrops(List<DropModel> drops) async {
+    if (!mounted) return;
+    try {
+      // Update cache with new drops
+      for (var drop in drops) {
+        _cachedDrops[drop.id.toString()] = drop;
+      }
+
+      if (_isInitialLoad) {
+        await _markerManager?.clearAllMarkers();
+        for (var drop in _cachedDrops.values) {
+          await _markerManager?.addDropMarker(drop);
+        }
+        _isInitialLoad = false;
+      } else {
+        final List<String> newDropIds =
+            drops.map((drop) => drop.id.toString()).toList();
+        final List<String> currentDropIds =
+            _markerManager?.getCurrentDropIds() ?? [];
+
+        final Set<String> newDropSet = Set.from(newDropIds);
+        final Set<String> currentDropSet = Set.from(currentDropIds);
+
+        final dropsToRemove = currentDropSet.difference(newDropSet);
+        final dropsToAdd = newDropSet.difference(currentDropSet);
+
+        // Remove old markers
+        for (var dropId in dropsToRemove) {
+          await _markerManager?.removeMarker(dropId);
+          _cachedDrops.remove(dropId);
+        }
+
+        // Add new markers
+        for (var dropId in dropsToAdd) {
+          final drop = _cachedDrops[dropId];
+          if (drop != null) {
+            await _markerManager?.addDropMarker(drop);
           }
         }
       }
     } catch (e) {
-      print('Error updating location: $e');
+      print('Error updating drops: $e');
     }
   }
 
@@ -206,11 +294,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     _markerManager = MarkerManager(pointAnnotationManager, _showDropModal);
     // _circleAnnotationManager =
     //     await mapboxMap.annotations.createCircleAnnotationManager();
-    if (_userLocation != null) {
-      await _getNearbyDrops(_userLocation!);
-    } else {
-      await _getCurrentLocation();
-    }
+    await _getCurrentLocation();
   }
 
   void _showDropModal(DropModel drop) {
@@ -428,15 +512,14 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       if (response.statusCode == 201) {
         final rewards = json.decode(response.body);
         Navigator.pop(context);
+        _cachedDrops.remove(drop.id);
         _markerManager?.removeMarker(drop.id);
         _showRewardsDialog(rewards, drop.rarity);
       } else if (response.statusCode == 403) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('You are too far away from this drop')),
         );
-      
       } else {
-        print(response.body);
         throw Exception('Failed to claim drop');
       }
     } catch (e) {
@@ -1396,9 +1479,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                 );
 
                 // Perform the actual refresh
-                await _getNearbyDrops(_userLocation!);
-                _lastLocation = _userLocation;
-
+                // _dropsService.getDrops();
                 // Close the scanning animation
                 if (mounted) {
                   Navigator.of(context).pop();
@@ -1415,37 +1496,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             child: const Icon(Icons.play_arrow, color: Color(0xFF3B82F6)),
           ),*/
         ],
-      ),
-    );
-  }
-
-  Widget _buildDropCounter() {
-    return Positioned(
-      top: 100,
-      left: 16,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFF0A0A1A).withOpacity(0.9),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: const Color(0xFF3B82F6).withOpacity(0.3),
-          ),
-        ),
-        child: const Row(
-          children: [
-            Icon(Icons.catching_pokemon, color: Color(0xFF3B82F6), size: 20),
-            SizedBox(width: 8),
-            Text(
-              '3/10 Drops',
-              style: TextStyle(
-                color: Colors.white,
-                fontFamily: 'Orbitron',
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -1584,13 +1634,12 @@ class MarkerManager {
 
   DropModel? getDropByAnnotationId(String annotationId) {
     final dropId = _annotationToDropId[annotationId];
-    print('Drop ID: $dropId');
     return dropId != null ? _markerDrops[dropId] : null;
   }
 
-  Future<void> addDropMarker(Map<String, dynamic> dropData) async {
+  Future<void> addDropMarker(DropModel dropData) async {
     try {
-      final drop = DropModel.fromJson(dropData);
+      final drop = dropData;
       final String markerPath = _getMarkerAssetPath(drop.rarity);
 
       final ByteData bytes = await rootBundle.load(markerPath);
