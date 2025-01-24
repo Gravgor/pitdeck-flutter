@@ -640,8 +640,8 @@ class ControlCenter extends StatelessWidget {
             ),
           ),
           _buildRaceCoins(context),
-          const SizedBox(height: 24),
-          _buildDailyRewards(context),
+         /* const SizedBox(height: 24),
+          _buildDailyRewards(context),*/
           const SizedBox(height: 24),
           Expanded(
             child: Padding(
