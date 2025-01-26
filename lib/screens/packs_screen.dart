@@ -21,6 +21,8 @@ class _PacksScreenState extends State<PacksScreen>
   bool _isOpeningLoading = false;
   String _selectedFilter = 'ALL';
   late AnimationController _controller;
+  final TextEditingController _searchController = TextEditingController();
+  List<Pack> _filteredPacks = [];
 
   @override
   void initState() {
@@ -30,10 +32,26 @@ class _PacksScreenState extends State<PacksScreen>
       vsync: this,
     )..repeat();
     _fetchPacks();
+    _searchController.addListener(_filterPacks);
+  }
+
+  void _filterPacks() {
+    if (_searchController.text.isEmpty) {
+      setState(() => _filteredPacks = _packs);
+    } else {
+      setState(() {
+        _filteredPacks = _packs
+            .where((pack) => pack.name
+                .toLowerCase()
+                .contains(_searchController.text.toLowerCase()))
+            .toList();
+      });
+    }
   }
 
   @override
   void dispose() {
+    _searchController.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -57,6 +75,7 @@ class _PacksScreenState extends State<PacksScreen>
               .where(
                   (pack) => pack.imageUrl.contains('pitdeck-app.s3.eu-north-1'))
               .toList();
+          _filteredPacks = _packs;
           _isLoading = false;
         });
       }
@@ -133,6 +152,22 @@ class _PacksScreenState extends State<PacksScreen>
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  String _formatNumber(int number) {
+    final String numStr = number.toString();
+    final StringBuffer result = StringBuffer();
+    int count = 0;
+
+    for (int i = numStr.length - 1; i >= 0; i--) {
+      if (count != 0 && count % 3 == 0) {
+        result.write('.');
+      }
+      result.write(numStr[i]);
+      count++;
+    }
+
+    return result.toString().split('').reversed.join();
   }
 
   Widget _buildPackCard(Pack pack) {
@@ -340,7 +375,9 @@ class _PacksScreenState extends State<PacksScreen>
           ),
           const SizedBox(height: 32),
           Text(
-            _isOpeningLoading ? 'Opening pack...' : 'Loading available packs...',
+            _isOpeningLoading
+                ? 'Opening pack...'
+                : 'Loading available packs...',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 24,
@@ -357,24 +394,120 @@ class _PacksScreenState extends State<PacksScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A1A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1A2E),
-        title: const Text(
-          'Card Packs',
-          style: TextStyle(
-            fontFamily: 'Orbitron',
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        elevation: 0,
-      ),
-      body: _isLoading 
-          ? _buildLoadingState()
-          : ListView.builder(
-              itemCount: _packs.length,
-              itemBuilder: (context, index) => _buildPackCard(_packs[index]),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1A2E),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 8,
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0A0A1A),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: const Color(0xFF3B82F6).withOpacity(0.3),
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Text(
+                        'Card Packs',
+                        style: TextStyle(
+                          fontFamily: 'Orbitron',
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const Spacer(),
+                      Consumer<UserProvider>(
+                        builder: (context, userProvider, _) => Row(
+                          children: [
+                            const Icon(
+                              Icons.monetization_on,
+                              color: Color(0xFFFFD700),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _formatNumber(userProvider.user?.coins ?? 0),
+                              style: const TextStyle(
+                                color: Color(0xFFFFD700),
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0A0A1A),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFF3B82F6).withOpacity(0.3),
+                      ),
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'Search packs...',
+                        hintStyle: TextStyle(
+                          color: Colors.white.withOpacity(0.5),
+                        ),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: Colors.white.withOpacity(0.5),
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
+            Expanded(
+              child: _isLoading
+                  ? _buildLoadingState()
+                  : ListView.builder(
+                      itemCount: _filteredPacks.length,
+                      itemBuilder: (context, index) =>
+                          _buildPackCard(_filteredPacks[index]),
+                    ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

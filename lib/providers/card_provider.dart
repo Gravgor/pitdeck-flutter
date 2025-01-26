@@ -14,7 +14,7 @@ class CardProvider with ChangeNotifier {
   List<CardModel> get cards => _cards;
   Map<String, CardDetailModel> get cardDetails => _cardDetails;
 
-   List<CardModel> getUserCards() {
+  List<CardModel> getUserCards() {
     return _cards;
   }
 
@@ -42,7 +42,11 @@ class CardProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         final List<dynamic> cardsData = json.decode(response.body);
 
-        _cards = cardsData.map((json) => CardModel.fromJson(json)).toList();
+        _cards = cardsData.map((json) => CardModel.fromJson(json)).toList()
+          ..sort((a, b) =>
+              (b.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0)).compareTo(
+                  a.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0)));
+        print(_cards.length);
         notifyListeners();
         return _cards;
       } else {
@@ -101,4 +105,3 @@ class CardProvider with ChangeNotifier {
     await fetchUserCards();
   }
 }
-

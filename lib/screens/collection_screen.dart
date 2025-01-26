@@ -54,7 +54,6 @@ class _CollectionScreenState extends State<CollectionScreen> {
     try {
       final response = await Provider.of<CardProvider>(context, listen: false)
           .fetchUserCards();
-
       if (mounted) {
         setState(() {
           _cards = response.cast<CardModel>();
@@ -423,6 +422,73 @@ class _CollectionScreenState extends State<CollectionScreen> {
   }
 
   Widget _buildCardGrid() {
+    if (_isLoading && _cards.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFF3B82F6)),
+      );
+    }
+
+    if (_cards.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.card_membership_outlined,
+              size: 64,
+              color: Colors.white.withOpacity(0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Your collection is empty',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Orbitron',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Open packs to start collecting cards',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PacksScreen()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF3B82F6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'OPEN PACKS',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Orbitron',
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     var filteredCards = _cards.where((card) {
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
@@ -432,20 +498,12 @@ class _CollectionScreenState extends State<CollectionScreen> {
             card.serialNumber!.toLowerCase().contains(query);
       }
       return true;
-    }).toList()
-      ..sort((a, b) => (b.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0))
-          .compareTo(a.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0)));
+    }).toList();
 
     if (_selectedFilter == 'trade') {
       filteredCards = filteredCards.where((card) => card.isForTrade).toList();
     } else if (_selectedFilter == 'market') {
       filteredCards = filteredCards.where((card) => card.isForSale).toList();
-    }
-
-    if (_isLoading && filteredCards.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF3B82F6)),
-      );
     }
 
     if (_error != null && filteredCards.isEmpty) {
@@ -607,6 +665,8 @@ class _CollectionScreenState extends State<CollectionScreen> {
                             const SizedBox(height: 4),
                             Text(
                               '#${card.serialNumber}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: Colors.grey,
                                 fontSize: 14,
@@ -1983,9 +2043,11 @@ class _CollectionScreenState extends State<CollectionScreen> {
                             const SizedBox(height: 2),
                             Text(
                               '#${card.serialNumber}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: Colors.grey,
-                                fontSize: 8,
+                                fontSize: 14,
                               ),
                             ),
                           ],
