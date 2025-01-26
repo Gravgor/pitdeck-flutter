@@ -68,7 +68,16 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1A2E),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 8,
+                  ),
+                ],
+              ),
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
@@ -77,7 +86,7 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1A1A2E),
+                        color: const Color(0xFF0A0A1A),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: const Color(0xFF3B82F6).withOpacity(0.3),
@@ -90,40 +99,77 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
                       ),
                     ),
                   ),
-                  const Spacer(),
-                  Text(
-                    'Select ${widget.pack.cardsPerPack - _selectedCardIds.length} more cards',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Orbitron',
-                    ),
+                  const SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Opening Pack',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Select ${widget.pack.cardsPerPack - _selectedCardIds.length} more cards',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 14,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                    ],
                   ),
-                  const Spacer(),
-                  const SizedBox(width: 40),
                 ],
               ),
             ),
             Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.all(16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  childAspectRatio: 0.7,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      const Color(0xFF1A1A2E),
+                      const Color(0xFF0A0A1A),
+                    ],
+                  ),
                 ),
-                itemCount: _cardPool.length,
-                itemBuilder: (context, index) {
-                  final card = _cardPool[index];
-                  final isSelected = _selectedCardIds.contains(card['id']);
-                  return _buildCard(card, isSelected);
-                },
+                child: GridView.builder(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 24,
+                  ),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.75,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 20,
+                  ),
+                  itemCount: _cardPool.length,
+                  itemBuilder: (context, index) {
+                    final card = _cardPool[index];
+                    final isSelected = _selectedCardIds.contains(card['id']);
+                    return _buildCard(card, isSelected);
+                  },
+                ),
               ),
             ),
             if (_isSelectionComplete)
-              Padding(
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A2E),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, -4),
+                    ),
+                  ],
+                ),
                 padding: const EdgeInsets.all(16),
                 child: ElevatedButton(
                   onPressed: () {

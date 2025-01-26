@@ -665,6 +665,8 @@ class _CollectionScreenState extends State<CollectionScreen> {
                             const SizedBox(height: 4),
                             Text(
                               '#${card.serialNumber}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: Colors.grey,
                                 fontSize: 14,
@@ -2041,9 +2043,11 @@ class _CollectionScreenState extends State<CollectionScreen> {
                             const SizedBox(height: 2),
                             Text(
                               '#${card.serialNumber}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: Colors.grey,
-                                fontSize: 8,
+                                fontSize: 14,
                               ),
                             ),
                           ],
