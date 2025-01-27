@@ -76,6 +76,10 @@ class _CollectionScreenState extends State<CollectionScreen> {
     });
   }
 
+  void _refreshCards() {
+    _fetchCards();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -967,6 +971,38 @@ class _CollectionScreenState extends State<CollectionScreen> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
+                                    fontFamily: 'Orbitron',
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            if (cardDetails.isForSale &&
+                                cardDetails.isForSale == true)
+                              ElevatedButton(
+                                onPressed: () => {
+                                  _removeFromMarketplace(cardDetails),
+                                    Navigator.pop(context),
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar( 
+                                        content: Text('Card removed from Marketplace!'),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                  ),
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF3B82F6),
+                                  minimumSize: const Size(double.infinity, 56),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Remove from Marketplace',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Orbitron',
+                                    color: Colors.white,
                                   ),
                                 ),
                               ),
@@ -993,6 +1029,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                       color: Color(0xFF3B82F6),
+                                      fontFamily: 'Orbitron',
                                     ),
                                   ),
                                 ),
@@ -1125,6 +1162,12 @@ class _CollectionScreenState extends State<CollectionScreen> {
     if (value >= 70) return Colors.green;
     if (value >= 60) return Colors.yellow;
     return Colors.red;
+  }
+
+  void _removeFromMarketplace(CardDetailModel card) {
+    Provider.of<CardProvider>(context, listen: false)
+        .removeFromMarketplace(card.id!);
+    _fetchCards();
   }
 
   void _showListForSaleModal(CardDetailModel card) {
@@ -1304,8 +1347,11 @@ class _CollectionScreenState extends State<CollectionScreen> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        // Handle listing the card
-                        Navigator.pop(context);
+                        final price = int.tryParse(priceController.text) ?? 0;
+                        Provider.of<CardProvider>(context, listen: false)
+                            .sellCard(card.id!, price);
+                                                    Navigator.pop(context);
+
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Card listed successfully!'),

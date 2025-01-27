@@ -46,7 +46,6 @@ class CardProvider with ChangeNotifier {
           ..sort((a, b) =>
               (b.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0)).compareTo(
                   a.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0)));
-        print(_cards.length);
         notifyListeners();
         return _cards;
       } else {
@@ -60,11 +59,7 @@ class CardProvider with ChangeNotifier {
 
   Future<CardDetailModel> fetchCardDetails(String cardId) async {
     try {
-      // Return cached details if available
-      if (_cardDetails.containsKey(cardId)) {
-        return _cardDetails[cardId]!;
-      }
-
+    
       final userProvider = Provider.of<UserProvider>(
         navigatorKey.currentContext!,
         listen: false,
@@ -102,6 +97,47 @@ class CardProvider with ChangeNotifier {
   }
 
   Future<void> revalidateUserCards() async {
+    print('Revalidating user cards');
     await fetchUserCards();
+  }
+
+  Future<void> sellCard(String cardId, int price) async {
+    final userProvider = Provider.of<UserProvider>(
+      navigatorKey.currentContext!,
+      listen: false,
+    );
+    final token = userProvider.user?.token;
+    final response = await http.post(
+      Uri.parse('$_baseUrl/marketplace/put-for-sale/$cardId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'price': price,
+      }),
+    );
+    if (response.statusCode == 201) {
+      await fetchUserCards();
+      notifyListeners();
+    }
+  }
+
+  Future<void> removeFromMarketplace(String cardId) async {
+    final userProvider = Provider.of<UserProvider>(
+      navigatorKey.currentContext!,
+      listen: false,
+    );
+    final token = userProvider.user?.token;
+    final response = await http.post(
+      Uri.parse('$_baseUrl/marketplace/remove-from-sale/$cardId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (response.statusCode == 200) {
+      notifyListeners();
+    }
   }
 }

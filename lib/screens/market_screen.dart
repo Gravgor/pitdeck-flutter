@@ -937,15 +937,6 @@ class _MarketScreenState extends State<MarketScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Buy Card',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Orbitron',
-                ),
-              ),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(16),
@@ -1020,6 +1011,7 @@ class _MarketScreenState extends State<MarketScreen>
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
                         ),
                       ),
                     ),
@@ -1056,8 +1048,10 @@ class _MarketScreenState extends State<MarketScreen>
                       child: Text(
                         isProcessing ? 'Processing...' : 'Buy Now',
                         style: const TextStyle(
-                          color: Colors.white,
+                         fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                          color: Colors.white,
                         ),
                       ),
                     ),
