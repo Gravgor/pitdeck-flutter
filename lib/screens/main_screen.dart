@@ -23,9 +23,6 @@ import 'dart:math';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:pitdeck/components/control_center.dart';
 
-void main() {
-  MapboxOptions.setAccessToken(MapboxConfig.accessToken);
-}
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});

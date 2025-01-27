@@ -8,10 +8,14 @@ import 'package:pitdeck/providers/navigation_provider.dart';
 import 'package:pitdeck/providers/card_provider.dart';
 import 'package:pitdeck/providers/listing_provider.dart';
 import 'package:pitdeck/providers/trade_provider.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' hide Size;
+import 'package:pitdeck/config/mapbox_config.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Add this line
+   MapboxOptions.setAccessToken(MapboxConfig.accessToken);
   runApp(
     MultiProvider(
       providers: [
