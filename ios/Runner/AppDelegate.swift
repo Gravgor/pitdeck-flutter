@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import MapboxMaps
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
