@@ -10,12 +10,18 @@ import 'package:pitdeck/providers/listing_provider.dart';
 import 'package:pitdeck/providers/trade_provider.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' hide Size;
 import 'package:pitdeck/config/mapbox_config.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Add this line
-   MapboxOptions.setAccessToken(MapboxConfig.accessToken);
+  WidgetsFlutterBinding.ensureInitialized();
+  MapboxOptions.setAccessToken(MapboxConfig.accessToken);
+
+  final prefs = await SharedPreferences.getInstance();
+  final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+  final token = prefs.getString('token');
+
   runApp(
     MultiProvider(
       providers: [
@@ -26,13 +32,38 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ListingProvider()),
         ChangeNotifierProvider(create: (_) => TradeProvider()),
       ],
-      child: MyApp(),
+      child: MyApp(isLoggedIn: isLoggedIn, token: token),
     ),
   );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MyApp extends StatefulWidget {
+  final bool isLoggedIn;
+  final String? token;
+
+  const MyApp({super.key, required this.isLoggedIn, this.token});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    _initializeUser();
+  }
+
+  Future<void> _initializeUser() async {
+    if (widget.isLoggedIn && widget.token != null) {
+      try {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        await authProvider.getUserDetails();
+      } catch (e) {
+        print('Error fetching user details: $e');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,15 +80,7 @@ class MyApp extends StatelessWidget {
               titleSmall: const TextStyle(fontFamily: 'Orbitron'),
             ),
       ),
-      home: Consumer<AuthProvider>(
-        builder: (context, authProvider, _) {
-          final user = authProvider.currentUser;
-          if (user != null) {
-            return const MainScreen();
-          }
-          return const AuthScreen();
-        },
-      ),
+      home: widget.isLoggedIn ? const MainScreen() : const AuthScreen(),
     );
   }
 }

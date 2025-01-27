@@ -3,6 +3,7 @@ import 'package:pitdeck/providers/user_provider.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/user.dart';
 import 'package:provider/provider.dart';
@@ -11,9 +12,19 @@ import '../main.dart';
 class AuthProvider with ChangeNotifier {
   final _userSubject = BehaviorSubject<User?>();
   final _baseUrl = 'https://api.pitdeck.app/api';
+  static const String _isLoggedIn = 'isLoggedIn';
+  static const String _token = 'token';
+  static const String _userId = 'userId';
 
   User? get currentUser => _userSubject.valueOrNull;
   Stream<User?> get userStream => _userSubject.stream;
+
+  Future<void> saveUserToPrefs(User user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_isLoggedIn, true);
+    await prefs.setString(_token, user.token);
+    await prefs.setString(_userId, user.id);
+  }
 
   Future<void> login(String email, String password) async {
     try {
@@ -74,7 +85,7 @@ class AuthProvider with ChangeNotifier {
             isPremium: userDetails['isPremium'],
             token: initialUser.token,
           );
-
+          await saveUserToPrefs(fullUser);
           _userSubject.add(fullUser);
           await Provider.of<UserProvider>(navigatorKey.currentContext!,
                   listen: false)
@@ -145,6 +156,24 @@ class AuthProvider with ChangeNotifier {
       rethrow;
     }
   }
+
+  Future<void> getUserDetails() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString(_userId);
+    final token = prefs.getString(_token);
+    final response = await http.get(Uri.parse('$_baseUrl/users/$userId'), headers: {
+      'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (response.statusCode == 200) {
+      final userDetails = json.decode(response.body);
+      final user = User.fromJson(userDetails, token: token);
+      _userSubject.add(user);
+      notifyListeners();
+    }
+  }
+
 
   @override
   void dispose() {
