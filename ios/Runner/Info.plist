@@ -59,6 +59,8 @@
 	<true/>
 	<key>MGLMapboxMetricsEnabledSettingShowInApp</key>
 	<true/>
+	<key>MGLMapboxAccessToken</key>
+	<string>sk.eyJ1IjoiZ3JhdmdvcjExMSIsImEiOiJjbTZmaWZyZzgwNHk2MmpxcHU4ejFoOTNpIn0.WS1Aq5U_EMcQ4pPSh398Pw</string>
 	
 </dict>
 </plist>
