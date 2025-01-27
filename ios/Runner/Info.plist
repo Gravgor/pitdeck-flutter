@@ -55,5 +55,10 @@
 	<array>
 		<string>location</string>
 	</array>
+	<key>io.flutter.embedded_views_preview</key>
+	<true/>
+	<key>MGLMapboxMetricsEnabledSettingShowInApp</key>
+	<true/>
+	
 </dict>
 </plist>
