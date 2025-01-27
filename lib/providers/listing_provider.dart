@@ -45,6 +45,10 @@ class ListingProvider with ChangeNotifier {
       }
     });
 
+    _socket.on('newSold', (data) {
+      fetchListings();
+    });
+
     _socket.onDisconnect((_) => print('Disconnected from WebSocket'));
     _socket.onError((err) => print('WebSocket error: $err'));
   }
@@ -77,7 +81,18 @@ class ListingProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
         final List<dynamic> listingsData = responseData['listings'];
-        _listings = listingsData
+        final activeListings = listingsData
+            .where((listing) => listing['status'] == 'ACTIVE')
+            .toList();
+        final userProvider = Provider.of<UserProvider>(
+          navigatorKey.currentContext!,
+          listen: false,
+        );
+        final userId = userProvider.user?.id;
+        final filteredListings = activeListings
+            .where((listing) => listing['sellerId'] != userId)
+            .toList();
+        _listings = filteredListings
             .map((json) {
               try {
                 return ListingModel.fromJson(json);
@@ -155,23 +170,18 @@ class ListingProvider with ChangeNotifier {
       }
 
       final response = await http.post(
-        Uri.parse('$_baseUrl/listings/$listingId/buy'),
+        Uri.parse('$_baseUrl/marketplace/buy/$listingId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
 
-      if (response.statusCode == 200) {
-        // Update the listing status instead of removing it
-        final index =
-            _listings.indexWhere((listing) => listing.id == listingId);
-        if (index != -1) {
-          final updatedListing =
-              ListingModel.fromJson(json.decode(response.body));
-          _listings[index] = updatedListing;
-          notifyListeners();
-        }
+      if (response.statusCode == 201) {
+        _listings.removeWhere((listing) => listing.id == listingId);
+        // Refetch listings
+        fetchListings();
+        notifyListeners();
       } else {
         final errorData = json.decode(response.body);
         throw Exception(errorData['message'] ?? 'Failed to buy listing');

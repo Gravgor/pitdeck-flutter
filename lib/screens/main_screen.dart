@@ -100,7 +100,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       final auth = Provider.of<UserProvider>(context, listen: false);
       final lastLocation = auth.user?.lastLocation;
 
-      if (lastLocation != null) {
+      if (lastLocation != null) {;
         print('Last location: ${lastLocation.toJson()}');
         await _mapboxMap?.flyTo(
           CameraOptions(
@@ -1127,7 +1127,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         children: [
           FloatingActionButton.extended(
             onPressed: () async {
-              if (_userLocation != null) {
                 showDialog(
                   context: context,
                   barrierDismissible: false,
@@ -1210,10 +1209,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   ),
                 );
 
-                if (mounted) {
-                  Navigator.of(context).pop();
-                }
-              }
+              Navigator.of(context).pop();
             },
             backgroundColor: const Color(0xFF1A1A2E),
             label: const Text(
