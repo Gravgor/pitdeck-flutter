@@ -300,7 +300,7 @@ class AuthProvider with ChangeNotifier {
       );
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final user = User.fromJson(data['user'], token: data['token']);
+        final user = User.fromJson(data['user'], token: currentUser?.token);
         _userSubject.add(user);
         notifyListeners();
       } else {
