@@ -1,19 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:pitdeck/providers/user_provider.dart';
+import 'package:pitdeck/screens/onboarding_screen.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/user.dart';
 import 'package:provider/provider.dart';
 import '../main.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class AuthProvider with ChangeNotifier {
   final _userSubject = BehaviorSubject<User?>();
   final _baseUrl = 'https://api.pitdeck.app/api';
+  static const String _isLoggedIn = 'isLoggedIn';
+  static const String _token = 'token';
+  static const String _userId = 'userId';
 
   User? get currentUser => _userSubject.valueOrNull;
   Stream<User?> get userStream => _userSubject.stream;
+
+  Future<void> saveUserToPrefs(User user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_isLoggedIn, true);
+    await prefs.setString(_token, user.token);
+    await prefs.setString(_userId, user.id);
+  }
 
   Future<void> login(String email, String password) async {
     try {
@@ -74,7 +88,7 @@ class AuthProvider with ChangeNotifier {
             isPremium: userDetails['isPremium'],
             token: initialUser.token,
           );
-
+          await saveUserToPrefs(fullUser);
           _userSubject.add(fullUser);
           await Provider.of<UserProvider>(navigatorKey.currentContext!,
                   listen: false)
@@ -141,6 +155,150 @@ class AuthProvider with ChangeNotifier {
       } else {
         throw Exception('Failed to register');
       }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> getUserDetails() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString(_userId);
+      final token = prefs.getString(_token);
+      if (userId == null || token == null) {
+        throw Exception('User ID or token not found');
+      }
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/users/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final userDetails = json.decode(response.body);
+        final user = User.fromJson(userDetails, token: token);
+        _userSubject.add(user);
+
+        await Provider.of<UserProvider>(navigatorKey.currentContext!,
+                listen: false)
+            .updateUser(user);
+
+        notifyListeners();
+      } else {
+        throw Exception('Failed to fetch user details: ${response.statusCode}');
+      }
+    } catch (e) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      _userSubject.add(null);
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> signInWithGoogle() async {
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+      if (googleUser == null) return;
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
+
+      if (idToken == null) throw Exception('Failed to get ID token');
+
+      // Send to backend
+      final response = await http.post(
+        Uri.parse('$_baseUrl/auth/google/mobile'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'idToken': idToken,
+          'email': googleUser.email,
+          'name': googleUser.displayName,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', data['token']);
+        await prefs.setBool('isLoggedIn', true);
+
+        await getUserDetails();
+        notifyListeners();
+      } else {
+        throw Exception('Failed to authenticate with Google');
+      }
+    } catch (e) {
+      throw Exception('Google sign in failed: $e');
+    }
+  }
+
+  Future<void> signInWithApple() async {
+    try {
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      // Send to backend
+      final response = await http.post(
+        Uri.parse('$_baseUrl/auth/mobile/apple'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'identityToken': credential.identityToken,
+          'authorizationCode': credential.authorizationCode,
+          'givenName': credential.givenName,
+          'familyName': credential.familyName,
+          'email': credential.email,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', data['token']);
+        await prefs.setBool('isLoggedIn', true);
+
+        await getUserDetails();
+        Navigator.of(navigatorKey.currentContext!).pushReplacement(
+          MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+        );
+        notifyListeners();
+      } else {
+        throw Exception('Failed to authenticate with Apple');
+      }
+    } catch (e) {
+      throw Exception('Apple sign in failed: $e');
+    }
+  }
+
+  Future<void> updateUsername(String username) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/users/username'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${currentUser?.token}',
+        },
+        body: json.encode({'username': username}),
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final user = User.fromJson(data['user'], token: data['token']);
+        _userSubject.add(user);
+        notifyListeners();
+      } else {
+        throw Exception('Failed to update username');
+      }
+
     } catch (e) {
       rethrow;
     }

@@ -85,13 +85,13 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json, {String? token}) {
     return User(
-      id: json['id'],
-      name: json['name'],
-      email: json['email'],
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
       emailVerified: json['emailVerified'] != null
-          ? DateTime.parse(json['emailVerified'])
+          ? DateTime.parse(json['emailVerified'].toString())
           : null,
-      image: json['image'],
+      image: json['image'] ?? '',
       coins: json['coins'] ?? 1000,
       level: json['level'] ?? 1,
       xp: json['xp'] ?? 0,
@@ -99,14 +99,17 @@ class User {
       bio: json['bio'] ?? '',
       role: json['role'] ?? 'user',
       isPremium: json['isPremium'] ?? false,
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
-      lastLogin:
-          json['lastLogin'] != null ? DateTime.parse(json['lastLogin']) : null,
-      lastActive: json['lastActive'] != null
-          ? DateTime.parse(json['lastActive'])
+      createdAt: DateTime.parse(json['createdAt'].toString()),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'].toString())
+          : DateTime.now(),
+      lastLogin: json['lastLogin'] != null
+          ? DateTime.parse(json['lastLogin'].toString())
           : null,
-      token: token ?? json['token'] ?? '',
+      lastActive: json['lastActive'] != null
+          ? DateTime.parse(json['lastActive'].toString())
+          : null,
+      token: token ?? '',
       locations: (json['locations'] as List<dynamic>?)
               ?.map((loc) => UserLocation.fromJson(loc))
               .toList() ??

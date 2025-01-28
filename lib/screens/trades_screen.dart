@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:pitdeck/models/trade.dart';
+import 'package:pitdeck/screens/received_offers_screen.dart';
 import '../models/card.dart';
 import 'package:provider/provider.dart';
 import '../providers/trade_provider.dart';
 import '../providers/user_provider.dart';
+import 'my_listings_screen.dart';
 
 class TradesScreen extends StatefulWidget {
   const TradesScreen({super.key});
@@ -33,24 +35,140 @@ class _TradesScreenState extends State<TradesScreen>
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A1A),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
-          TabBar(
-            controller: _tabController,
-            indicatorColor: Colors.blue,
-            tabs: const [
-              Tab(text: 'MY LISTINGS'),
-              Tab(text: 'RECEIVED'),
-              Tab(text: 'SENT'),
-            ],
+          const SizedBox(height: 60),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Trade Management',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Orbitron',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Manage your trades',
+                      style: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.white.withOpacity(0.1),
+                    padding: const EdgeInsets.all(8),
+                  ),
+                  icon: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ],
+            ),
           ),
+          const SizedBox(height: 24),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            height: 56,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A2E),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.1),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF3B82F6).withOpacity(0.1),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                color: const Color(0xFF3B82F6),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF3B82F6).withOpacity(0.3),
+                    blurRadius: 8,
+                    spreadRadius: -2,
+                  ),
+                ],
+              ),
+              indicatorPadding: const EdgeInsets.all(4),
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white.withOpacity(0.5),
+              labelStyle: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Orbitron',
+                letterSpacing: 1.2,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 14,
+                fontFamily: 'Orbitron',
+                letterSpacing: 1.2,
+              ),
+              dividerColor: Colors.transparent,
+              tabs: const [
+                Tab(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.list_alt, size: 18),
+                      SizedBox(width: 8),
+                      Text('MY LISTINGS', style: TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ),
+                Tab(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.download, size: 18),
+                      SizedBox(width: 8),
+                      Text('RECEIVED', style: TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ),
+                Tab(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.upload, size: 18),
+                      SizedBox(width: 8),
+                      Text('SENT', style: TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: [
-                _buildMyListings(),
-                //_buildReceivedOffers(),
-                //_buildSentOffers(),
+              children: const [
+                MyListingsScreen(),
+                ReceivedOffersScreen(),
+                Center(
+                    child: Text('Sent', style: TextStyle(color: Colors.white))),
               ],
             ),
           ),
@@ -59,44 +177,39 @@ class _TradesScreenState extends State<TradesScreen>
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 64, 16, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Trade Management',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Orbitron',
-                  letterSpacing: 1,
-                ),
-              ),
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(
-                  Icons.close,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Manage your trades and offers',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 12,
-              letterSpacing: 0.5,
+  Widget _buildHeaderButton({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF3B82F6) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : Colors.grey,
+              size: 20,
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.grey,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -155,135 +268,6 @@ class _TradesScreenState extends State<TradesScreen>
   void _cancelTrade(String tradeId) {
     // TODO: Implement cancel trade
   }
-
- /* Widget _buildReceivedOffers() {
-    return Consumer<TradeProvider>(
-      builder: (context, tradeProvider, child) {
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-        final userId = userProvider.user?.id;
-
-        if (userId == null) {
-          return const Center(
-            child: Text(
-              'Please log in to view offers',
-              style: TextStyle(color: Colors.grey),
-            ),
-          );
-        }
-
-        final receivedOffers = tradeProvider.trades
-            .where((trade) =>
-                trade.receivers.any((receiver) => receiver.id == userId) &&
-                trade.status == TradeStatus.PENDING)
-            .toList();
-
-        if (receivedOffers.isEmpty) {
-          return const Center(
-            child: Text(
-              'No received offers',
-              style: TextStyle(color: Colors.grey),
-            ),
-          );
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: receivedOffers.length,
-          itemBuilder: (context, index) {
-            final trade = receivedOffers[index];
-
-            return _buildTradeCard(
-              cards: trade.offeredCards,
-              title: 'Offer from ${trade.sender.name}',
-              subtitle: trade.note ?? 'No note provided',
-              status: trade.status.toString().split('.').last,
-              onTap: () => _showOfferDetails(
-                  context,
-                  trade,
-                  isReceived: true),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextButton(
-                    onPressed: () => _acceptOffer(trade.id),
-                    child: const Text(
-                      'Accept',
-                      style: TextStyle(color: Colors.green),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => _declineOffer(trade.id),
-                    child: const Text(
-                      'Decline',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildSentOffers() {
-    return Consumer<TradeProvider>(
-      builder: (context, tradeProvider, child) {
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-        final userId = userProvider.user?.id;
-
-        if (userId == null) {
-          return const Center(
-            child: Text(
-              'Please log in to view offers',
-              style: TextStyle(color: Colors.grey),
-            ),
-          );
-        }
-
-        final sentOffers = tradeProvider.trades
-            .where((trade) =>
-                trade.senderId == userId && trade.status == TradeStatus.PENDING)
-            .toList();
-
-        if (sentOffers.isEmpty) {
-          return const Center(
-            child: Text(
-              'No sent offers',
-              style: TextStyle(color: Colors.grey),
-            ),
-          );
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: sentOffers.length,
-          itemBuilder: (context, index) {
-            final trade = sentOffers[index];
-
-            return _buildTradeCard(
-              cards: trade.offeredCards,
-              title: 'Your offer to ${trade.receivers[0].name}',
-              subtitle: trade.note ?? 'No note provided',
-              status: trade.status.toString().split('.').last,
-              onTap: () => _showOfferDetails(
-                  context,
-                  trade,
-                  isReceived: false),
-              trailing: TextButton(
-                onPressed: () => _cancelTrade(trade.id),
-                child: const Text(
-                  'Cancel Offer',
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }*/
 
   Future<void> _acceptOffer(String tradeId) async {
     try {
@@ -500,95 +484,6 @@ class _TradesScreenState extends State<TradesScreen>
     );
   }
 
-  void _showOfferDetails(BuildContext context, TradeModel offer,
-      {required bool isReceived}) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: const Color(0xFF1A1A2E),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    isReceived ? 'Received Offer' : 'Sent Offer',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: Colors.white),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _buildOfferCardDetails(offer, isReceived),
-              const SizedBox(height: 24),
-              if (isReceived)
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          // TODO: Implement reject offer
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child: const Text('Reject'),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          // TODO: Implement accept offer
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child: const Text('Accept'),
-                      ),
-                    ),
-                  ],
-                )
-              else
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      // TODO: Implement cancel offer
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text('Cancel Offer'),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildTradeCardDetails(TradeModel trade) {
     final offeredCards = trade.offeredCards;
     //final wantedCards = trade.wantedCards;
@@ -734,145 +629,6 @@ class _TradesScreenState extends State<TradesScreen>
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildOfferCardDetails(TradeModel offer, bool isReceived) {
-    final offeredCards = offer.offeredCards;
-    //final originalCards = offer.wantedCards;
-    final additionalCoins = offer.coinsOffered;
-    final note = offer.note ?? '';
-    final status = offer.status.toString();
-    final trader = offer.sender.name;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          isReceived ? 'Offered Cards from $trader:' : 'Your Offered Cards:',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        _buildCardsList(offeredCards),
-        const SizedBox(height: 16),
-        const Text(
-          'In Exchange For:',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        //_buildCardsList(originalCards),
-        if (additionalCoins > 0) ...[
-          const SizedBox(height: 16),
-          Text(
-            'Additional Coins: $additionalCoins',
-            style: const TextStyle(
-              color: Colors.amber,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Note:',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                note,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 6,
-              ),
-              decoration: BoxDecoration(
-                color: _getStatusColor(status).withOpacity(0.2),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                status,
-                style: TextStyle(
-                  color: _getStatusColor(status),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCardsList(List<CardDetailModel> cards) {
-    return SizedBox(
-      height: 120,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: cards.length,
-        itemBuilder: (context, index) {
-          final card = cards[index];
-          return Container(
-            width: 100,
-            margin: const EdgeInsets.only(right: 8),
-            child: Column(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    card.imageUrl,
-                    height: 80,
-                    width: 80,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  card.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
-                  maxLines: 2,
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          );
-        },
-      ),
     );
   }
 }

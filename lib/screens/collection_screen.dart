@@ -504,6 +504,10 @@ class _CollectionScreenState extends State<CollectionScreen> {
       return true;
     }).toList();
 
+    if (_selectedFilter == "all") {
+      filteredCards = filteredCards.where((card) => !card.isForTrade && !card.isForSale).toList();
+    }
+
     if (_selectedFilter == 'trade') {
       filteredCards = filteredCards.where((card) => card.isForTrade).toList();
     } else if (_selectedFilter == 'market') {
@@ -955,7 +959,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
                               _buildCardStats(cardDetails.stats!),
                             ],
                             const SizedBox(height: 32),
-                            if (!cardDetails.isForSale)
+                            if (!cardDetails.isForSale && !cardDetails.isForTrade)
                               ElevatedButton(
                                 onPressed: () =>
                                     _showListForSaleModal(cardDetails),
@@ -977,7 +981,8 @@ class _CollectionScreenState extends State<CollectionScreen> {
                                 ),
                               ),
                             if (cardDetails.isForSale &&
-                                cardDetails.isForSale == true)
+                                cardDetails.isForSale == true &&
+                                cardDetails.isForTrade == false)
                               ElevatedButton(
                                 onPressed: () => {
                                   _removeFromMarketplace(cardDetails),

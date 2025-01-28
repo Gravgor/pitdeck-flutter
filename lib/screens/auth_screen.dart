@@ -318,13 +318,45 @@ class _AuthScreenState extends State<AuthScreen> {
           _buildSocialButton(
             text: 'Continue with Apple',
             icon: Icons.apple,
-            onPressed: () {},
-          )
-        else
+            onPressed: () async {
+              try {
+                await Provider.of<AuthProvider>(context, listen: false)
+                    .signInWithApple();
+                if (!mounted) return;
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => const MainScreen()),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Apple sign in failed: ${e.toString()}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+          ),
+        if (!Platform.isIOS)
           _buildSocialButton(
             text: 'Continue with Google',
             icon: Icons.g_mobiledata,
-            onPressed: () {},
+            onPressed: () async {
+              try {
+                await Provider.of<AuthProvider>(context, listen: false)
+                    .signInWithGoogle();
+                if (!mounted) return;
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => const MainScreen()),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Google sign in failed: ${e.toString()}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
           ),
       ],
     );
