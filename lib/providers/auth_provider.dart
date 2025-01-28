@@ -269,7 +269,7 @@ class AuthProvider with ChangeNotifier {
         await prefs.setBool('isLoggedIn', true);
 
         await getUserDetails();
-        if (data['needUsernameSetup']) {
+        if (data['user']['needUsernameSetup']) {
           Navigator.of(navigatorKey.currentContext!).pushReplacement(
             MaterialPageRoute(builder: (context) => const OnboardingScreen()),
           );
