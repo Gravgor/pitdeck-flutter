@@ -506,7 +506,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                         children: [
                           Row(
                             children: [
-                              if (offer.sender.image != null)
+                              if (offer.user.image != null)
                                 Container(
                                   width: 32,
                                   height: 32,
@@ -514,7 +514,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(16),
                                     child: Image.network(
-                                      offer.sender.image!,
+                                      offer.user.image!,
                                       fit: BoxFit.cover,
                                     ),
                                   ),
@@ -523,7 +523,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    offer.sender.name ?? 'Unknown User',
+                                    offer.user.name ?? 'Unknown User',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 14,
@@ -531,7 +531,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                                     ),
                                   ),
                                   Text(
-                                    'Level ${offer.sender.level}',
+                                    'Level ${offer.user.level}',
                                     style: TextStyle(
                                       color: Colors.grey.shade400,
                                       fontSize: 12,
@@ -579,11 +579,11 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                               },
                             ),
                           ),
-                          if (offer.coinsOffered > 0)
+                          if (offer.coins > 0)
                             Padding(
                               padding: const EdgeInsets.only(top: 8),
                               child: Text(
-                                '+ ${offer.coinsOffered} coins',
+                                '+ ${offer.coins} coins',
                                 style: const TextStyle(
                                   color: Colors.amber,
                                   fontSize: 14,

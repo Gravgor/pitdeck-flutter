@@ -280,7 +280,7 @@ class TradeProvider with ChangeNotifier {
           'coinsOffered': coinsOffered,
         }),
       );
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         final updatedTrade = TradeModel.fromJson(json.decode(response.body));
         final index = _trades.indexWhere((trade) => trade.id == tradeId);
         if (index != -1) {
@@ -325,8 +325,14 @@ class TradeProvider with ChangeNotifier {
                 trade.status != TradeStatus.ACCEPTED)
             .toList();
 
+        // Safely fetch offers for each listing
         for (var trade in _myListings) {
-          await fetchReceivedOffers(trade.id);
+          try {
+            await fetchReceivedOffers(trade.id);
+          } catch (e) {
+            print('Error fetching offers for trade ${trade.id}: $e');
+            _receivedOffers[trade.id] = [];
+          }
         }
 
         notifyListeners();
@@ -335,6 +341,9 @@ class TradeProvider with ChangeNotifier {
         throw Exception(errorData['message'] ?? 'Failed to load my listings');
       }
     } catch (e) {
+      print('Error fetching my listings: $e');
+      _myListings = []; // Reset to empty list on error
+      notifyListeners();
       throw Exception('Network error: $e');
     }
   }
@@ -359,6 +368,7 @@ class TradeProvider with ChangeNotifier {
         final List<dynamic> offersData = json.decode(response.body);
         _receivedOffers[tradeId] =
             offersData.map((json) => TradeOfferModel.fromJson(json)).toList();
+        print('Received offers: ${_receivedOffers[tradeId]}');
         notifyListeners();
       } else {
         final errorData = json.decode(response.body);
@@ -366,6 +376,8 @@ class TradeProvider with ChangeNotifier {
             errorData['message'] ?? 'Failed to load received offers');
       }
     } catch (e) {
+      print('Error fetching offers: $e');
+      _receivedOffers[tradeId] = []; // Initialize empty array on error
       throw Exception('Network error: $e');
     }
   }
@@ -386,11 +398,13 @@ class TradeProvider with ChangeNotifier {
       );
       if (response.statusCode == 200) {
         final List<dynamic> tradesData = json.decode(response.body);
-        _allReceivedOffers = tradesData.map((json) => TradeModel.fromJson(json)).toList();
+        _allReceivedOffers =
+            tradesData.map((json) => TradeModel.fromJson(json)).toList();
         notifyListeners();
       } else {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to load received offers');
+        throw Exception(
+            errorData['message'] ?? 'Failed to load received offers');
       }
     } catch (e) {
       throw Exception('Network error: $e');
@@ -413,7 +427,8 @@ class TradeProvider with ChangeNotifier {
       );
       if (response.statusCode == 200) {
         final updatedTrade = TradeModel.fromJson(json.decode(response.body));
-        final index = _allReceivedOffers.indexWhere((trade) => trade.id == updatedTrade.id);
+        final index = _allReceivedOffers
+            .indexWhere((trade) => trade.id == updatedTrade.id);
         if (index != -1) {
           _allReceivedOffers[index] = updatedTrade;
           notifyListeners();
@@ -440,7 +455,8 @@ class TradeProvider with ChangeNotifier {
       );
       if (response.statusCode == 200) {
         final updatedTrade = TradeModel.fromJson(json.decode(response.body));
-        final index = _allReceivedOffers.indexWhere((trade) => trade.id == updatedTrade.id);
+        final index = _allReceivedOffers
+            .indexWhere((trade) => trade.id == updatedTrade.id);
         if (index != -1) {
           _allReceivedOffers[index] = updatedTrade;
           notifyListeners();

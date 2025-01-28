@@ -255,7 +255,7 @@ class _CreateTradeScreenState extends State<CreateTradeScreen> {
                             ),
                             child: Image.network(
                               card.imageUrl,
-                              height: 100,
+                              height: 90,
                               width: double.infinity,
                               fit: BoxFit.cover,
                             ),
@@ -302,7 +302,7 @@ class _CreateTradeScreenState extends State<CreateTradeScreen> {
                                   '#${card.serialNumber}',
                                   style: TextStyle(
                                     color: Colors.grey.shade400,
-                                    fontSize: 10,
+                                    fontSize: 9.5,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),

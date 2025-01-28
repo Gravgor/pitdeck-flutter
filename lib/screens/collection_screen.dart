@@ -800,7 +800,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
                       Stack(
                         children: [
                           Container(
-                            height: 360,
+                            height: 400,
                             decoration: BoxDecoration(
                               image: DecorationImage(
                                 image: NetworkImage(cardDetails.imageUrl),
@@ -809,7 +809,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
                             ),
                           ),
                           Container(
-                            height: 360,
+                            height: 400,
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 begin: Alignment.topCenter,

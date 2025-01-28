@@ -20,13 +20,13 @@ class ColorUtils {
 
   static Color getTradeOfferStatusColor(TradeOfferStatus? status) {
     switch (status) {
-      case TradeOfferStatus.PENDING:
+      case TradeOfferStatus.pending:
         return const Color(0xFFFFA500);
-      case TradeOfferStatus.ACCEPTED:
+      case TradeOfferStatus.accepted:
         return const Color(0xFF22C55E);
-      case TradeOfferStatus.DECLINED:
+      case TradeOfferStatus.declined:
         return const Color(0xFFEF4444);
-      case TradeOfferStatus.CANCELLED:
+      case TradeOfferStatus.cancelled:
         return const Color(0xFF6B7280);
       default:
         return Colors.grey;

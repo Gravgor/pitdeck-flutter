@@ -71,7 +71,11 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
         ? const Center(child: CircularProgressIndicator())
         : Consumer<TradeProvider>(
             builder: (context, tradeProvider, _) {
-              final List<TradeOfferModel> offers = tradeProvider.receivedOffers.values.toList().expand((list) => list).toList();
+              final List<TradeOfferModel> offers = tradeProvider
+                  .receivedOffers.values
+                  .toList()
+                  .expand((list) => list)
+                  .toList();
 
               if (offers.isEmpty) {
                 return const Center(
@@ -106,7 +110,7 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
         children: [
           _buildOfferHeader(offer),
           _buildOfferedCards(offer),
-          if (offer.coinsOffered > 0) _buildCoinsOffered(offer),
+          if (offer.coins > 0) _buildCoinsOffered(offer),
           if (offer.note?.isNotEmpty ?? false) _buildNote(offer),
           _buildActions(offer),
         ],
@@ -119,7 +123,7 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          if (offer.sender.image != null)
+          if (offer.user.image != null)
             Container(
               width: 40,
               height: 40,
@@ -127,17 +131,32 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: Image.network(
-                  offer.sender.image!,
+                  offer.user.image!,
                   fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: Colors.grey.shade800,
+                    child: const Icon(Icons.person, color: Colors.white),
+                  ),
                 ),
               ),
+            )
+          else
+            Container(
+              width: 40,
+              height: 40,
+              margin: const EdgeInsets.only(right: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade800,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(Icons.person, color: Colors.white),
             ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  offer.sender.name ?? 'Unknown User',
+                  offer.user.name,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -145,7 +164,7 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
                   ),
                 ),
                 Text(
-                  'Level ${offer.sender.level} • ${offer.formattedCreatedAt}',
+                  'Expires in ${_formatTimeLeft(offer.expiresAt)}',
                   style: TextStyle(
                     color: Colors.grey.shade400,
                     fontSize: 12,
@@ -157,14 +176,14 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: ColorUtils.getTradeStatusColor(null, offer.status)
-                  .withOpacity(0.2),
+              color:
+                  ColorUtils.getTradeOfferStatusColor(offer.status).withOpacity(0.2),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
               offer.statusText,
               style: TextStyle(
-                color: ColorUtils.getTradeStatusColor(null, offer.status),
+                color: ColorUtils.getTradeOfferStatusColor(offer.status),
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),
@@ -173,6 +192,17 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
         ],
       ),
     );
+  }
+
+  String _formatTimeLeft(DateTime expiresAt) {
+    final difference = expiresAt.difference(DateTime.now());
+    if (difference.inDays > 0) {
+      return '${difference.inDays}d';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h';
+    } else {
+      return '${difference.inMinutes}m';
+    }
   }
 
   Widget _buildOfferedCards(TradeOfferModel offer) {
@@ -274,7 +304,7 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
           const Icon(Icons.monetization_on, color: Colors.amber, size: 20),
           const SizedBox(width: 8),
           Text(
-            '${offer.coinsOffered} coins offered',
+            '${offer.coins} coins offered',
             style: const TextStyle(
               color: Colors.amber,
               fontSize: 14,
