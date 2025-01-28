@@ -291,12 +291,12 @@ class AuthProvider with ChangeNotifier {
   Future<void> updateUsername(String username) async {
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/users/username'),
+        Uri.parse('$_baseUrl/users/update/name'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${currentUser?.token}',
         },
-        body: json.encode({'username': username}),
+        body: json.encode({'name': username}),
       );
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
