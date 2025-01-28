@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pitdeck/providers/user_provider.dart';
+import 'package:pitdeck/screens/main_screen.dart';
 import 'package:pitdeck/screens/onboarding_screen.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:http/http.dart' as http;
@@ -261,16 +262,22 @@ class AuthProvider with ChangeNotifier {
         }),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         final data = json.decode(response.body);
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', data['token']);
         await prefs.setBool('isLoggedIn', true);
 
         await getUserDetails();
-        Navigator.of(navigatorKey.currentContext!).pushReplacement(
-          MaterialPageRoute(builder: (context) => const OnboardingScreen()),
-        );
+        if (data['needUsernameSetup']) {
+          Navigator.of(navigatorKey.currentContext!).pushReplacement(
+            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+          );
+        } else {
+          Navigator.of(navigatorKey.currentContext!).pushReplacement(
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+          );
+        }
         notifyListeners();
       } else {
         throw Exception('Failed to authenticate with Apple');
@@ -298,7 +305,6 @@ class AuthProvider with ChangeNotifier {
       } else {
         throw Exception('Failed to update username');
       }
-
     } catch (e) {
       rethrow;
     }

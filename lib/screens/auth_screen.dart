@@ -323,9 +323,6 @@ class _AuthScreenState extends State<AuthScreen> {
                 await Provider.of<AuthProvider>(context, listen: false)
                     .signInWithApple();
                 if (!mounted) return;
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => const MainScreen()),
-                );
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
