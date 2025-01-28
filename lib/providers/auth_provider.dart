@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pitdeck/providers/user_provider.dart';
+import 'package:pitdeck/screens/onboarding_screen.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -267,12 +268,39 @@ class AuthProvider with ChangeNotifier {
         await prefs.setBool('isLoggedIn', true);
 
         await getUserDetails();
+        Navigator.of(navigatorKey.currentContext!).pushReplacement(
+          MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+        );
         notifyListeners();
       } else {
         throw Exception('Failed to authenticate with Apple');
       }
     } catch (e) {
       throw Exception('Apple sign in failed: $e');
+    }
+  }
+
+  Future<void> updateUsername(String username) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/users/username'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${currentUser?.token}',
+        },
+        body: json.encode({'username': username}),
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final user = User.fromJson(data['user'], token: data['token']);
+        _userSubject.add(user);
+        notifyListeners();
+      } else {
+        throw Exception('Failed to update username');
+      }
+
+    } catch (e) {
+      rethrow;
     }
   }
 

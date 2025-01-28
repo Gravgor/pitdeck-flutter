@@ -67,11 +67,13 @@
         <key>CFBundleURLSchemes</key>
         <array>
             <string>com.googleusercontent.apps.YOUR-CLIENT-ID</string>
+			<string>com.pitdeck.pitdeckapp</string>
         </array>
     </dict>
 </array>
 <key>GIDClientID</key>
 <string>YOUR-CLIENT-ID</string>
+
 	
 </dict>
 </plist>
