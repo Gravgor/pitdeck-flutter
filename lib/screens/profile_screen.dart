@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
 import 'package:pitdeck/providers/navigation_provider.dart';
 import 'package:pitdeck/providers/card_provider.dart';
+import 'package:pitdeck/providers/favorite_provider.dart';
+import 'package:pitdeck/providers/badge_provider.dart';
+import 'package:pitdeck/models/badge.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -20,6 +23,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _initializeUserSocket() async {
     final auth = Provider.of<UserProvider>(context, listen: false);
+    print('Name: ${auth.user?.name}');
+    print('Level: ${auth.user?.level}');
+    print('Coins: ${auth.user?.coins}');
     await auth.connectUserSocket();
   }
 
@@ -273,56 +279,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
-                    'Badges',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Orbitron',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 80,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        _buildBadge(
-                            'Early Bird', 'assets/badges/early_bird.png', true),
-                        _buildBadge(
-                            'Collector', 'assets/badges/collector.png', true),
-                        _buildBadge(
-                            'Trading Pro', 'assets/badges/trading.png', false),
-                        _buildBadge(
-                            'Legend', 'assets/badges/legend.png', false),
-                        _buildBadge(
-                            'Pioneer', 'assets/badges/pioneer.png', false),
-                      ],
-                    ),
-                  ),
+                  _buildBadges(),
                   const SizedBox(height: 24),
-                  const Text(
-                    'Favorites',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Orbitron',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildFavoriteItem('Driver', 'https://picsum.photos/100',
-                          'Max Verstappen'),
-                      _buildFavoriteItem('Team', 'https://picsum.photos/101',
-                          'Red Bull Racing'),
-                      _buildFavoriteItem(
-                          'Series', 'https://picsum.photos/102', '2024 Season'),
-                    ],
-                  ),
+                  _buildFavorites(),
                   const SizedBox(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -542,7 +501,115 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildBadge(String name, String imagePath, bool isUnlocked) {
+  Widget _buildBadges() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Badges',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Orbitron',
+          ),
+        ),
+        const SizedBox(height: 12),
+        Consumer<BadgeProvider>(
+          builder: (context, badgeProvider, _) {
+            if (badgeProvider.isLoading) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                ),
+              );
+            }
+
+            final badges = badgeProvider.badges;
+
+            if (badges.isEmpty) {
+              return _buildEmptyBadges();
+            }
+
+            return SizedBox(
+              height: 100,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: badges.length,
+                itemBuilder: (context, index) {
+                  final badge = badges[index];
+                  return _buildBadgeItem(badge);
+                },
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyBadges() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A2E),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.emoji_events_outlined,
+            color: Color(0xFF3B82F6),
+            size: 48,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'No Badges Yet',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Complete challenges and milestones to earn badges and showcase your achievements!',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.grey.shade400,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              // Navigate to challenges/missions screen
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3B82F6),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 12,
+              ),
+            ),
+            icon: const Icon(Icons.flag, color: Colors.white),
+            label: const Text(
+              'View Challenges',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBadgeItem(BadgeModel badge) {
     return Container(
       width: 80,
       margin: const EdgeInsets.only(right: 12),
@@ -555,27 +622,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
               shape: BoxShape.circle,
               color: const Color(0xFF1A1A2E),
               border: Border.all(
-                color: isUnlocked
+                color: badge.isUnlocked
                     ? const Color(0xFF3B82F6)
                     : Colors.grey.withOpacity(0.3),
                 width: 2,
               ),
             ),
             child: Center(
-              child: Icon(
-                Icons.emoji_events,
-                color: isUnlocked
+              child: Image.network(
+                badge.imageUrl,
+                width: 30,
+                height: 30,
+                color: badge.isUnlocked
                     ? const Color(0xFF3B82F6)
                     : Colors.grey.withOpacity(0.3),
-                size: 24,
+                errorBuilder: (context, error, stackTrace) => Icon(
+                  Icons.emoji_events,
+                  color: badge.isUnlocked
+                      ? const Color(0xFF3B82F6)
+                      : Colors.grey.withOpacity(0.3),
+                  size: 24,
+                ),
               ),
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            name,
+            badge.name,
             style: TextStyle(
-              color: isUnlocked ? Colors.white : Colors.grey.withOpacity(0.5),
+              color: badge.isUnlocked
+                  ? Colors.white
+                  : Colors.grey.withOpacity(0.5),
               fontSize: 10,
               fontWeight: FontWeight.bold,
             ),
@@ -586,7 +663,153 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildFavoriteItem(String type, String imageUrl, String name) {
+  Widget _buildFavorites() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Favorites',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Orbitron',
+          ),
+        ),
+        const SizedBox(height: 12),
+        Consumer<FavoriteProvider>(
+          builder: (context, favoriteProvider, _) {
+            if (favoriteProvider.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final favorites = favoriteProvider.favorites;
+
+            if (favorites.isEmpty) {
+              return _buildEmptyFavorites();
+            }
+
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: favorites
+                  .map((favorite) => _buildFavoriteItem(
+                        favorite.type,
+                        favorite.imageUrl,
+                        favorite.name,
+                        isLocked: favorite.isLocked,
+                        requiresPremium: favorite.requiresPremium,
+                      ))
+                  .toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyFavorites() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A2E),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.star_border_rounded,
+            color: Color(0xFF3B82F6),
+            size: 48,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'No Favorites Yet',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Explore the map to discover and collect your favorite drivers, teams, and series!',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.grey.shade400,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Consumer<UserProvider>(
+            builder: (context, userProvider, _) {
+              if (userProvider.user?.isPremium == true) {
+                return ElevatedButton.icon(
+                  onPressed: () {
+                    // Navigate to map
+                    Provider.of<NavigationProvider>(context, listen: false)
+                        .changePage(0);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF3B82F6),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                  ),
+                  icon: const Icon(Icons.map, color: Colors.white),
+                  label: const Text('Explore Map',
+                      style: TextStyle(color: Colors.white)),
+                );
+              }
+
+              return Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.star, color: Colors.white, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Get Premium',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '2x higher chance to find favorites on map',
+                    style: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFavoriteItem(String type, String imageUrl, String name,
+      {bool isLocked = true, bool requiresPremium = false}) {
     return Column(
       children: [
         Container(

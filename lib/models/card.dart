@@ -39,6 +39,21 @@ class CardModel {
         : null,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'type': type,
+      'series': series,
+      'serialNumber': serialNumber,
+      'imageUrl': imageUrl,
+      'rarity': rarity,
+      'isForSale': isForSale,
+      'isForTrade': isForTrade,
+      'updatedAt': updatedAt?.toIso8601String(),
+    };
+  }
 }
 
 class CardDetailModel {

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:pitdeck/models/trade_offer.dart';
 import 'dart:convert';
 import '../models/trade.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +12,12 @@ class TradeProvider with ChangeNotifier {
   final String _baseUrl = 'https://api.pitdeck.app/api';
   List<TradeModel> _trades = [];
   late IO.Socket _socket;
+  List<TradeModel> _myListings = [];
+  final Map<String, List<TradeOfferModel>> _receivedOffers = {};
+  List<TradeModel> _allReceivedOffers = [];
+
+  Map<String, List<TradeOfferModel>> get receivedOffers => _receivedOffers;
+  List<TradeModel> get allReceivedOffers => _allReceivedOffers;
 
   TradeProvider() {
     _initializeSocket();
@@ -137,9 +144,6 @@ class TradeProvider with ChangeNotifier {
           'offeredCardIds': offeredCardIds,
           'coinsOffered': coinsOffered,
           'note': note,
-          'receiverIds': receiverIds,
-          'wantedCardIds': wantedCardIds,
-          'isOpenTrade': receiverIds == null || receiverIds.isEmpty,
         }),
       );
 
@@ -164,25 +168,17 @@ class TradeProvider with ChangeNotifier {
       );
       final token = userProvider.user?.token;
 
-      if (token == null) {
-        throw Exception('No authentication token found');
-      }
-
-      final response = await http.delete(
-        Uri.parse('$_baseUrl/marketplace/trades/$tradeId'),
+      await http.delete(
+        Uri.parse('$_baseUrl/marketplace/trades/cancel/$tradeId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
-
-      if (response.statusCode == 200) {
-        _trades.removeWhere((trade) => trade.id == tradeId);
-        notifyListeners();
-      } else {
-        final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to cancel trade');
-      }
+      _trades.removeWhere((trade) => trade.id == tradeId);
+      _myListings.removeWhere((trade) => trade.id == tradeId);
+      _receivedOffers.remove(tradeId);
+      notifyListeners();
     } catch (e) {
       throw Exception('Network error: $e');
     }
@@ -254,6 +250,201 @@ class TradeProvider with ChangeNotifier {
       } else {
         final errorData = json.decode(response.body);
         throw Exception(errorData['message'] ?? 'Failed to decline trade');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<void> makeOffer({
+    required String tradeId,
+    required List<String> offeredCardIds,
+    required int coinsOffered,
+    String? note,
+  }) async {
+    final userProvider = Provider.of<UserProvider>(
+      navigatorKey.currentContext!,
+      listen: false,
+    );
+    final token = userProvider.user?.token;
+
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/marketplace/trades/make-offer/$tradeId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({
+          'offeredCardIds': offeredCardIds,
+          'coinsOffered': coinsOffered,
+        }),
+      );
+      if (response.statusCode == 200) {
+        final updatedTrade = TradeModel.fromJson(json.decode(response.body));
+        final index = _trades.indexWhere((trade) => trade.id == tradeId);
+        if (index != -1) {
+          _trades[index] = updatedTrade;
+          notifyListeners();
+        }
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to make offer');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  List<TradeModel> get myListings => _myListings;
+
+  Future<void> fetchMyListings() async {
+    final userProvider = Provider.of<UserProvider>(
+      navigatorKey.currentContext!,
+      listen: false,
+    );
+    final token = userProvider.user?.token;
+
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/marketplace/trades/my-listings'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> tradesData = json.decode(response.body);
+        _myListings =
+            tradesData.map((json) => TradeModel.fromJson(json)).toList();
+
+        _myListings = _myListings
+            .where((trade) =>
+                trade.status != TradeStatus.CANCELLED &&
+                trade.status != TradeStatus.ACCEPTED)
+            .toList();
+
+        for (var trade in _myListings) {
+          await fetchReceivedOffers(trade.id);
+        }
+
+        notifyListeners();
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to load my listings');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<void> fetchReceivedOffers(String tradeId) async {
+    final userProvider = Provider.of<UserProvider>(
+      navigatorKey.currentContext!,
+      listen: false,
+    );
+    final token = userProvider.user?.token;
+
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/marketplace/trade/$tradeId/offers'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> offersData = json.decode(response.body);
+        _receivedOffers[tradeId] =
+            offersData.map((json) => TradeOfferModel.fromJson(json)).toList();
+        notifyListeners();
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(
+            errorData['message'] ?? 'Failed to load received offers');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<void> fetchAllReceivedOffers() async {
+    final userProvider = Provider.of<UserProvider>(
+      navigatorKey.currentContext!,
+      listen: false,
+    );
+    final token = userProvider.user?.token;
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/marketplace/trades/received'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> tradesData = json.decode(response.body);
+        _allReceivedOffers = tradesData.map((json) => TradeModel.fromJson(json)).toList();
+        notifyListeners();
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to load received offers');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<void> acceptOffer(String offerId) async {
+    final userProvider = Provider.of<UserProvider>(
+      navigatorKey.currentContext!,
+      listen: false,
+    );
+    final token = userProvider.user?.token;
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/marketplace/trades/accept-offer/$offerId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        final updatedTrade = TradeModel.fromJson(json.decode(response.body));
+        final index = _allReceivedOffers.indexWhere((trade) => trade.id == updatedTrade.id);
+        if (index != -1) {
+          _allReceivedOffers[index] = updatedTrade;
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<void> declineOffer(String offerId) async {
+    final userProvider = Provider.of<UserProvider>(
+      navigatorKey.currentContext!,
+      listen: false,
+    );
+    final token = userProvider.user?.token;
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/marketplace/trades/decline-offer/$offerId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        final updatedTrade = TradeModel.fromJson(json.decode(response.body));
+        final index = _allReceivedOffers.indexWhere((trade) => trade.id == updatedTrade.id);
+        if (index != -1) {
+          _allReceivedOffers[index] = updatedTrade;
+          notifyListeners();
+        }
       }
     } catch (e) {
       throw Exception('Network error: $e');

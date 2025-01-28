@@ -8,6 +8,8 @@ import 'dart:convert';
 import '../models/user.dart';
 import 'package:provider/provider.dart';
 import '../main.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class AuthProvider with ChangeNotifier {
   final _userSubject = BehaviorSubject<User?>();
@@ -158,22 +160,121 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> getUserDetails() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getString(_userId);
-    final token = prefs.getString(_token);
-    final response = await http.get(Uri.parse('$_baseUrl/users/$userId'), headers: {
-      'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
-    if (response.statusCode == 200) {
-      final userDetails = json.decode(response.body);
-      final user = User.fromJson(userDetails, token: token);
-      _userSubject.add(user);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString(_userId);
+      final token = prefs.getString(_token);
+      if (userId == null || token == null) {
+        throw Exception('User ID or token not found');
+      }
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/users/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final userDetails = json.decode(response.body);
+        final user = User.fromJson(userDetails, token: token);
+        _userSubject.add(user);
+
+        await Provider.of<UserProvider>(navigatorKey.currentContext!,
+                listen: false)
+            .updateUser(user);
+
+        notifyListeners();
+      } else {
+        throw Exception('Failed to fetch user details: ${response.statusCode}');
+      }
+    } catch (e) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      _userSubject.add(null);
       notifyListeners();
+      rethrow;
     }
   }
 
+  Future<void> signInWithGoogle() async {
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+      if (googleUser == null) return;
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
+
+      if (idToken == null) throw Exception('Failed to get ID token');
+
+      // Send to backend
+      final response = await http.post(
+        Uri.parse('$_baseUrl/auth/google/mobile'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'idToken': idToken,
+          'email': googleUser.email,
+          'name': googleUser.displayName,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', data['token']);
+        await prefs.setBool('isLoggedIn', true);
+
+        await getUserDetails();
+        notifyListeners();
+      } else {
+        throw Exception('Failed to authenticate with Google');
+      }
+    } catch (e) {
+      throw Exception('Google sign in failed: $e');
+    }
+  }
+
+  Future<void> signInWithApple() async {
+    try {
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      // Send to backend
+      final response = await http.post(
+        Uri.parse('$_baseUrl/auth/mobile/apple'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'identityToken': credential.identityToken,
+          'authorizationCode': credential.authorizationCode,
+          'givenName': credential.givenName,
+          'familyName': credential.familyName,
+          'email': credential.email,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', data['token']);
+        await prefs.setBool('isLoggedIn', true);
+
+        await getUserDetails();
+        notifyListeners();
+      } else {
+        throw Exception('Failed to authenticate with Apple');
+      }
+    } catch (e) {
+      throw Exception('Apple sign in failed: $e');
+    }
+  }
 
   @override
   void dispose() {

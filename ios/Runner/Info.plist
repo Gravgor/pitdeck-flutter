@@ -61,6 +61,17 @@
 	<true/>
 	<key>MGLMapboxAccessToken</key>
 	<string>sk.eyJ1IjoiZ3JhdmdvcjExMSIsImEiOiJjbTZmaWZyZzgwNHk2MmpxcHU4ejFoOTNpIn0.WS1Aq5U_EMcQ4pPSh398Pw</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+    <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+            <string>com.googleusercontent.apps.YOUR-CLIENT-ID</string>
+        </array>
+    </dict>
+</array>
+<key>GIDClientID</key>
+<string>YOUR-CLIENT-ID</string>
 	
 </dict>
 </plist>

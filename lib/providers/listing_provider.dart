@@ -132,15 +132,13 @@ class ListingProvider with ChangeNotifier {
       }
 
       final response = await http.post(
-        Uri.parse('$_baseUrl/marketplace/listings'),
+        Uri.parse('$_baseUrl/marketplace/put-for-sale/$cardId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
         body: json.encode({
-          'cardId': cardId,
           'price': price,
-          'note': note,
         }),
       );
 

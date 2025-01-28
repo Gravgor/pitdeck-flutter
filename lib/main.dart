@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:pitdeck/providers/badge_provider.dart';
+import 'package:pitdeck/providers/favorite_provider.dart';
 import 'package:pitdeck/screens/auth_screen.dart';
 import 'package:pitdeck/screens/main_screen.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +13,7 @@ import 'package:pitdeck/providers/trade_provider.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' hide Size;
 import 'package:pitdeck/config/mapbox_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:math' show pi, sin, cos;
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -31,6 +34,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => CardProvider()),
         ChangeNotifierProvider(create: (_) => ListingProvider()),
         ChangeNotifierProvider(create: (_) => TradeProvider()),
+        ChangeNotifierProvider(create: (_) => FavoriteProvider()),
+        ChangeNotifierProvider(create: (_) => BadgeProvider()),
       ],
       child: MyApp(isLoggedIn: isLoggedIn, token: token),
     ),
@@ -47,10 +52,17 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
+  bool _isInitializing = true;
+  late final AnimationController _controller;
+
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat();
     _initializeUser();
   }
 
@@ -63,6 +75,15 @@ class _MyAppState extends State<MyApp> {
         print('Error fetching user details: $e');
       }
     }
+    setState(() {
+      _isInitializing = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -80,7 +101,91 @@ class _MyAppState extends State<MyApp> {
               titleSmall: const TextStyle(fontFamily: 'Orbitron'),
             ),
       ),
-      home: widget.isLoggedIn ? const MainScreen() : const AuthScreen(),
+      home: _isInitializing
+          ? _buildLoadingScreen()
+          : widget.isLoggedIn && widget.token != null
+              ? const MainScreen()
+              : const AuthScreen(),
+    );
+  }
+
+  Widget _buildLoadingScreen() {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0A1A),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              height: 200,
+              width: 200,
+              child: Stack(
+                alignment: Alignment.center,
+                children: List.generate(3, (index) {
+                  return AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, child) {
+                      return Transform.rotate(
+                        angle:
+                            (_controller.value * 2 * pi) + (index * pi / 1.5),
+                        child: Transform.translate(
+                          offset: Offset(
+                            sin(_controller.value * 2 * pi + index) * 30,
+                            cos(_controller.value * 2 * pi + index) * 30,
+                          ),
+                          child: Container(
+                            width: 80,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  const Color(0xFF3B82F6).withOpacity(0.8),
+                                  const Color(0xFF1E40AF).withOpacity(0.8),
+                                ],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      const Color(0xFF3B82F6).withOpacity(0.3),
+                                  blurRadius: 15,
+                                  spreadRadius: -5,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                }),
+              ),
+            ),
+            const SizedBox(height: 40),
+            ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [
+                  Color(0xFFEF4444),
+                  Color(0xFF3B82F6),
+                  Color(0xFFEFB344),
+                ],
+              ).createShader(bounds),
+              child: const Text(
+                'PITDECK',
+                style: TextStyle(
+                  fontFamily: 'Orbitron',
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 4,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

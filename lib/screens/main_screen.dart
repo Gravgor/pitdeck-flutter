@@ -98,16 +98,13 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       final lastLocation = auth.user?.lastLocation;
 
       if (lastLocation != null) {;
-        print('Last location: ${lastLocation.toJson()}');
-        await _mapboxMap?.flyTo(
+        await _mapboxMap?.setCamera(
           CameraOptions(
             center: Point(
-              coordinates:
-                  Position(lastLocation.longitude, lastLocation.latitude),
+              coordinates: Position(lastLocation.longitude, lastLocation.latitude),
             ),
             zoom: 15.0,
           ),
-          MapAnimationOptions(duration: 2000),
         );
       }
 
@@ -122,14 +119,13 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         'latitude': position.latitude,
         'longitude': position.longitude,
       });
-      await _mapboxMap?.flyTo(
+      await _mapboxMap?.setCamera(
         CameraOptions(
           center: Point(
             coordinates: Position(position.longitude, position.latitude),
           ),
           zoom: 15.0,
         ),
-        MapAnimationOptions(duration: 2000),
       );
     } catch (e) {
       print('Error getting location: $e');
