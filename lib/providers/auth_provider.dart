@@ -228,8 +228,8 @@ class AuthProvider with ChangeNotifier {
         final data = json.decode(response.body);
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', data['token']);
+        await prefs.setString('userId', data['user']['id']);
         await prefs.setBool('isLoggedIn', true);
-
         await getUserDetails();
         notifyListeners();
       } else {
@@ -266,6 +266,7 @@ class AuthProvider with ChangeNotifier {
         final data = json.decode(response.body);
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', data['token']);
+        await prefs.setString('userId', data['user']['id']);
         await prefs.setBool('isLoggedIn', true);
 
         await getUserDetails();
