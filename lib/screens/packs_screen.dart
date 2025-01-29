@@ -187,6 +187,68 @@ class _PacksScreenState extends State<PacksScreen>
     return result.toString().split('').reversed.join();
   }
 
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 180,
+            height: 260,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A2E),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: const Color(0xFF3B82F6).withOpacity(0.3),
+              ),
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                TweenAnimationBuilder<double>(
+                  duration: const Duration(seconds: 2),
+                  tween: Tween(begin: 0, end: 4 * pi),
+                  curve: Curves.linear,
+                  builder: (context, value, child) => Transform.rotate(
+                    angle: value,
+                    child: Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: SweepGradient(
+                          colors: [
+                            const Color(0xFF3B82F6).withOpacity(0.0),
+                            const Color(0xFF3B82F6).withOpacity(0.5),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.card_giftcard,
+                  color: Color(0xFF3B82F6),
+                  size: 48,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            _isOpeningLoading ? 'Opening pack...' : 'Loading packs...',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPackCard(Pack pack) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -199,38 +261,37 @@ class _PacksScreenState extends State<PacksScreen>
       ),
       child: Stack(
         children: [
-          if (pack.isLimited)
-            Positioned(
-              top: 12,
-              right: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'Limited: ${pack.limitedQuantity}',
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               ClipRRect(
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(16)),
-                child: Image.network(
-                  pack.imageUrl.startsWith('http')
-                      ? pack.imageUrl
-                      : 'https://pitdeck-app.s3.eu-north-1.amazonaws.com${pack.imageUrl}',
-                  height: 200,
-                  fit: BoxFit.cover,
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.network(
+                        pack.imageUrl.startsWith('http')
+                            ? pack.imageUrl
+                            : 'https://pitdeck-app.s3.eu-north-1.amazonaws.com${pack.imageUrl}',
+                        fit: BoxFit.cover,
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              const Color(0xFF1A1A2E).withOpacity(0.8),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               Padding(
@@ -245,17 +306,42 @@ class _PacksScreenState extends State<PacksScreen>
                           pack.name,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 18,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Orbitron',
                           ),
                         ),
-                        Text(
-                          '${pack.price} Race Coins',
-                          style: const TextStyle(
-                            color: Color(0xFF3B82F6),
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFD700).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: const Color(0xFFFFD700).withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.monetization_on,
+                                color: Color(0xFFFFD700),
+                                size: 16,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _formatNumber(pack.price),
+                                style: const TextStyle(
+                                  color: Color(0xFFFFD700),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Orbitron',
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -272,26 +358,42 @@ class _PacksScreenState extends State<PacksScreen>
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: [
-                        ...pack.guaranteedRarities.map((rarity) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
+                      children: pack.guaranteedRarities.map((rarity) {
+                        final color = _getRarityColor(rarity);
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: color.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.star,
+                                color: color,
+                                size: 16,
                               ),
-                              decoration: BoxDecoration(
-                                color: _getRarityColor(rarity).withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                'Guaranteed $rarity',
+                              const SizedBox(width: 4),
+                              Text(
+                                rarity,
                                 style: TextStyle(
-                                  color: _getRarityColor(rarity),
+                                  color: color,
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
+                                  fontFamily: 'Orbitron',
                                 ),
                               ),
-                            )),
-                      ],
+                            ],
+                          ),
+                        );
+                      }).toList(),
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
@@ -300,10 +402,11 @@ class _PacksScreenState extends State<PacksScreen>
                         onPressed: () => _openPack(pack),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF3B82F6),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(12),
                           ),
+                          elevation: 0,
                         ),
                         child: Text(
                           _isOpeningLoading ? 'Opening...' : 'Open Pack',
@@ -311,6 +414,7 @@ class _PacksScreenState extends State<PacksScreen>
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
+                            fontFamily: 'Orbitron',
                           ),
                         ),
                       ),
@@ -320,6 +424,44 @@ class _PacksScreenState extends State<PacksScreen>
               ),
             ],
           ),
+          if (pack.isLimited)
+            Positioned(
+              top: 16,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFFEF4444).withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.timer,
+                      color: Color(0xFFEF4444),
+                      size: 16,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Limited: ${pack.limitedQuantity}',
+                      style: const TextStyle(
+                        color: Color(0xFFEF4444),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Orbitron',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -340,71 +482,6 @@ class _PacksScreenState extends State<PacksScreen>
       default:
         return Colors.grey;
     }
-  }
-
-  Widget _buildLoadingState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Stack(
-            alignment: Alignment.center,
-            children: List.generate(
-              3,
-              (index) => AnimatedBuilder(
-                animation: _controller,
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(
-                      0,
-                      20 * sin((_controller.value * 2 * pi) + index),
-                    ),
-                    child: Transform.rotate(
-                      angle: 0.2 * (index - 1),
-                      child: Container(
-                        width: 180,
-                        height: 260,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          color: const Color(0xFF1A1A2E),
-                          border: Border.all(
-                            color: const Color(0xFF3B82F6).withOpacity(0.3),
-                            width: 2,
-                          ),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            '?',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 72,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Orbitron',
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-          const SizedBox(height: 32),
-          Text(
-            _isOpeningLoading
-                ? 'Opening pack...'
-                : 'Loading available packs...',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Orbitron',
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -459,33 +536,47 @@ class _PacksScreenState extends State<PacksScreen>
                       ),
                       const Spacer(),
                       Consumer<UserProvider>(
-                        builder: (context, userProvider, _) => Row(
-                          children: [
-                            const Icon(
-                              Icons.monetization_on,
-                              color: Color(0xFFFFD700),
-                              size: 20,
+                        builder: (context, userProvider, _) => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0A0A1A),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: const Color(0xFFFFD700).withOpacity(0.3),
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _formatNumber(userProvider.user?.coins ?? 0),
-                              style: const TextStyle(
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.monetization_on,
                                 color: Color(0xFFFFD700),
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                                size: 20,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 8),
+                              Text(
+                                _formatNumber(userProvider.user?.coins ?? 0),
+                                style: const TextStyle(
+                                  color: Color(0xFFFFD700),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Orbitron',
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   Container(
-                    height: 40,
+                    height: 48,
                     decoration: BoxDecoration(
                       color: const Color(0xFF0A0A1A),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: const Color(0xFF3B82F6).withOpacity(0.3),
                       ),
