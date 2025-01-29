@@ -671,6 +671,13 @@ class _CollectionScreenState extends State<CollectionScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
+                            Text(
+                              '#${card.serialNumber}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10.9,
+                              ),
+                            ),
                           ],
                         ),
                       ),
