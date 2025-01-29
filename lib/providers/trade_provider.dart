@@ -400,6 +400,9 @@ class TradeProvider with ChangeNotifier {
         final List<dynamic> tradesData = json.decode(response.body);
         _allReceivedOffers =
             tradesData.map((json) => TradeModel.fromJson(json)).toList();
+        _allReceivedOffers = _allReceivedOffers
+            .where((trade) => trade.status == TradeStatus.PENDING)
+            .toList();
         notifyListeners();
       } else {
         final errorData = json.decode(response.body);
@@ -425,7 +428,7 @@ class TradeProvider with ChangeNotifier {
           'Authorization': 'Bearer $token',
         },
       );
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         final updatedTrade = TradeModel.fromJson(json.decode(response.body));
         final index = _allReceivedOffers
             .indexWhere((trade) => trade.id == updatedTrade.id);
@@ -433,6 +436,9 @@ class TradeProvider with ChangeNotifier {
           _allReceivedOffers[index] = updatedTrade;
           notifyListeners();
         }
+      } else if (response.statusCode == 400) {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to accept offer');
       }
     } catch (e) {
       throw Exception('Network error: $e');

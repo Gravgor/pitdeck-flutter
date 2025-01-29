@@ -176,8 +176,8 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color:
-                  ColorUtils.getTradeOfferStatusColor(offer.status).withOpacity(0.2),
+              color: ColorUtils.getTradeOfferStatusColor(offer.status)
+                  .withOpacity(0.2),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
@@ -255,7 +255,8 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    Row(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -276,7 +277,7 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(height: 4),
                         Text(
                           '#${card.serialNumber}',
                           style: TextStyle(
@@ -354,7 +355,14 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: const Text('Accept'),
+            child: const Text(
+              'Accept',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontFamily: 'Orbitron',
+              ),
+            ),
           ),
         ],
       ),
