@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pitdeck/screens/settings_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
 import 'package:pitdeck/providers/navigation_provider.dart';
@@ -7,6 +8,7 @@ import 'package:pitdeck/providers/favorite_provider.dart';
 import 'package:pitdeck/providers/badge_provider.dart';
 import 'package:pitdeck/models/badge.dart';
 import 'package:pitdeck/providers/scroll_notifier.dart';
+import 'package:pitdeck/screens/friends_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -63,6 +65,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.people_outline,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FriendsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.settings,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SettingsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
                 centerTitle: true,
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(

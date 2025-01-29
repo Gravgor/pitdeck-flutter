@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -99,6 +101,7 @@ class _PacksScreenState extends State<PacksScreen>
 
       if (response.statusCode == 201) {
         final sessionData = json.decode(response.body);
+        final completer = Completer<void>();
 
         if (!mounted) return;
         showModalBottomSheet(
@@ -123,6 +126,7 @@ class _PacksScreenState extends State<PacksScreen>
                 );
 
                 if (completeResponse.statusCode == 201) {
+                  completer.complete();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Pack opened successfully!'),
@@ -131,6 +135,7 @@ class _PacksScreenState extends State<PacksScreen>
                   );
                 }
               } catch (e) {
+                completer.completeError(e);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Failed to complete pack opening'),
@@ -141,6 +146,8 @@ class _PacksScreenState extends State<PacksScreen>
             },
           ),
         );
+        await completer.future;
+        if (!mounted) return;
       } else if (response.statusCode == 400) {
         setState(() => _isOpeningLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -158,7 +165,9 @@ class _PacksScreenState extends State<PacksScreen>
         ),
       );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
