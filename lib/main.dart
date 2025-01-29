@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pitdeck/providers/badge_provider.dart';
 import 'package:pitdeck/providers/favorite_provider.dart';
+import 'package:pitdeck/providers/scroll_notifier.dart';
 import 'package:pitdeck/screens/auth_screen.dart';
 import 'package:pitdeck/screens/main_screen.dart';
 import 'package:provider/provider.dart';
@@ -36,6 +37,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => TradeProvider()),
         ChangeNotifierProvider(create: (_) => FavoriteProvider()),
         ChangeNotifierProvider(create: (_) => BadgeProvider()),
+        ChangeNotifierProvider(create: (_) => ScrollNotifier()),
       ],
       child: MyApp(isLoggedIn: isLoggedIn, token: token),
     ),

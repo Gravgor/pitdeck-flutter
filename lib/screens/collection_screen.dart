@@ -27,6 +27,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
   final Set<String> _selectedTypes = {};
   String _searchQuery = '';
   String _selectedFilter = 'all';
+  bool _isCardModalOpen = false;
 
   @override
   void initState() {
@@ -670,16 +671,6 @@ class _CollectionScreenState extends State<CollectionScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '#${card.serialNumber}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 14,
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -779,13 +770,16 @@ class _CollectionScreenState extends State<CollectionScreen> {
   }
 
   void _showCardDetails(BuildContext context, String cardId) async {
+    if (_isCardModalOpen) return;
+    setState(() {
+      _isCardModalOpen = true;
+    });
     try {
       final cardDetails =
           await Provider.of<CardProvider>(context, listen: false)
               .fetchCardDetails(cardId);
 
       if (!mounted) return;
-
       Navigator.of(context).push(
         MaterialPageRoute(
           fullscreenDialog: true,
@@ -1049,7 +1043,13 @@ class _CollectionScreenState extends State<CollectionScreen> {
             ),
           ),
         ),
-      );
+      ).whenComplete(() {
+        if (mounted) {
+          setState(() {
+            _isCardModalOpen = false;
+          });
+        }
+      });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

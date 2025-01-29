@@ -141,6 +141,14 @@ class _PacksScreenState extends State<PacksScreen>
             },
           ),
         );
+      } else if (response.statusCode == 400) {
+        setState(() => _isOpeningLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You do not have enough coins to open this pack'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -288,9 +296,9 @@ class _PacksScreenState extends State<PacksScreen>
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: const Text(
-                          'Open Pack',
-                          style: TextStyle(
+                        child: Text(
+                          _isOpeningLoading ? 'Opening...' : 'Open Pack',
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,

@@ -103,58 +103,83 @@ class _TradesScreenState extends State<TradesScreen>
               indicator: BoxDecoration(
                 color: const Color(0xFF3B82F6),
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF3B82F6).withOpacity(0.3),
-                    blurRadius: 8,
-                    spreadRadius: -2,
-                  ),
-                ],
               ),
-              indicatorPadding: const EdgeInsets.all(4),
+              indicatorSize: TabBarIndicatorSize.tab,
               labelColor: Colors.white,
-              unselectedLabelColor: Colors.white.withOpacity(0.5),
+              unselectedLabelColor: Colors.grey,
               labelStyle: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Orbitron',
-                letterSpacing: 1.2,
               ),
               unselectedLabelStyle: const TextStyle(
                 fontSize: 14,
                 fontFamily: 'Orbitron',
-                letterSpacing: 1.2,
               ),
               dividerColor: Colors.transparent,
-              tabs: const [
+              padding: const EdgeInsets.all(4),
+              tabs: [
                 Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.list_alt, size: 18),
-                      SizedBox(width: 8),
-                      Text('MY LISTINGS', style: TextStyle(fontSize: 12)),
-                    ],
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.list_alt, size: 16),
+                        const SizedBox(width: 8),
+                        Text(
+                          'MY LISTINGS',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _tabController.index == 0
+                                ? Colors.white
+                                : Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.download, size: 18),
-                      SizedBox(width: 8),
-                      Text('RECEIVED', style: TextStyle(fontSize: 12)),
-                    ],
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.download, size: 16),
+                        const SizedBox(width: 8),
+                        Text(
+                          'RECEIVED',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _tabController.index == 1
+                                ? Colors.white
+                                : Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.upload, size: 18),
-                      SizedBox(width: 8),
-                      Text('SENT', style: TextStyle(fontSize: 12)),
-                    ],
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.upload, size: 16),
+                        const SizedBox(width: 8),
+                        Text(
+                          'SENT',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _tabController.index == 2
+                                ? Colors.white
+                                : Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],

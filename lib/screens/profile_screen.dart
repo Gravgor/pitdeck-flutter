@@ -6,6 +6,7 @@ import 'package:pitdeck/providers/card_provider.dart';
 import 'package:pitdeck/providers/favorite_provider.dart';
 import 'package:pitdeck/providers/badge_provider.dart';
 import 'package:pitdeck/models/badge.dart';
+import 'package:pitdeck/providers/scroll_notifier.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -23,9 +24,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _initializeUserSocket() async {
     final auth = Provider.of<UserProvider>(context, listen: false);
-    print('Name: ${auth.user?.name}');
-    print('Level: ${auth.user?.level}');
-    print('Coins: ${auth.user?.coins}');
     await auth.connectUserSocket();
   }
 
@@ -34,364 +32,395 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A1A),
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              expandedHeight: 90,
-              backgroundColor: const Color(0xFF0A0A1A),
-              pinned: true,
-              flexibleSpace: FlexibleSpaceBar(
-                background: Stack(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            const Color(0xFF1A1A2E),
-                            const Color(0xFF0A0A1A),
-                          ],
-                        ),
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (scrollNotification) {
+            if (scrollNotification is ScrollUpdateNotification) {
+              Provider.of<ScrollNotifier>(context, listen: false)
+                  .updateScrollPosition(scrollNotification.metrics.pixels);
+            }
+            return true;
+          },
+          child: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 90,
+                backgroundColor: const Color(0xFF0A0A1A),
+                pinned: true,
+                floating: false,
+                title: Consumer<ScrollNotifier>(
+                  builder: (context, scrollNotifier, _) => AnimatedOpacity(
+                    opacity: scrollNotifier.showTitle ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: const Text(
+                      'PITDECK',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Orbitron',
+                        letterSpacing: 2,
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
-                      child: Row(
-                        children: [
-                          Stack(
-                            children: [
-                              Container(
-                                width: 60,
-                                height: 60,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: const Color(0xFF3B82F6),
-                                    width: 2,
+                  ),
+                ),
+                centerTitle: true,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Stack(
+                    children: [
+                      Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Color(0xFF1A1A2E),
+                              Color(0xFF0A0A1A),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
+                        child: Row(
+                          children: [
+                            Stack(
+                              children: [
+                                Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: const Color(0xFF3B82F6),
+                                      width: 2,
+                                    ),
                                   ),
-                                ),
-                                child: ClipOval(
-                                  child: Consumer<UserProvider>(
-                                    builder: (context, userProvider, _) =>
-                                        Image.network(
-                                      userProvider.user?.image ??
-                                          'https://via.placeholder.com/60',
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              const Icon(
-                                        Icons.person,
-                                        color: Colors.white,
-                                        size: 30,
+                                  child: ClipOval(
+                                    child: Consumer<UserProvider>(
+                                      builder: (context, userProvider, _) =>
+                                          Image.network(
+                                        userProvider.user?.image ??
+                                            'https://via.placeholder.com/60',
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                const Icon(
+                                          Icons.person,
+                                          color: Colors.white,
+                                          size: 30,
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              Consumer<UserProvider>(
-                                builder: (context, userProvider, _) {
-                                  if (userProvider.user?.isPremium == true) {
-                                    return Positioned(
-                                      bottom: -2,
-                                      right: -2,
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          gradient: const LinearGradient(
-                                            colors: [
-                                              Color(0xFFFFD700),
-                                              Color(0xFFFFA500)
+                                Consumer<UserProvider>(
+                                  builder: (context, userProvider, _) {
+                                    if (userProvider.user?.isPremium == true) {
+                                      return Positioned(
+                                        bottom: -2,
+                                        right: -2,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            gradient: const LinearGradient(
+                                              colors: [
+                                                Color(0xFFFFD700),
+                                                Color(0xFFFFA500)
+                                              ],
+                                            ),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: const Color(0xFFFFD700)
+                                                    .withOpacity(0.3),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
                                             ],
                                           ),
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: const Color(0xFFFFD700)
-                                                  .withOpacity(0.3),
-                                              blurRadius: 8,
-                                              offset: const Offset(0, 2),
-                                            ),
-                                          ],
+                                          child: const Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.star,
+                                                color: Colors.white,
+                                                size: 12,
+                                              ),
+                                              SizedBox(width: 2),
+                                              Text(
+                                                'PREMIUM',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 8,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily: 'Orbitron',
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                        child: const Row(
+                                      );
+                                    }
+                                    return const SizedBox.shrink();
+                                  },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Consumer<UserProvider>(
+                                    builder: (context, userProvider, _) => Text(
+                                      userProvider.user?.name ?? 'Guest',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'Orbitron',
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF3B82F6)
+                                              .withOpacity(0.2),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Icon(
-                                              Icons.star,
-                                              color: Colors.white,
+                                            const Icon(
+                                              Icons.military_tech,
+                                              color: Color(0xFF3B82F6),
                                               size: 12,
                                             ),
-                                            SizedBox(width: 2),
-                                            Text(
-                                              'PREMIUM',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 8,
-                                                fontWeight: FontWeight.bold,
-                                                fontFamily: 'Orbitron',
+                                            const SizedBox(width: 4),
+                                            Consumer<UserProvider>(
+                                              builder:
+                                                  (context, userProvider, _) =>
+                                                      Text(
+                                                'Level ${userProvider.user?.level ?? 1}',
+                                                style: const TextStyle(
+                                                  color: Color(0xFF3B82F6),
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                             ),
                                           ],
                                         ),
                                       ),
-                                    );
-                                  }
-                                  return const SizedBox.shrink();
-                                },
-                              ),
-                            ],
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Consumer<UserProvider>(
-                                  builder: (context, userProvider, _) => Text(
-                                    userProvider.user?.name ?? 'Guest',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      fontFamily: 'Orbitron',
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF3B82F6)
-                                            .withOpacity(0.2),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(
-                                            Icons.military_tech,
-                                            color: Color(0xFF3B82F6),
-                                            size: 12,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Consumer<UserProvider>(
-                                            builder:
-                                                (context, userProvider, _) =>
-                                                    Text(
-                                              'Level ${userProvider.user?.level ?? 1}',
+                                      const SizedBox(width: 8),
+                                      Consumer<UserProvider>(
+                                        builder: (context, userProvider, _) =>
+                                            Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.monetization_on,
+                                              color: Color(0xFFFFD700),
+                                              size: 12,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              _formatNumber(
+                                                  userProvider.user?.coins ??
+                                                      0),
                                               style: const TextStyle(
-                                                color: Color(0xFF3B82F6),
+                                                color: Color(0xFFFFD700),
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Consumer<UserProvider>(
-                                      builder: (context, userProvider, _) =>
-                                          Row(
-                                        children: [
-                                          Icon(
-                                            Icons.monetization_on,
-                                            color: const Color(0xFFFFD700),
-                                            size: 12,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            '${_formatNumber(userProvider.user?.coins ?? 0)}',
-                                            style: const TextStyle(
-                                              color: Color(0xFFFFD700),
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'RaceCoins',
+                                              style: TextStyle(
+                                                color: Colors.white
+                                                    .withOpacity(0.7),
+                                                fontSize: 12,
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            'RaceCoins',
-                                            style: TextStyle(
-                                              color:
-                                                  Colors.white.withOpacity(0.7),
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    _buildStatItem(
-                                        Icons.grid_view, '142', 'Cards'),
-                                    const SizedBox(width: 16),
-                                    _buildStatItem(
-                                        Icons.swap_horiz, '23', 'Trades'),
-                                    const SizedBox(width: 16),
-                                    _buildStatItem(Icons.sell, '15', 'Sales'),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  const Text(
-                    'Bio',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Orbitron',
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Consumer<UserProvider>(
-                    builder: (context, userProvider, _) => Text(
-                      userProvider.user?.bio ??
-                          'Racing enthusiast and collector. Always looking for rare cards and epic moments in motorsport history!',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                        fontFamily: 'Orbitron',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  _buildBadges(),
-                  const SizedBox(height: 24),
-                  _buildFavorites(),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Collection',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Orbitron',
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          final navProvider = Provider.of<NavigationProvider>(
-                              context,
-                              listen: false);
-                          navProvider.changePage(1); // Switch to Collection tab
-                        },
-                        child: Row(
-                          children: [
-                            Text(
-                              'See all',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.7),
-                                fontSize: 14,
-                                fontFamily: 'Orbitron',
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      _buildStatItem(
+                                          Icons.grid_view, '142', 'Cards'),
+                                      const SizedBox(width: 16),
+                                      _buildStatItem(
+                                          Icons.swap_horiz, '23', 'Trades'),
+                                      const SizedBox(width: 16),
+                                      _buildStatItem(Icons.sell, '15', 'Sales'),
+                                    ],
+                                  ),
+                                ],
                               ),
-                            ),
-                            const SizedBox(width: 4),
-                            Icon(
-                              Icons.arrow_forward_ios,
-                              color: Colors.white.withOpacity(0.7),
-                              size: 12,
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 180,
-                    child: Consumer<CardProvider>(
-                      builder: (context, cardProvider, _) {
-                        final cards = cardProvider.cards.take(5).toList();
-                        return ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: cards.length,
-                          itemBuilder: (context, index) {
-                            final card = cards[index];
-                            return Container(
-                              width: 120,
-                              margin: const EdgeInsets.only(right: 12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    height: 120,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: _getRarityColor(card.rarity)
-                                            .withOpacity(0.3),
-                                        width: 2,
-                                      ),
-                                      image: DecorationImage(
-                                        image: NetworkImage(card.imageUrl),
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    card.name,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Row(
-                                    children: [
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '#${card.serialNumber}',
-                                        style: TextStyle(
-                                          color: _getRarityColor(card.rarity),
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    const Text(
+                      'Bio',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Orbitron',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Consumer<UserProvider>(
+                      builder: (context, userProvider, _) => Text(
+                        userProvider.user?.bio ??
+                            'Racing enthusiast and collector. Always looking for rare cards and epic moments in motorsport history!',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 14,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildBadges(),
+                    const SizedBox(height: 24),
+                    _buildFavorites(),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Collection',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Orbitron',
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            final navProvider = Provider.of<NavigationProvider>(
+                                context,
+                                listen: false);
+                            navProvider
+                                .changePage(1); // Switch to Collection tab
+                          },
+                          child: Row(
+                            children: [
+                              Text(
+                                'See all',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: 14,
+                                  fontFamily: 'Orbitron',
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                color: Colors.white.withOpacity(0.7),
+                                size: 12,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 180,
+                      child: Consumer<CardProvider>(
+                        builder: (context, cardProvider, _) {
+                          final cards = cardProvider.cards.take(5).toList();
+                          return ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: cards.length,
+                            itemBuilder: (context, index) {
+                              final card = cards[index];
+                              return Container(
+                                width: 120,
+                                margin: const EdgeInsets.only(right: 12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      height: 120,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: _getRarityColor(card.rarity)
+                                              .withOpacity(0.3),
+                                          width: 2,
+                                        ),
+                                        image: DecorationImage(
+                                          image: NetworkImage(card.imageUrl),
+                                          fit: BoxFit.cover,
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        );
-                      },
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      card.name,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Row(
+                                      children: [
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '#${card.serialNumber}',
+                                          style: TextStyle(
+                                            color: _getRarityColor(card.rarity),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                ]),
+                  ]),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
