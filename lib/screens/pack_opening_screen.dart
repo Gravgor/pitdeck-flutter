@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:pitdeck/models/card.dart';
 import 'package:pitdeck/models/pack.dart';
 import 'dart:math' show pi, sin;
+import 'package:pitdeck/screens/pack_results_screen.dart';
 
 class PackOpeningScreen extends StatefulWidget {
   final Map<String, dynamic> sessionData;
@@ -27,6 +29,7 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
   final Map<String, bool> _cardRevealed = {};
   bool _isSelectionComplete = false;
   bool _hasStartedSelection = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -172,10 +175,7 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
                 ),
                 padding: const EdgeInsets.all(16),
                 child: ElevatedButton(
-                  onPressed: () {
-                    widget.onComplete(_selectedCardIds.toList());
-                    Navigator.pop(context);
-                  },
+                  onPressed: _isLoading ? null : _onComplete,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3B82F6),
                     minimumSize: const Size(double.infinity, 56),
@@ -185,15 +185,17 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
                     elevation: 8,
                     shadowColor: const Color(0xFF3B82F6).withOpacity(0.5),
                   ),
-                  child: const Text(
-                    'CONFIRM SELECTION',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      fontFamily: 'Orbitron',
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'CONFIRM SELECTION',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontFamily: 'Orbitron',
+                          ),
+                        ),
                 ),
               ),
           ],
@@ -552,6 +554,48 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
         return Colors.orange;
       default:
         return Colors.grey;
+    }
+  }
+
+  void _onComplete() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final List<CardModel> selectedCards = [];
+
+      // Fetch details for each selected card
+      for (String cardId in _selectedCardIds) {
+        final card = _cardPool.firstWhere((card) => card['id'] == cardId);
+        selectedCards.add(CardModel.fromJson(card));
+      }
+
+      if (!mounted) return;
+
+      // Navigate to results screen
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => PackResultsScreen(cards: selectedCards),
+        ),
+      );
+
+      // Call the original onComplete callback
+      widget.onComplete(_selectedCardIds.toList());
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error processing selected cards'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 }
