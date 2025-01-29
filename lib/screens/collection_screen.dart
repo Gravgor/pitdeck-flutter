@@ -28,6 +28,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
   String _searchQuery = '';
   String _selectedFilter = 'all';
   bool _isCardModalOpen = false;
+  late FocusNode _priceFocusNode;
 
   @override
   void initState() {
@@ -35,12 +36,14 @@ class _CollectionScreenState extends State<CollectionScreen> {
     _filteredCards = _cards;
     _fetchCards();
     _startPeriodicRefresh();
+    _priceFocusNode = FocusNode();
   }
 
   @override
   void dispose() {
     _refreshTimer?.cancel();
     _searchController.dispose();
+    _priceFocusNode.dispose();
     super.dispose();
   }
 
@@ -83,19 +86,25 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
-      body: Column(
-        children: [
-          _buildHeader(),
-          _buildStats(),
-          _buildSearchBar(),
-          _buildFilterChips(),
-          const SizedBox(height: 8),
-          Expanded(child: _buildCardGrid()),
-        ],
+    return GestureDetector(
+      onTap: () {
+        // Dismiss keyboard when tapping outside
+        FocusScope.of(context).unfocus();
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0A0A1A),
+        body: Column(
+          children: [
+            _buildHeader(),
+            _buildStats(),
+            _buildSearchBar(),
+            _buildFilterChips(),
+            const SizedBox(height: 8),
+            Expanded(child: _buildCardGrid()),
+          ],
+        ),
+        bottomNavigationBar: _buildBottomNavigationBar(),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
@@ -506,7 +515,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
     }).toList();
 
     if (_selectedFilter == "all") {
-      filteredCards = filteredCards.where((card) => !card.isForTrade && !card.isForSale).toList();
+      filteredCards = filteredCards
+          .where((card) => !card.isForTrade && !card.isForSale)
+          .toList();
     }
 
     if (_selectedFilter == 'trade') {
@@ -787,7 +798,8 @@ class _CollectionScreenState extends State<CollectionScreen> {
               .fetchCardDetails(cardId);
 
       if (!mounted) return;
-      Navigator.of(context).push(
+      Navigator.of(context)
+          .push(
         MaterialPageRoute(
           fullscreenDialog: true,
           builder: (context) => Scaffold(
@@ -960,7 +972,8 @@ class _CollectionScreenState extends State<CollectionScreen> {
                               _buildCardStats(cardDetails.stats!),
                             ],
                             const SizedBox(height: 32),
-                            if (!cardDetails.isForSale && !cardDetails.isForTrade)
+                            if (!cardDetails.isForSale &&
+                                !cardDetails.isForTrade)
                               ElevatedButton(
                                 onPressed: () =>
                                     _showListForSaleModal(cardDetails),
@@ -987,12 +1000,13 @@ class _CollectionScreenState extends State<CollectionScreen> {
                               ElevatedButton(
                                 onPressed: () => {
                                   _removeFromMarketplace(cardDetails),
-                                    Navigator.pop(context),
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar( 
-                                        content: Text('Card removed from Marketplace!'),
-                                        backgroundColor: Colors.green,
-                                      ),
+                                  Navigator.pop(context),
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          'Card removed from Marketplace!'),
+                                      backgroundColor: Colors.green,
+                                    ),
                                   ),
                                 },
                                 style: ElevatedButton.styleFrom(
@@ -1050,7 +1064,8 @@ class _CollectionScreenState extends State<CollectionScreen> {
             ),
           ),
         ),
-      ).whenComplete(() {
+      )
+          .whenComplete(() {
         if (mounted) {
           setState(() {
             _isCardModalOpen = false;
@@ -1316,22 +1331,21 @@ class _CollectionScreenState extends State<CollectionScreen> {
               const SizedBox(height: 24),
               TextField(
                 controller: priceController,
-                style: const TextStyle(color: Colors.white),
+                focusNode: _priceFocusNode,
                 keyboardType: TextInputType.number,
+                style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
-                  hintText: 'Enter your price',
-                  hintStyle: const TextStyle(color: Colors.grey),
-                  filled: true,
-                  fillColor: const Color(0xFF0A0A1A),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  prefixIcon: const Icon(
-                    Icons.attach_money,
-                    color: Colors.grey,
+                  hintText: 'Enter price',
+                  hintStyle: TextStyle(color: Colors.grey.shade600),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
                   ),
                 ),
+                onEditingComplete: () {
+                  _priceFocusNode.unfocus();
+                },
               ),
               const Spacer(),
               Row(
@@ -1362,7 +1376,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
                         final price = int.tryParse(priceController.text) ?? 0;
                         Provider.of<CardProvider>(context, listen: false)
                             .sellCard(card.id!, price);
-                                                    Navigator.pop(context);
+                        Navigator.pop(context);
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
