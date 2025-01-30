@@ -23,7 +23,6 @@ import 'dart:math';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:pitdeck/components/control_center.dart';
 
-
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -97,11 +96,13 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       final auth = Provider.of<UserProvider>(context, listen: false);
       final lastLocation = auth.user?.lastLocation;
 
-      if (lastLocation != null) {;
+      if (lastLocation != null) {
+        ;
         await _mapboxMap?.setCamera(
           CameraOptions(
             center: Point(
-              coordinates: Position(lastLocation.longitude, lastLocation.latitude),
+              coordinates:
+                  Position(lastLocation.longitude, lastLocation.latitude),
             ),
             zoom: 15.0,
           ),
@@ -339,6 +340,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => TweenAnimationBuilder<double>(
           duration: const Duration(milliseconds: 500),
@@ -349,25 +351,39 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             child: Opacity(
               opacity: (1 - value).clamp(0.0, 1.0),
               child: Container(
-                margin: const EdgeInsets.all(16),
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.only(bottom: 32),
                 decoration: BoxDecoration(
                   color: const Color(0xFF1A1A2E),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
                   border: Border.all(
                     color: _getRarityColor(newDrop.rarity).withOpacity(0.3),
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _getRarityColor(newDrop.rarity).withOpacity(0.1),
+                      blurRadius: 20,
+                      spreadRadius: 5,
+                    ),
+                  ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    const SizedBox(height: 12),
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      width: 32,
+                      height: 4,
                       decoration: BoxDecoration(
-                        color: _getRarityColor(newDrop.rarity).withOpacity(0.1),
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(16),
-                        ),
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(2),
                       ),
+                    ),
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Row(
                         children: [
                           TweenAnimationBuilder<double>(
@@ -383,16 +399,32 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                                 ),
                                 decoration: BoxDecoration(
                                   color: _getRarityColor(newDrop.rarity)
-                                      .withOpacity(0.2),
+                                      .withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  newDrop.rarity.toString().split('.').last,
-                                  style: TextStyle(
-                                    color: _getRarityColor(newDrop.rarity),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
+                                  border: Border.all(
+                                    color: _getRarityColor(newDrop.rarity)
+                                        .withOpacity(0.3),
                                   ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.auto_awesome,
+                                      color: _getRarityColor(newDrop.rarity),
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      newDrop.rarity.toString().split('.').last,
+                                      style: TextStyle(
+                                        color: _getRarityColor(newDrop.rarity),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        fontFamily: 'Orbitron',
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -401,24 +433,89 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text(
-                                '${distance.toStringAsFixed(0)}m away',
-                                style: TextStyle(
-                                  color: isInRange ? Colors.green : Colors.red,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isInRange
+                                      ? const Color(0xFF10B981).withOpacity(0.1)
+                                      : const Color(0xFFEF4444)
+                                          .withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: isInRange
+                                        ? const Color(0xFF10B981)
+                                            .withOpacity(0.3)
+                                        : const Color(0xFFEF4444)
+                                            .withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      isInRange
+                                          ? Icons.near_me
+                                          : Icons.location_off,
+                                      color: isInRange
+                                          ? const Color(0xFF10B981)
+                                          : const Color(0xFFEF4444),
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '${distance.toStringAsFixed(0)}m away',
+                                      style: TextStyle(
+                                        color: isInRange
+                                            ? const Color(0xFF10B981)
+                                            : const Color(0xFFEF4444),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'Orbitron',
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                               if (!isPremium &&
                                   distance > 100 &&
                                   distance <= 1500) ...[
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Get Premium to reach this drop!',
-                                  style: TextStyle(
-                                    color: Colors.amber.shade300,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
+                                const SizedBox(height: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFB800)
+                                        .withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: const Color(0xFFFFB800)
+                                          .withOpacity(0.3),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.star,
+                                        color: Color(0xFFFFB800),
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Get Premium to Reach',
+                                        style: TextStyle(
+                                          color: const Color(0xFFFFB800),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: 'Orbitron',
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -427,6 +524,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 24),
                     TweenAnimationBuilder<double>(
                       duration: const Duration(milliseconds: 800),
                       tween: Tween(begin: 0.0, end: 1.0),
@@ -434,57 +532,96 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                       builder: (context, value, child) => Transform.scale(
                         scale: value,
                         child: Container(
-                          height: 200,
-                          margin: const EdgeInsets.all(24),
+                          height: 280,
+                          margin: const EdgeInsets.symmetric(horizontal: 0),
                           decoration: BoxDecoration(
                             color: _getRarityColor(newDrop.rarity)
                                 .withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: _getRarityColor(newDrop.rarity)
-                                  .withOpacity(0.1),
+                            border: Border(
+                              top: BorderSide(
+                                color: _getRarityColor(newDrop.rarity)
+                                    .withOpacity(0.2),
+                              ),
+                              bottom: BorderSide(
+                                color: _getRarityColor(newDrop.rarity)
+                                    .withOpacity(0.2),
+                              ),
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: _getRarityColor(newDrop.rarity)
+                                    .withOpacity(0.1),
+                                blurRadius: 10,
+                                spreadRadius: 0,
+                              ),
+                            ],
+                          ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Icon(
+                                Icons.card_giftcard,
+                                color: _getRarityColor(newDrop.rarity)
+                                    .withOpacity(0.2),
+                                size: 80,
+                              ),
+                              if (!isInRange)
+                                Icon(
+                                  Icons.lock,
+                                  color: _getRarityColor(newDrop.rarity)
+                                      .withOpacity(0.3),
+                                  size: 40,
+                                ),
+                            ],
                           ),
                         ),
                       ),
                     ),
+                    const SizedBox(height: 24),
                     Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: TweenAnimationBuilder<double>(
                         duration: const Duration(milliseconds: 600),
                         tween: Tween(begin: 0.0, end: 1.0),
                         curve: Curves.easeOutCubic,
                         builder: (context, value, child) => Transform.scale(
                           scale: value,
-                          child: ElevatedButton(
-                            onPressed:
-                                isInRange ? () => _openDrop(newDrop) : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isInRange
-                                  ? _getRarityColor(newDrop.rarity)
-                                  : Colors.grey,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed:
+                                  isInRange ? () => _openDrop(newDrop) : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isInRange
+                                    ? _getRarityColor(newDrop.rarity)
+                                    : const Color(0xFF2A2A3E),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
                               ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  isInRange ? Icons.lock_open : Icons.lock,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  isInRange ? 'Open Drop' : 'Too Far Away',
-                                  style: const TextStyle(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    isInRange ? Icons.lock_open : Icons.lock,
                                     color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+                                    size: 20,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    isInRange ? 'Open Drop' : 'Too Far Away',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      fontFamily: 'Orbitron',
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -524,7 +661,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         );
         return;
       }
-
       final response = await http.post(
         Uri.parse('$baseUrl/drops/claim'),
         headers: {
@@ -537,7 +673,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           'longitude': _userLocation!.longitude,
         }),
       );
-
       if (!mounted) return;
 
       if (response.statusCode == 201) {
@@ -550,8 +685,15 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('You are too far away from this drop')),
         );
+      } else if (response.statusCode == 500) {
+        print(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You are too far away from this drop')),
+        );
       } else {
-        throw Exception('Failed to claim drop');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error claiming drop')),
+        );
       }
     } catch (e) {
       if (!mounted) return;
@@ -562,7 +704,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   }
 
   void _showRewardsDialog(Map<String, dynamic> rewards, DropRarity rarity) {
-    final List<dynamic> rewardsList = rewards['rewards'] ?? [];
+    final List<dynamic> rewardsList = rewards['rewards'];
 
     showDialog(
       context: context,
@@ -722,7 +864,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: Column(
                           children: [
-                            const SizedBox(height:70),
+                            const SizedBox(height: 70),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -1026,73 +1168,33 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     return SafeArea(
       child: Container(
         margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFF0A0A1A).withOpacity(0.9),
+          color: const Color(0xFF1A1A2E),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: const Color(0xFF3B82F6).withOpacity(0.3),
+            color: Colors.white.withOpacity(0.1),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
-            ShaderMask(
-              shaderCallback: (bounds) => const LinearGradient(
-                colors: [
-                  Color(0xFFEF4444),
-                  Color(0xFF3B82F6),
-                  Color(0xFFEFB344),
-                ],
-              ).createShader(bounds),
-              child: const Text(
-                'PITDECK',
-                style: TextStyle(
-                  fontFamily: 'Orbitron',
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            const Spacer(),
-            Row(
-              children: [
-                const SizedBox(width: 12),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: const Color(0xFF3B82F6).withOpacity(0.3),
-                    ),
+            Consumer<UserProvider>(
+              builder: (context, auth, _) => Row(
+                children: [
+                  const Icon(
+                    Icons.person,
+                    color: Colors.white,
+                    size: 14,
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.military_tech,
-                        color: Color(0xFF3B82F6),
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Consumer<UserProvider>(
-                        builder: (context, userProvider, _) => Text(
-                          'LVL ${userProvider.user?.level ?? 1}',
-                          style: const TextStyle(
-                            fontFamily: 'Orbitron',
-                            fontSize: 12,
-                            color: Color(0xFF3B82F6),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Consumer<UserProvider>(
-                  builder: (context, auth, _) => Text(
+                  const SizedBox(width: 4),
+                  Text(
                     auth.user?.name ?? 'Guest',
                     style: const TextStyle(
                       fontFamily: 'Orbitron',
@@ -1101,13 +1203,86 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                ],
+              ),
+            ),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFB800).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFFFFB800).withOpacity(0.3),
                 ),
-              ],
+              ),
+              child: Consumer<UserProvider>(
+                builder: (context, userProvider, _) => Row(
+                  children: [
+                    const Icon(
+                      Icons.monetization_on,
+                      color: Color(0xFFFFB800),
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      _formatNumber(userProvider.user?.coins ?? 0),
+                      style: const TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 12,
+                        color: Color(0xFFFFB800),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3B82F6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFF3B82F6).withOpacity(0.3),
+                ),
+              ),
+              child: Consumer<UserProvider>(
+                builder: (context, userProvider, _) => Row(
+                  children: [
+                    const Icon(
+                      Icons.military_tech,
+                      color: Color(0xFF3B82F6),
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'LVL ${userProvider.user?.level ?? 1}',
+                      style: const TextStyle(
+                        fontFamily: 'Orbitron',
+                        fontSize: 12,
+                        color: Color(0xFF3B82F6),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  String _formatNumber(int number) {
+    if (number >= 1000000) {
+      return '${(number / 1000000).toStringAsFixed(1)}M';
+    } else if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(1)}K';
+    }
+    return number.toString();
   }
 
   Widget _buildRefreshButton() {
@@ -1120,87 +1295,85 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         children: [
           FloatingActionButton.extended(
             onPressed: () async {
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  barrierColor: Colors.black.withOpacity(0.5),
-                  builder: (context) => BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                    child: Center(
-                      child: Container(
-                        width: 200,
-                        height: 200,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // Outer rotating circle
-                            TweenAnimationBuilder<double>(
-                              duration: const Duration(seconds: 2),
-                              tween: Tween(begin: 0, end: 4 * 3.14159),
-                              curve: Curves.linear,
-                              builder: (context, value, child) =>
-                                  Transform.rotate(
-                                angle: value,
-                                child: Container(
-                                  width: 200,
-                                  height: 200,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: const Color(0xFF3B82F6)
-                                          .withOpacity(0.5),
-                                      width: 2,
-                                    ),
-                                    gradient: SweepGradient(
-                                      colors: [
-                                        const Color(0xFF3B82F6)
-                                            .withOpacity(0.1),
-                                        const Color(0xFF3B82F6)
-                                            .withOpacity(0.5),
-                                      ],
-                                    ),
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                barrierColor: Colors.black.withOpacity(0.5),
+                builder: (context) => BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                  child: Center(
+                    child: Container(
+                      width: 200,
+                      height: 200,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Outer rotating circle
+                          TweenAnimationBuilder<double>(
+                            duration: const Duration(seconds: 2),
+                            tween: Tween(begin: 0, end: 4 * 3.14159),
+                            curve: Curves.linear,
+                            builder: (context, value, child) =>
+                                Transform.rotate(
+                              angle: value,
+                              child: Container(
+                                width: 200,
+                                height: 200,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: const Color(0xFF3B82F6)
+                                        .withOpacity(0.5),
+                                    width: 2,
+                                  ),
+                                  gradient: SweepGradient(
+                                    colors: [
+                                      const Color(0xFF3B82F6).withOpacity(0.1),
+                                      const Color(0xFF3B82F6).withOpacity(0.5),
+                                    ],
                                   ),
                                 ),
                               ),
                             ),
-                            // Inner scanning line
-                            TweenAnimationBuilder<double>(
-                              duration: const Duration(seconds: 2),
-                              tween: Tween(begin: -1, end: 1),
-                              curve: Curves.easeInOut,
-                              builder: (context, value, child) =>
-                                  Transform.translate(
-                                offset: Offset(0, 100 * value),
-                                child: Container(
-                                  width: 150,
-                                  height: 2,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Colors.blue.withOpacity(0),
-                                        Colors.blue.withOpacity(0.8),
-                                        Colors.blue.withOpacity(0),
-                                      ],
-                                    ),
+                          ),
+                          // Inner scanning line
+                          TweenAnimationBuilder<double>(
+                            duration: const Duration(seconds: 2),
+                            tween: Tween(begin: -1, end: 1),
+                            curve: Curves.easeInOut,
+                            builder: (context, value, child) =>
+                                Transform.translate(
+                              offset: Offset(0, 100 * value),
+                              child: Container(
+                                width: 150,
+                                height: 2,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.blue.withOpacity(0),
+                                      Colors.blue.withOpacity(0.8),
+                                      Colors.blue.withOpacity(0),
+                                    ],
                                   ),
                                 ),
                               ),
                             ),
-                            // Center dot
-                            Container(
-                              width: 10,
-                              height: 10,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF3B82F6),
-                                shape: BoxShape.circle,
-                              ),
+                          ),
+                          // Center dot
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF3B82F6),
+                              shape: BoxShape.circle,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                );
+                ),
+              );
 
               Navigator.of(context).pop();
             },
