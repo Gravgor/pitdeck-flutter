@@ -49,6 +49,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   final baseUrl = 'https://api.pitdeck.app/api';
 
+  StreamSubscription<geo.Position>? _locationStreamSubscription;
+
   @override
   void initState() {
     super.initState();
@@ -65,6 +67,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   void dispose() {
     _locationTimer?.cancel();
     _socketReconnectTimer?.cancel();
+    _locationStreamSubscription?.cancel();
     _socket?.disconnect();
     _socket?.dispose();
     super.dispose();
@@ -97,7 +100,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       final lastLocation = auth.user?.lastLocation;
 
       if (lastLocation != null) {
-        ;
         await _mapboxMap?.setCamera(
           CameraOptions(
             center: Point(
@@ -295,13 +297,37 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _startLocationUpdates() async {
-    _locationTimer?.cancel();
-    _locationTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+    _locationStreamSubscription?.cancel();
+
+    final geo.LocationSettings locationSettings = geo.LocationSettings(
+      accuracy: geo.LocationAccuracy.high,
+      distanceFilter: 10, // Update every 10 meters
+    );
+
+    _locationStreamSubscription = geo.Geolocator.getPositionStream(
+      locationSettings: locationSettings,
+    ).listen((geo.Position position) {
       if (mounted) {
-        _getCurrentLocation();
-      } else {
-        timer.cancel();
+        setState(() {
+          _userLocation = position;
+        });
+
+        _socket?.emit('location:update', {
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+        });
+
+        _mapboxMap?.setCamera(
+          CameraOptions(
+            center: Point(
+              coordinates: Position(position.longitude, position.latitude),
+            ),
+            zoom: 15.0,
+          ),
+        );
       }
+    }, onError: (error) {
+      print('Error getting location stream: $error');
     });
   }
 
@@ -337,27 +363,25 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     final maxRange = isPremium ? 1500.0 : 100.0;
     final isInRange = distance <= maxRange;
 
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => TweenAnimationBuilder<double>(
-          duration: const Duration(milliseconds: 500),
-          tween: Tween(begin: 1.0, end: 0.0),
-          curve: Curves.easeOutBack,
-          builder: (context, value, child) => Transform.translate(
-            offset: Offset(0, 50 * value),
-            child: Opacity(
-              opacity: (1 - value).clamp(0.0, 1.0),
+      barrierDismissible: true,
+      barrierColor: Colors.transparent,
+      builder: (context) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+          child: TweenAnimationBuilder<double>(
+            duration: const Duration(milliseconds: 500),
+            tween: Tween(begin: 0.8, end: 1.0),
+            curve: Curves.easeOutBack,
+            builder: (context, value, child) => Transform.scale(
+              scale: value,
               child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.only(bottom: 32),
                 decoration: BoxDecoration(
                   color: const Color(0xFF1A1A2E),
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(24),
-                  ),
+                  borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: _getRarityColor(newDrop.rarity).withOpacity(0.3),
                   ),
@@ -533,7 +557,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                         scale: value,
                         child: Container(
                           height: 280,
-                          margin: const EdgeInsets.symmetric(horizontal: 0),
+                          width: MediaQuery.of(context).size.width,
+                          margin: EdgeInsets.zero,
                           decoration: BoxDecoration(
                             color: _getRarityColor(newDrop.rarity)
                                 .withOpacity(0.05),
@@ -547,14 +572,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                                     .withOpacity(0.2),
                               ),
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: _getRarityColor(newDrop.rarity)
-                                    .withOpacity(0.1),
-                                blurRadius: 10,
-                                spreadRadius: 0,
-                              ),
-                            ],
                           ),
                           child: Stack(
                             alignment: Alignment.center,
@@ -588,39 +605,42 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                           scale: value,
                           child: SizedBox(
                             width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed:
-                                  isInRange ? () => _openDrop(newDrop) : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: isInRange
-                                    ? _getRarityColor(newDrop.rarity)
-                                    : const Color(0xFF2A2A3E),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 32),
+                              child: ElevatedButton(
+                                onPressed:
+                                    isInRange ? () => _openDrop(newDrop) : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isInRange
+                                      ? _getRarityColor(newDrop.rarity)
+                                      : const Color(0xFF2A2A3E),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
                                 ),
-                                elevation: 0,
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    isInRange ? Icons.lock_open : Icons.lock,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    isInRange ? 'Open Drop' : 'Too Far Away',
-                                    style: const TextStyle(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      isInRange ? Icons.lock_open : Icons.lock,
                                       color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      fontFamily: 'Orbitron',
+                                      size: 20,
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      isInRange ? 'Open Drop' : 'Too Far Away',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        fontFamily: 'Orbitron',
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -749,77 +769,79 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   builder: (context, value, child) => Stack(
                     alignment: Alignment.center,
                     children: [
-                      // Outer rotating circles
+                      // Background glow
+                      Container(
+                        width: 300,
+                        height: 300,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: _getRarityColor(rarity).withOpacity(0.3),
+                              blurRadius: 50 * value,
+                              spreadRadius: 20 * value,
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Rotating border
                       Transform.rotate(
-                        angle: value * 4 * pi,
+                        angle: value * 2 * pi,
                         child: Container(
                           width: 200,
                           height: 200,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            gradient: SweepGradient(
-                              colors: [
-                                _getRarityColor(rarity).withOpacity(0),
-                                _getRarityColor(rarity),
-                                _getRarityColor(rarity).withOpacity(0),
-                              ],
-                              stops: [0, value, 1],
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Inner pulsing circle
-                      Transform.scale(
-                        scale: 1 + (0.2 * sin(value * 3 * pi)),
-                        child: Container(
-                          width: 160,
-                          height: 160,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: const Color(0xFF1A1A2E),
                             border: Border.all(
-                              color: _getRarityColor(rarity),
+                              color: _getRarityColor(rarity).withOpacity(0.5),
                               width: 2,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: _getRarityColor(rarity).withOpacity(0.5),
-                                blurRadius: 20,
-                                spreadRadius: value * 5,
-                              ),
-                            ],
                           ),
                         ),
                       ),
-                      // Center icon
-                      TweenAnimationBuilder<double>(
-                        duration: const Duration(milliseconds: 1500),
-                        tween: Tween(begin: 0, end: 1),
-                        curve: Curves.elasticOut,
-                        builder: (context, scaleValue, child) =>
-                            Transform.scale(
-                          scale: scaleValue,
-                          child: Icon(
-                            Icons.card_giftcard,
-                            size: 50 + (20 * sin(value * 6 * pi)),
+                      // Main container
+                      Container(
+                        width: 180,
+                        height: 180,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFF1A1A2E),
+                          border: Border.all(
                             color: _getRarityColor(rarity),
+                            width: 2,
+                          ),
+                        ),
+                        child: Center(
+                          child: TweenAnimationBuilder<double>(
+                            duration: const Duration(milliseconds: 1000),
+                            tween: Tween(begin: 0, end: 1),
+                            curve: Curves.easeOutBack,
+                            builder: (context, scaleValue, child) =>
+                                Transform.scale(
+                              scale: scaleValue,
+                              child: Icon(
+                                Icons.card_giftcard,
+                                size: 60,
+                                color: _getRarityColor(rarity),
+                              ),
+                            ),
                           ),
                         ),
                       ),
                       // Particles
-                      ...List.generate(12, (index) {
-                        final angle = (index / 12) * 2 * pi;
-                        final radius = 150 * value;
+                      ...List.generate(8, (index) {
+                        final angle = (index / 8) * 2 * pi;
+                        final radius = 120 * value;
                         return Positioned(
-                          left: cos(angle) * radius + 100,
-                          top: sin(angle) * radius + 100,
-                          child: Transform.scale(
-                            scale: (1 - value) * 2,
+                          left: cos(angle) * radius + 150,
+                          top: sin(angle) * radius + 150,
+                          child: FadeTransition(
+                            opacity: AlwaysStoppedAnimation(1 - value),
                             child: Container(
-                              width: 8,
-                              height: 8,
+                              width: 4,
+                              height: 12,
                               decoration: BoxDecoration(
-                                shape: BoxShape.circle,
+                                borderRadius: BorderRadius.circular(2),
                                 color: _getRarityColor(rarity),
                               ),
                             ),
@@ -838,6 +860,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildFinalReward(List<dynamic> rewardsList, DropRarity rarity) {
+
     return Dialog.fullscreen(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -921,24 +944,23 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                             ),
                             const SizedBox(height: 40),
                             Container(
+                              width: MediaQuery.of(context).size.width,
                               height: 400,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(24),
-                                boxShadow: [
-                                  BoxShadow(
+                                border: Border(
+                                  top: BorderSide(
                                     color: _getRarityColor(rarity)
-                                        .withOpacity(0.3),
-                                    blurRadius: 20,
-                                    spreadRadius: 5,
+                                        .withOpacity(0.2),
                                   ),
-                                ],
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(24),
-                                child: Image.network(
-                                  card['imageUrl'],
-                                  fit: BoxFit.cover,
+                                  bottom: BorderSide(
+                                    color: _getRarityColor(rarity)
+                                        .withOpacity(0.2),
+                                  ),
                                 ),
+                              ),
+                              child: Image.network(
+                                card['imageUrl'],
+                                fit: BoxFit.cover,
                               ),
                             ),
                             const SizedBox(height: 40),
@@ -991,11 +1013,12 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3B82F6),
+                        backgroundColor: _getRarityColor(rarity),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
+                        elevation: 0,
                       ),
                       child: const Text(
                         'Confirm',
@@ -1015,7 +1038,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                       IconButton(
                         onPressed: () {
                           Navigator.pop(context);
-                          // TODO: Navigate to trade creation
                         },
                         icon: const Icon(
                           Icons.swap_horiz,
@@ -1027,7 +1049,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                       IconButton(
                         onPressed: () {
                           Navigator.pop(context);
-                          // TODO: Navigate to market listing
                         },
                         icon: const Icon(
                           Icons.sell,
