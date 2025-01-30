@@ -3,6 +3,7 @@ import 'package:pitdeck/models/listing.dart';
 import 'package:pitdeck/models/trade.dart';
 import 'package:pitdeck/providers/card_provider.dart';
 import 'package:pitdeck/providers/trade_provider.dart';
+import 'package:pitdeck/screens/my_listings_screen.dart';
 import 'package:pitdeck/screens/trades_screen.dart';
 import '../models/card.dart';
 import 'package:provider/provider.dart';
@@ -80,75 +81,6 @@ class _MarketScreenState extends State<MarketScreen>
       body: Column(
         children: [
           _buildHeader(),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            height: 56,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1A2E),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.1),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF3B82F6).withOpacity(0.1),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: TabBar(
-              controller: _tabController,
-              indicator: BoxDecoration(
-                color: const Color(0xFF3B82F6),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF3B82F6).withOpacity(0.3),
-                    blurRadius: 8,
-                    spreadRadius: -2,
-                  ),
-                ],
-              ),
-              indicatorPadding: const EdgeInsets.all(4),
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white.withOpacity(0.5),
-              labelStyle: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Orbitron',
-                letterSpacing: 1.2,
-              ),
-              unselectedLabelStyle: const TextStyle(
-                fontSize: 14,
-                fontFamily: 'Orbitron',
-                letterSpacing: 1.2,
-              ),
-              dividerColor: Colors.transparent,
-              tabs: const [
-                Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.store, size: 18),
-                      SizedBox(width: 8),
-                      Text('MARKET', style: TextStyle(fontSize: 12)),
-                    ],
-                  ),
-                ),
-                Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.swap_horiz, size: 18),
-                      SizedBox(width: 8),
-                      Text('TRADES'),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -172,38 +104,175 @@ class _MarketScreenState extends State<MarketScreen>
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 64, 16, 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A2E),
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.white.withOpacity(0.1),
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'Market',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Orbitron',
-                  letterSpacing: 1,
-                ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Market Overview',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Orbitron',
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Buy, sell, and trade racing cards',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.5),
+                      fontSize: 14,
+                      fontFamily: 'Orbitron',
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(height: 4),
-              Text(
-                'Buy, sell, and trade cards',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 12,
-                  letterSpacing: 0.5,
+              IconButton(
+                onPressed: () {
+                  _showTradeManagement();
+                },
+                icon: Icon(
+                  Icons.inventory_2_outlined,
+                  color: Colors.white.withOpacity(0.5),
                 ),
               ),
             ],
           ),
-          IconButton(
-            onPressed: _showTradeManagement,
-            icon: const Icon(
-              Icons.swap_horiz,
-              color: Colors.white,
+          const SizedBox(height: 32),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 40,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0A0A1A),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.1),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.search,
+                        color: Colors.white.withOpacity(0.5),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontFamily: 'Orbitron',
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Search by name, type...',
+                            hintStyle: TextStyle(
+                              color: Colors.white.withOpacity(0.3),
+                              fontSize: 14,
+                              fontFamily: 'Orbitron',
+                            ),
+                            border: InputBorder.none,
+                            isDense: true,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                height: 40,
+                width: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0A0A1A),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.1),
+                  ),
+                ),
+                child: IconButton(
+                  onPressed: () {}, // TODO: Add filter functionality
+                  icon: Icon(
+                    Icons.tune,
+                    color: Colors.white.withOpacity(0.5),
+                    size: 20,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0A0A1A),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.1),
+              ),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicator: const BoxDecoration(
+                color: Color(0xFF3B82F6),
+                border: Border(),
+              ),
+              dividerColor: Colors.transparent,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white.withOpacity(0.5),
+              labelStyle: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                fontFamily: 'Orbitron',
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                fontFamily: 'Orbitron',
+              ),
+              tabs: [
+                Tab(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.store_outlined, size: 16),
+                        SizedBox(width: 8),
+                        Text('MARKET'),
+                      ],
+                    ),
+                  ),
+                ),
+                Tab(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.swap_horiz, size: 16),
+                        SizedBox(width: 8),
+                        Text('TRADES'),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -465,40 +534,34 @@ class _MarketScreenState extends State<MarketScreen>
   Widget _buildBottomNavigationBar() {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF0A0A1A),
+        color: const Color(0xFF1A1A2E),
         border: Border(
           top: BorderSide(
             color: Colors.white.withOpacity(0.1),
-            width: 1,
           ),
         ),
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          child: Consumer<NavigationProvider>(
-            builder: (context, navProvider, _) {
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildNavItem(
-                      Icons.map, 'Map', navProvider.currentIndex == 0),
-                  _buildNavItem(Icons.card_membership, 'Collection',
-                      navProvider.currentIndex == 1),
-                  _buildNavItem(
-                      Icons.store, 'Market', navProvider.currentIndex == 2),
-                  _buildNavItem(
-                      Icons.person, 'Profile', navProvider.currentIndex == 3),
-                ],
-              );
-            },
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildNavItem(Icons.map_outlined, Icons.map, 'Map', false),
+              _buildNavItem(Icons.card_membership_outlined,
+                  Icons.card_membership, 'Collection', false),
+              _buildNavItem(Icons.store_outlined, Icons.store, 'Market', true),
+              _buildNavItem(
+                  Icons.person_outline, Icons.person, 'Profile', false),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, bool isSelected) {
+  Widget _buildNavItem(IconData outlinedIcon, IconData filledIcon, String label,
+      bool isSelected) {
     return GestureDetector(
       onTap: () {
         if (!isSelected) {
@@ -515,20 +578,35 @@ class _MarketScreenState extends State<MarketScreen>
       },
       behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFF3B82F6).withOpacity(0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: isSelected
+              ? Border.all(
+                  color: const Color(0xFF3B82F6).withOpacity(0.3),
+                )
+              : null,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              icon,
-              color: isSelected ? const Color(0xFF3B82F6) : Colors.grey,
+              isSelected ? filledIcon : outlinedIcon,
+              color: isSelected
+                  ? const Color(0xFF3B82F6)
+                  : Colors.white.withOpacity(0.5),
               size: 24,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? const Color(0xFF3B82F6) : Colors.grey,
+                color: isSelected
+                    ? const Color(0xFF3B82F6)
+                    : Colors.white.withOpacity(0.5),
                 fontSize: 12,
                 fontFamily: 'Orbitron',
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -1015,7 +1093,7 @@ class _MarketScreenState extends State<MarketScreen>
     );
   }
 
-  void _showMakeOfferModal(BuildContext context, TradeModel trade) {
+   void _showMakeOfferModal(BuildContext context, TradeModel trade) {
     Set<String> selectedCardIds = {};
     final TextEditingController noteController = TextEditingController();
     final TextEditingController coinsController = TextEditingController();
@@ -1027,209 +1105,315 @@ class _MarketScreenState extends State<MarketScreen>
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => Container(
           height: MediaQuery.of(context).size.height * 0.9,
-          padding: const EdgeInsets.all(16),
           decoration: const BoxDecoration(
-            color: Color(0xFF1A1A2E),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            color: Color(0xFF0A0A1A),
+            border: Border(
+              top: BorderSide(color: Colors.white10),
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Make Offer',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Orbitron',
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  _showCardSelectionModal(selectedCardIds, (selected) {
-                    setState(() {
-                      selectedCardIds = selected;
-                    });
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Select Cards to Offer',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              if (selectedCardIds.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 120,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: selectedCardIds.length,
-                    itemBuilder: (context, index) {
-                      final card =
-                          Provider.of<CardProvider>(context, listen: false)
-                              .cards
-                              .firstWhere((card) =>
-                                  card.serialNumber ==
-                                  selectedCardIds.elementAt(index));
-                      return Container(
-                        width: 80,
-                        margin: const EdgeInsets.only(right: 8),
-                        child: Column(
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Stack(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    card.imageUrl,
-                                    height: 80,
-                                    width: 80,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                Positioned(
-                                  right: 0,
-                                  top: 0,
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        selectedCardIds
-                                            .remove(card.serialNumber);
-                                      });
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.all(2),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: const Icon(
-                                        Icons.close,
-                                        color: Colors.white,
-                                        size: 16,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
                             Text(
-                              card.name,
-                              style: const TextStyle(
+                              'Make Offer',
+                              style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 12,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Orbitron',
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Select cards to trade',
+                              style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: 14,
+                                fontFamily: 'Orbitron',
+                              ),
                             ),
                           ],
                         ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0A0A1A),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white10),
-                ),
-                child: TextField(
-                  controller: coinsController,
-                  keyboardType: TextInputType.number,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    hintText: 'Additional coins (optional)',
-                    hintStyle: TextStyle(color: Colors.grey),
-                    border: InputBorder.none,
-                    prefixIcon:
-                        Icon(Icons.monetization_on, color: Colors.amber),
-                  ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: Icon(
+                            Icons.close,
+                            color: Colors.white.withOpacity(0.5),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0A0A1A),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white10),
-                ),
-                child: TextField(
-                  controller: noteController,
-                  maxLines: 3,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    hintText: 'Add a note to your offer...',
-                    hintStyle: TextStyle(color: Colors.grey),
-                    border: InputBorder.none,
+                  border: Border(
+                    top: BorderSide(color: Colors.white.withOpacity(0.1)),
+                    bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
                   ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Selected Cards',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 14,
+                            fontFamily: 'Orbitron',
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: () {
+                            _showCardSelectionModal(selectedCardIds, (selected) {
+                              setState(() {
+                                selectedCardIds = selected;
+                              });
+                            });
+                          },
+                          icon: const Icon(Icons.add_circle_outline, size: 16),
+                          label: const Text('Add Cards'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF3B82F6),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (selectedCardIds.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          border: Border.all(color: Colors.white10),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'No cards selected',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 14,
+                              fontFamily: 'Orbitron',
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      SizedBox(
+                        height: 120,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: selectedCardIds.length,
+                          itemBuilder: (context, index) {
+                            final card = Provider.of<CardProvider>(context, listen: false)
+                                .cards
+                                .firstWhere((card) => card.serialNumber == selectedCardIds.elementAt(index));
+                            return Container(
+                              width: 80,
+                              margin: const EdgeInsets.only(right: 8),
+                              child: Column(
+                                children: [
+                                  Stack(
+                                    children: [
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: Colors.white10),
+                                        ),
+                                        child: Image.network(
+                                          card.imageUrl,
+                                          height: 80,
+                                          width: 80,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                      Positioned(
+                                        right: 4,
+                                        top: 4,
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              selectedCardIds.remove(card.serialNumber);
+                                            });
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.all(2),
+                                            decoration: BoxDecoration(
+                                              color: Colors.black.withOpacity(0.5),
+                                              border: Border.all(color: Colors.white24),
+                                            ),
+                                            child: Icon(
+                                              Icons.close,
+                                              color: Colors.white.withOpacity(0.8),
+                                              size: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    card.name,
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.8),
+                                      fontSize: 12,
+                                      fontFamily: 'Orbitron',
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Additional Coins',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.5),
+                        fontSize: 14,
+                        fontFamily: 'Orbitron',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.05),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: TextField(
+                        controller: coinsController,
+                        keyboardType: TextInputType.number,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Orbitron',
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Enter amount',
+                          hintStyle: TextStyle(
+                            color: Colors.white.withOpacity(0.3),
+                          ),
+                          border: InputBorder.none,
+                          suffixIcon: Icon(
+                            Icons.monetization_on,
+                            color: Colors.white.withOpacity(0.3),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Note',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.5),
+                        fontSize: 14,
+                        fontFamily: 'Orbitron',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.05),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: TextField(
+                        controller: noteController,
+                        maxLines: 3,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Orbitron',
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Add a note (optional)',
+                          hintStyle: TextStyle(
+                            color: Colors.white.withOpacity(0.3),
+                          ),
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const Spacer(),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey.withOpacity(0.2),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                          shape: const RoundedRectangleBorder(),
                         ),
-                      ),
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: selectedCardIds.isNotEmpty
-                          ? () {
-                              // TODO: Implement make offer logic
-                              Navigator.pop(context);
-                            }
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Send Offer',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Orbitron',
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: selectedCardIds.isNotEmpty ? () {
+                          // TODO: Implement make offer logic
+                          Navigator.pop(context);
+                        } : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF3B82F6),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: const RoundedRectangleBorder(),
+                          disabledBackgroundColor: Colors.white.withOpacity(0.05),
+                        ),
+                        child: Text(
+                          'Send Offer',
+                          style: TextStyle(
+                            color: selectedCardIds.isNotEmpty ? Colors.white : Colors.white.withOpacity(0.5),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Orbitron',
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

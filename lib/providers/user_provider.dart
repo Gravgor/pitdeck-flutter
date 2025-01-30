@@ -61,6 +61,26 @@ class UserProvider with ChangeNotifier {
     });
   }
 
+  Future<void> fetchUserProfile(String userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/users/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${_user!.token}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final userData = json.decode(response.body);
+        _user = User.fromJson(userData, token: _user!.token);
+        notifyListeners();
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> fetchUserDetails(String userId, String token) async {
     try {
       final response = await http.get(

@@ -14,6 +14,8 @@ class CardProvider with ChangeNotifier {
   List<CardModel> get cards => _cards;
   Map<String, CardDetailModel> get cardDetails => _cardDetails;
 
+  bool isLoading = false;
+
   List<CardModel> getUserCards() {
     return _cards;
   }

@@ -1,3 +1,5 @@
+import 'package:flutter/src/widgets/icon_data.dart';
+
 class BadgeModel {
   final String id;
   final String name;
@@ -27,4 +29,6 @@ class BadgeModel {
           : null,
     );
   }
+
+  IconData? get icon => null;
 }
