@@ -114,79 +114,141 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   Widget _buildLoadingScreen() {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A1A),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              height: 200,
-              width: 200,
-              child: Stack(
-                alignment: Alignment.center,
-                children: List.generate(3, (index) {
-                  return AnimatedBuilder(
-                    animation: _controller,
-                    builder: (context, child) {
-                      return Transform.rotate(
-                        angle:
-                            (_controller.value * 2 * pi) + (index * pi / 1.5),
-                        child: Transform.translate(
-                          offset: Offset(
-                            sin(_controller.value * 2 * pi + index) * 30,
-                            cos(_controller.value * 2 * pi + index) * 30,
-                          ),
-                          child: Container(
-                            width: 80,
-                            height: 120,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  const Color(0xFF3B82F6).withOpacity(0.8),
-                                  const Color(0xFF1E40AF).withOpacity(0.8),
-                                ],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color:
-                                      const Color(0xFF3B82F6).withOpacity(0.3),
-                                  blurRadius: 15,
-                                  spreadRadius: -5,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                }),
-              ),
-            ),
-            const SizedBox(height: 40),
-            ShaderMask(
-              shaderCallback: (bounds) => const LinearGradient(
+      body: Stack(
+        children: [
+          Image.asset(
+            'assets/images/racing_bg.jpg',
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
+          ),
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
                 colors: [
-                  Color(0xFFEF4444),
-                  Color(0xFF3B82F6),
-                  Color(0xFFEFB344),
+                  const Color(0xFF0A0A1A).withOpacity(0.7),
+                  const Color(0xFF0A0A1A).withOpacity(0.9),
+                  const Color(0xFF0A0A1A),
                 ],
-              ).createShader(bounds),
-              child: const Text(
-                'PITDECK',
-                style: TextStyle(
-                  fontFamily: 'Orbitron',
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 4,
-                ),
               ),
             ),
-          ],
-        ),
+          ),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      width: 240,
+                      height: 240,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF4B9FFF).withOpacity(0.1),
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 200,
+                      width: 200,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: List.generate(3, (index) {
+                          return AnimatedBuilder(
+                            animation: _controller,
+                            builder: (context, child) {
+                              return Transform.rotate(
+                                angle: (_controller.value * 2 * pi) +
+                                    (index * pi / 1.5),
+                                child: Transform.translate(
+                                  offset: Offset(
+                                    sin(_controller.value * 2 * pi + index) *
+                                        30,
+                                    cos(_controller.value * 2 * pi + index) *
+                                        30,
+                                  ),
+                                  child: Container(
+                                    width: 80,
+                                    height: 120,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: const Color(0xFF4B9FFF),
+                                        width: 1,
+                                      ),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          const Color(0xFF4B9FFF)
+                                              .withOpacity(0.2),
+                                          Colors.transparent,
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 40),
+                ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [
+                      Color(0xFFFF4B5C),
+                      Color(0xFF4B9FFF),
+                    ],
+                  ).createShader(bounds),
+                  child: const Text(
+                    'PITDECK',
+                    style: TextStyle(
+                      fontFamily: 'Orbitron',
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 4,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: const Color(0xFF4B9FFF),
+                      width: 1,
+                    ),
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF4B9FFF).withOpacity(0.1),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                  child: const Text(
+                    'LOADING',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontFamily: 'Orbitron',
+                      letterSpacing: 4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

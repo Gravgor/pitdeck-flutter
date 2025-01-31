@@ -1,7 +1,7 @@
 name: pitdeck
 description: "Pitdeck App"
 publish_to: 'none'
-version: 0.5.0
+version: 0.5.1
 
 environment:
   sdk: ^3.5.1
@@ -48,4 +48,5 @@ flutter:
   assets:
     - assets/map_style.json
     - assets/markers/
+    - assets/images/
     - assets/card_images/
