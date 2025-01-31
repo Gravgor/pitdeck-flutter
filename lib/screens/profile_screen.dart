@@ -626,7 +626,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 return Container(
                   decoration: BoxDecoration(
                     color: const Color(0xFF1A1A2E),
-                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    border: Border(
+                      top: BorderSide(
+                          color: _getRarityColor(card.rarity).withOpacity(0.2)),
+                      bottom: BorderSide(
+                          color: _getRarityColor(card.rarity).withOpacity(0.2)),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
