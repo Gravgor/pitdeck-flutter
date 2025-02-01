@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pitdeck/providers/badge_provider.dart';
 import 'package:pitdeck/providers/favorite_provider.dart';
@@ -112,9 +113,9 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   }
 
   Widget _buildLoadingScreen() {
-    return Scaffold(
+    return CupertinoPageScaffold(
       backgroundColor: const Color(0xFF0A0A1A),
-      body: Stack(
+      child: Stack(
         children: [
           Image.asset(
             'assets/images/racing_bg.jpg',
@@ -152,6 +153,10 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                           width: 1,
                         ),
                       ),
+                    ),
+                    const CupertinoActivityIndicator(
+                      radius: 20,
+                      color: Color(0xFF4B9FFF),
                     ),
                     SizedBox(
                       height: 200,
@@ -214,7 +219,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                       fontFamily: 'Orbitron',
                       fontSize: 40,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: CupertinoColors.white,
                       letterSpacing: 4,
                     ),
                   ),
@@ -238,7 +243,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                   child: const Text(
                     'LOADING',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: CupertinoColors.white,
                       fontSize: 14,
                       fontFamily: 'Orbitron',
                       letterSpacing: 4,

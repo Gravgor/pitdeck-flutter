@@ -4,20 +4,172 @@ import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/auth_provider.dart';
 import 'package:pitdeck/screens/main_screen.dart';
 
-class AuthScreen extends StatefulWidget {
+class AuthScreen extends StatelessWidget {
   const AuthScreen({super.key});
 
   @override
-  State<AuthScreen> createState() => _AuthScreenState();
-}
-
-class _AuthScreenState extends State<AuthScreen> {
-  bool _isLoading = false;
-  bool _obscurePassword = true;
-
-  @override
-  void dispose() {
-    super.dispose();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0A1A),
+      body: Stack(
+        children: [
+          // Racing background image with overlay
+          Image.asset(
+            'assets/images/racing_bg.jpg',
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
+          ),
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  const Color(0xFF0A0A1A).withOpacity(0.7),
+                  const Color(0xFF0A0A1A).withOpacity(0.9),
+                  const Color(0xFF0A0A1A),
+                ],
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Spacer(),
+                  Center(
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: const Color(0xFF4B9FFF).withOpacity(0.3),
+                              width: 1,
+                            ),
+                            color: const Color(0xFF1A1A2E).withOpacity(0.5),
+                          ),
+                          child: const Icon(
+                            Icons.speed_rounded,
+                            size: 48,
+                            color: Color(0xFF4B9FFF),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        RichText(
+                          text: const TextSpan(
+                            children: [
+                              TextSpan(
+                                text: 'PIT',
+                                style: TextStyle(
+                                  color: Color(0xFFFF4B5C),
+                                  fontSize: 48,
+                                  fontFamily: 'Orbitron',
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 4,
+                                ),
+                              ),
+                              TextSpan(
+                                text: 'DECK',
+                                style: TextStyle(
+                                  color: Color(0xFF4B9FFF),
+                                  fontSize: 48,
+                                  fontFamily: 'Orbitron',
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.white24,
+                              width: 1,
+                            ),
+                          ),
+                          child: const Text(
+                            'RACING CARDS EVOLVED',
+                            style: TextStyle(
+                              color: Colors.white60,
+                              fontSize: 14,
+                              fontFamily: 'Orbitron',
+                              letterSpacing: 2,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  _buildSocialLogin(context),
+                  const SizedBox(height: 32),
+                  Center(
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.05),
+                            border: Border.all(
+                              color: Colors.white24,
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.lock_outline,
+                                size: 16,
+                                color: Colors.white.withOpacity(0.5),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Secure Authentication',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.5),
+                                  fontSize: 12,
+                                  fontFamily: 'Orbitron',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'By continuing, you agree to our Terms of Service\nand Privacy Policy',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 12,
+                            fontFamily: 'Orbitron',
+                            height: 1.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSocialLogin(BuildContext context) {
@@ -26,17 +178,16 @@ class _AuthScreenState extends State<AuthScreen> {
       children: [
         if (Platform.isIOS)
           _buildSocialButton(
-            text: 'Continue with Apple',
+            text: 'Sign in with Apple',
             icon: Icons.apple,
             onPressed: () => _handleAppleSignIn(context),
           ),
-        if (!Platform.isIOS) ...[
+        if (!Platform.isIOS)
           _buildSocialButton(
-            text: 'Continue with Google',
+            text: 'Sign in with Google',
             icon: Icons.g_mobiledata,
             onPressed: () => _handleGoogleSignIn(context),
           ),
-        ],
       ],
     );
   }
@@ -55,7 +206,7 @@ class _AuthScreenState extends State<AuthScreen> {
           end: Alignment.bottomRight,
           colors: [
             const Color(0xFF4B9FFF).withOpacity(0.2),
-            Colors.transparent,
+            const Color(0xFF4B9FFF).withOpacity(0.1),
           ],
         ),
       ),
@@ -86,155 +237,6 @@ class _AuthScreenState extends State<AuthScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
-      body: Stack(
-        children: [
-          Image.asset(
-            'assets/images/racing_bg.jpg',
-            width: double.infinity,
-            height: double.infinity,
-            fit: BoxFit.cover,
-          ),
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color(0xFF0A0A1A).withOpacity(0.7),
-                  const Color(0xFF0A0A1A).withOpacity(0.9),
-                  const Color(0xFF0A0A1A),
-                ],
-              ),
-            ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                children: [
-                  const Spacer(),
-                  Center(
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xFF4B9FFF),
-                              width: 1,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xFFFF4B5C),
-                              width: 1,
-                            ),
-                          ),
-                        ),
-                        const Icon(
-                          Icons.speed_rounded,
-                          size: 48,
-                          color: Color(0xFF4B9FFF),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  ShaderMask(
-                    shaderCallback: (bounds) => const LinearGradient(
-                      colors: [Color(0xFFFF4B5C), Color(0xFF4B9FFF)],
-                    ).createShader(bounds),
-                    child: const Text(
-                      'PITDECK',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 56,
-                        fontFamily: 'Orbitron',
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 4,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                    decoration: BoxDecoration(
-                      border:
-                          Border.all(color: const Color(0xFF4B9FFF), width: 1),
-                      gradient: LinearGradient(
-                        colors: [
-                          const Color(0xFF4B9FFF).withOpacity(0.1),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                    child: const Text(
-                      'RACING CARDS EVOLVED',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontFamily: 'Orbitron',
-                        letterSpacing: 2,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  _buildSocialLogin(context),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 4,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4B9FFF).withOpacity(0.5),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Secure Authentication',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
-                          fontSize: 12,
-                          fontFamily: 'Orbitron',
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 4,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4B9FFF).withOpacity(0.5),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
