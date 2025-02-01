@@ -107,7 +107,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
           ? _buildLoadingScreen()
           : widget.isLoggedIn && widget.token != null
               ? const MainScreen()
-              : const AuthScreen(),
+              : const MainScreen(),
     );
   }
 
