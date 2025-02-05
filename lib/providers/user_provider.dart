@@ -135,10 +135,17 @@ class UserProvider with ChangeNotifier {
     }
   }
 
+
   Future<void> clearUser() async {
     _socket?.dispose();
     _user = null;
     await DefaultCacheManager().removeFile('user_details');
+    notifyListeners();
+  }
+
+  Future<void> updateUserBio(String newBio) async {
+    // Add your API call here if needed
+    _user = _user?.copyWith(bio: newBio);
     notifyListeners();
   }
 

@@ -59,21 +59,25 @@ class User {
   final DateTime updatedAt;
   final DateTime? lastLogin;
   final DateTime? lastActive;
+  final String? backgroundImage;
   final String token;
   final List<UserLocation> locations;
+
 
   User({
     required this.id,
     this.name,
     this.email,
     this.emailVerified,
-    this.image,
+    this.image, 
+    this.backgroundImage,
     this.coins = 1000,
     this.level = 1,
     this.xp = 0,
     this.totalXp = 0,
     this.bio = '',
     this.isPremium = false,
+
     this.role = 'user',
     required this.createdAt,
     required this.updatedAt,
@@ -92,6 +96,7 @@ class User {
           ? DateTime.parse(json['emailVerified'].toString())
           : null,
       image: json['image'] ?? '',
+      backgroundImage: json['backgroundImage'] ?? '',
       coins: json['coins'] ?? 1000,
       level: json['level'] ?? 1,
       xp: json['xp'] ?? 0,
@@ -99,6 +104,7 @@ class User {
       bio: json['bio'] ?? '',
       role: json['role'] ?? 'user',
       isPremium: json['isPremium'] ?? false,
+
       createdAt: DateTime.parse(json['createdAt'].toString()),
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'].toString())
@@ -124,6 +130,7 @@ class User {
       'email': email,
       'emailVerified': emailVerified?.toIso8601String(),
       'image': image,
+      'backgroundImage': backgroundImage,
       'coins': coins,
       'level': level,
       'xp': xp,
@@ -133,6 +140,7 @@ class User {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'lastLogin': lastLogin?.toIso8601String(),
+
       'lastActive': lastActive?.toIso8601String(),
       'token': token,
       'locations': locations.map((loc) => loc.toJson()).toList(),
