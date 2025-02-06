@@ -49,7 +49,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -518,11 +517,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 16),
           Row(
             children: [
-              _buildStatCard('Total Cards', '156', Icons.style),
+              _buildStatCard(
+                  'Total Cards',
+                  Provider.of<CardProvider>(context).cards.length.toString(),
+                  Icons.style),
               const SizedBox(width: 12),
-              _buildStatCard('Legendary', '3', Icons.auto_awesome),
+              _buildStatCard(
+                  'Legendary',
+                  Provider.of<CardProvider>(context)
+                      .cards
+                      .where((card) => card.rarity == 'Legendary')
+                      .length
+                      .toString(),
+                  Icons.auto_awesome),
               const SizedBox(width: 12),
-              _buildStatCard('Series', '12', Icons.category),
+              _buildStatCard(
+                  'Series',
+                  Provider.of<CardProvider>(context)
+                      .cards
+                      .map((c) => c.series)
+                      .toSet()
+                      .length
+                      .toString(),
+                  Icons.category),
             ],
           ),
           const SizedBox(height: 24),
