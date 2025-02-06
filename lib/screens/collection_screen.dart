@@ -33,7 +33,8 @@ class _CollectionScreenState extends State<CollectionScreen> {
   @override
   void initState() {
     super.initState();
-    _filteredCards = List<CardModel>.from(_cards);
+    final cardProvider = Provider.of<CardProvider>(context, listen: false);
+    _filteredCards = List<CardModel>.from(cardProvider.cards);
     _fetchCards();
     _startPeriodicRefresh();
     _priceFocusNode = FocusNode();
@@ -416,14 +417,19 @@ class _CollectionScreenState extends State<CollectionScreen> {
   }
 
   void _applyFilters() {
+    final cardProvider = Provider.of<CardProvider>(context, listen: false);
     setState(() {
-      _filteredCards = _cards.where((card) {
-        final matchesRarity = _selectedRarities.isEmpty ||
-            _selectedRarities.contains(card.rarity.toUpperCase());
-        final matchesType = _selectedTypes.isEmpty ||
-            _selectedTypes.contains(card.type.toUpperCase());
-        return matchesRarity && matchesType;
-      }).toList();
+      if (_selectedRarities.isEmpty && _selectedTypes.isEmpty) {
+        _filteredCards = List<CardModel>.from(cardProvider.cards);
+      } else {
+        _filteredCards = cardProvider.cards.where((card) {
+          final matchesRarity = _selectedRarities.isEmpty ||
+              _selectedRarities.contains(card.rarity.toUpperCase());
+          final matchesType = _selectedTypes.isEmpty ||
+              _selectedTypes.contains(card.type.toUpperCase());
+          return matchesRarity && matchesType;
+        }).toList();
+      }
     });
   }
 
