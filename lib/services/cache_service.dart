@@ -14,8 +14,9 @@ class CacheService {
 
   CacheService._internal();
 
-  Future<void> initialize() async {
-    _prefs = await SharedPreferences.getInstance();
+  Future<SharedPreferences> initialize() async {
+    _prefs ??= await SharedPreferences.getInstance();
+    return _prefs!;
   }
 
   Future<void> cacheDrops(Map<String, DropModel> drops) async {
