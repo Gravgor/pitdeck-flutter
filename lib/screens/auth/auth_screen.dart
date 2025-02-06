@@ -3,7 +3,6 @@ import 'package:pitdeck/screens/main_wrapper.dart';
 import 'dart:io' show Platform;
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/auth_provider.dart';
-import 'package:pitdeck/screens/main_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -12,34 +11,41 @@ class AuthScreen extends StatefulWidget {
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> {
-  final bool _isLoading = false;
-  final bool _obscurePassword = true;
+class _AuthScreenState extends State<AuthScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+      ),
+    );
+
+    _slideAnimation = Tween<double>(begin: 50.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.2, 0.7, curve: Curves.easeOut),
+      ),
+    );
+
+    _controller.forward();
+  }
 
   @override
   void dispose() {
+    _controller.dispose();
     super.dispose();
-  }
-
-  Widget _buildSocialLogin(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (Platform.isIOS)
-          _buildSocialButton(
-            text: 'Continue with Apple',
-            icon: Icons.apple,
-            onPressed: () => _handleAppleSignIn(context),
-          ),
-        if (!Platform.isIOS) ...[
-          _buildSocialButton(
-            text: 'Continue with Google',
-            icon: Icons.g_mobiledata,
-            onPressed: () => _handleGoogleSignIn(context),
-          ),
-        ],
-      ],
-    );
   }
 
   Widget _buildSocialButton({
@@ -50,42 +56,53 @@ class _AuthScreenState extends State<AuthScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFF4B9FFF), width: 1),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF4B9FFF).withOpacity(0.2),
-            Colors.transparent,
+            const Color(0xFF4B9FFF).withOpacity(0.15),
+            const Color(0xFF4B9FFF).withOpacity(0.05),
           ],
         ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF4B9FFF).withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: TextButton(
-        onPressed: onPressed,
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          backgroundColor: Colors.transparent,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 24,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  text,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Orbitron',
+                    letterSpacing: 1,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Text(
-              text,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Orbitron',
-                letterSpacing: 1,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -122,39 +139,66 @@ class _AuthScreenState extends State<AuthScreen> {
               child: Column(
                 children: [
                   const Spacer(),
-                  Center(
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xFF4B9FFF),
-                              width: 1,
+                  AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, child) {
+                      return Opacity(
+                        opacity: _fadeAnimation.value,
+                        child: Transform.translate(
+                          offset: Offset(0, _slideAnimation.value),
+                          child: Center(
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Container(
+                                  width: 120,
+                                  height: 120,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: const Color(0xFF4B9FFF),
+                                      width: 1,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF4B9FFF)
+                                            .withOpacity(0.2),
+                                        blurRadius: 20,
+                                        spreadRadius: 5,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  width: 100,
+                                  height: 100,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: const Color(0xFFFF4B5C),
+                                      width: 1,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFFFF4B5C)
+                                            .withOpacity(0.2),
+                                        blurRadius: 20,
+                                        spreadRadius: 5,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.speed_rounded,
+                                  size: 48,
+                                  color: Color(0xFF4B9FFF),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                        Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xFFFF4B5C),
-                              width: 1,
-                            ),
-                          ),
-                        ),
-                        const Icon(
-                          Icons.speed_rounded,
-                          size: 48,
-                          color: Color(0xFF4B9FFF),
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 32),
                   ShaderMask(
@@ -177,6 +221,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                     decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
                       border:
                           Border.all(color: const Color(0xFF4B9FFF), width: 1),
                       gradient: LinearGradient(
@@ -185,6 +230,13 @@ class _AuthScreenState extends State<AuthScreen> {
                           Colors.transparent,
                         ],
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF4B9FFF).withOpacity(0.1),
+                          blurRadius: 20,
+                          spreadRadius: 1,
+                        ),
+                      ],
                     ),
                     child: const Text(
                       'RACING CARDS EVOLVED',
@@ -197,7 +249,23 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                   ),
                   const Spacer(),
-                  _buildSocialLogin(context),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (Platform.isIOS)
+                        _buildSocialButton(
+                          text: 'Continue with Apple',
+                          icon: Icons.apple,
+                          onPressed: () => _handleAppleSignIn(context),
+                        ),
+                      if (!Platform.isIOS)
+                        _buildSocialButton(
+                          text: 'Continue with Google',
+                          icon: Icons.g_mobiledata,
+                          onPressed: () => _handleGoogleSignIn(context),
+                        ),
+                    ],
+                  ),
                   const SizedBox(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -248,7 +316,6 @@ class _AuthScreenState extends State<AuthScreen> {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const MainWrapper()),
       );
-
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
