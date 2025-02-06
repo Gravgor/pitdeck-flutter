@@ -3,13 +3,8 @@ import 'package:pitdeck/models/card.dart';
 import 'package:pitdeck/screens/pack/packs_screen.dart';
 import 'package:pitdeck/utils/color_utils.dart';
 import 'package:provider/provider.dart';
-import '../providers/user_provider.dart';
-import '../providers/navigation_provider.dart';
 import '../providers/card_provider.dart';
 import 'dart:async';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
 import '../widgets/collection/trade_modal.dart';
 import '../widgets/collection/list_for_sale_modal.dart';
 

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:pitdeck/utils/color_utils.dart';
 import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
@@ -196,7 +197,11 @@ class _PacksScreenState extends State<PacksScreen>
             width: 180,
             height: 260,
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1A2E),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: const Color(0xFF3B82F6).withOpacity(0.3),
@@ -253,11 +258,24 @@ class _PacksScreenState extends State<PacksScreen>
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF3B82F6).withOpacity(0.3),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF1A1A2E),
+            ColorUtils.getRarityColor(pack.guaranteedRarities.first)
+                .withOpacity(0.05),
+            const Color(0xFF1A1A2E),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Stack(
         children: [
@@ -313,14 +331,14 @@ class _PacksScreenState extends State<PacksScreen>
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
+                            horizontal: 16,
+                            vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFD700).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
+                            color: const Color(0xFFFFB800).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: const Color(0xFFFFD700).withOpacity(0.3),
+                              color: const Color(0xFFFFB800).withOpacity(0.3),
                             ),
                           ),
                           child: Row(
@@ -328,14 +346,14 @@ class _PacksScreenState extends State<PacksScreen>
                             children: [
                               const Icon(
                                 Icons.monetization_on,
-                                color: Color(0xFFFFD700),
+                                color: Color(0xFFFFB800),
                                 size: 16,
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 8),
                               Text(
                                 _formatNumber(pack.price),
                                 style: const TextStyle(
-                                  color: Color(0xFFFFD700),
+                                  color: Color(0xFFFFB800),
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   fontFamily: 'Orbitron',
@@ -359,7 +377,7 @@ class _PacksScreenState extends State<PacksScreen>
                       spacing: 8,
                       runSpacing: 8,
                       children: pack.guaranteedRarities.map((rarity) {
-                        final color = _getRarityColor(rarity);
+                        final color = ColorUtils.getRarityColor(rarity);
                         return Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -376,11 +394,11 @@ class _PacksScreenState extends State<PacksScreen>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                Icons.star,
+                                Icons.auto_awesome,
                                 color: color,
                                 size: 16,
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 8),
                               Text(
                                 rarity,
                                 style: TextStyle(
@@ -467,155 +485,66 @@ class _PacksScreenState extends State<PacksScreen>
     );
   }
 
-  Color _getRarityColor(String rarity) {
-    switch (rarity) {
-      case 'COMMON':
-        return Colors.grey;
-      case 'UNCOMMON':
-        return Colors.green;
-      case 'RARE':
-        return Colors.blue;
-      case 'EPIC':
-        return Colors.purple;
-      case 'LEGENDARY':
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
+      backgroundColor: const Color(0xFF0F0F1E),
       body: SafeArea(
         child: Column(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A2E),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 8,
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0A0A1A),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: const Color(0xFF3B82F6).withOpacity(0.3),
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      const Text(
-                        'Card Packs',
-                        style: TextStyle(
-                          fontFamily: 'Orbitron',
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const Spacer(),
-                      Consumer<UserProvider>(
-                        builder: (context, userProvider, _) => Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0A0A1A),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: const Color(0xFFFFD700).withOpacity(0.3),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.monetization_on,
-                                color: Color(0xFFFFD700),
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                _formatNumber(userProvider.user?.coins ?? 0),
-                                style: const TextStyle(
-                                  color: Color(0xFFFFD700),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'Orbitron',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0A0A1A),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: const Color(0xFF3B82F6).withOpacity(0.3),
-                      ),
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        hintText: 'Search packs...',
-                        hintStyle: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
-                        ),
-                        prefixIcon: Icon(
-                          Icons.search,
-                          color: Colors.white.withOpacity(0.5),
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildHeader(),
             Expanded(
-              child: _isLoading
-                  ? _buildLoadingState()
-                  : ListView.builder(
-                      itemCount: _filteredPacks.length,
-                      itemBuilder: (context, index) =>
-                          _buildPackCard(_filteredPacks[index]),
-                    ),
+              child: _isLoading ? _buildLoadingState() : _buildPacksList(),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          ),
+          const SizedBox(width: 16),
+          const Text(
+            'CARD PACKS',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPacksList() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _filteredPacks.length,
+      itemBuilder: (context, index) => _buildPackCard(_filteredPacks[index]),
     );
   }
 }
