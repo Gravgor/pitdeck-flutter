@@ -8,14 +8,9 @@ import 'dart:async';
 import 'package:pitdeck/config/mapbox_config.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:permission_handler/permission_handler.dart';
-import 'package:pitdeck/screens/collection_screen.dart';
-import 'package:pitdeck/screens/trades/market_screen.dart';
-import 'package:pitdeck/screens/pack/packs_screen.dart';
 import 'package:pitdeck/services/cache_service.dart';
-import 'package:pitdeck/services/socket_service.dart';
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
-import 'package:pitdeck/providers/navigation_provider.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:pitdeck/models/drop.dart';
@@ -52,9 +47,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   final baseUrl = 'https://api.pitdeck.app/api';
 
   StreamSubscription<geo.Position>? _locationStreamSubscription;
-
-  CircleAnnotationManager? _circleAnnotationManager;
-  CircleAnnotation? _userRadiusCircle;
 
   @override
   void initState() {
@@ -125,7 +117,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         _userLocation = position;
       });
 
-      await _addRadiusCircle(Position(position.longitude, position.latitude));
+
 
       _socket?.emit('location:update', {
         'latitude': position.latitude,
@@ -289,7 +281,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           _userLocation = position;
         });
 
-        _addRadiusCircle(Position(position.longitude, position.latitude));
 
         _socket?.emit('location:update', {
           'latitude': position.latitude,
@@ -326,38 +317,12 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   Future<void> _onMapCreated(MapboxMap mapboxMap) async {
     _mapboxMap = mapboxMap;
     await _enableLocationComponent();
-    _circleAnnotationManager =
-        await mapboxMap.annotations.createCircleAnnotationManager();
     final pointAnnotationManager =
         await mapboxMap.annotations.createPointAnnotationManager();
     _markerManager = MarkerManager(pointAnnotationManager, _showDropModal);
     await _getCurrentLocation();
   }
 
-  Future<void> _addRadiusCircle(Position position) async {
-    if (_circleAnnotationManager == null) return;
-
-    // Remove existing circle if any
-    if (_userRadiusCircle != null) {
-      await _circleAnnotationManager?.delete(_userRadiusCircle!);
-    }
-
-    final auth = Provider.of<UserProvider>(context, listen: false);
-    final isPremium = auth.user?.isPremium ?? false;
-    final radiusMeters = isPremium ? 500.0 : 100.0;
-    _userRadiusCircle = await _circleAnnotationManager?.create(
-      CircleAnnotationOptions(
-        geometry: Point(
-          coordinates: Position(position.lng, position.lat),
-        ),
-        circleRadius: radiusMeters,
-        circleColor: const Color(0xFF4B9FFF).withOpacity(0.1).value,
-        circleStrokeWidth: 2.0,
-        circleStrokeColor: const Color(0xFF4B9FFF).value,
-        circleStrokeOpacity: 0.8,
-      ),
-    );
-  }
 
   void _showDropModal(DropModel drop) {
     if (_isDropModalOpen) return;
