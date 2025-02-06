@@ -64,7 +64,12 @@ class MyApp extends StatelessWidget {
             if (snapshot.connectionState == ConnectionState.done) {
               final isLoggedIn = snapshot.data?.getBool('isLoggedIn') ?? false;
               final token = snapshot.data?.getString('token');
-              return isLoggedIn ? const MainWrapper() : const AuthScreen();
+              if (isLoggedIn && token != null) {
+                return const MainWrapper();
+              } else {
+                return const AuthScreen();
+              }
+
             }
             return const Scaffold(
               backgroundColor: Color(0xFF040412),

@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:pitdeck/screens/trades/market_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/navigation_provider.dart';
+import 'package:pitdeck/providers/user_provider.dart';
+import 'package:pitdeck/providers/card_provider.dart';
+import 'package:pitdeck/providers/trade_provider.dart';
+import 'package:pitdeck/providers/favorite_provider.dart';
+import 'package:pitdeck/providers/badge_provider.dart';
+import 'package:pitdeck/providers/scroll_notifier.dart';
 import 'package:pitdeck/screens/main_screen.dart';
 import 'package:pitdeck/screens/collection_screen.dart';
 import 'package:pitdeck/screens/profile_screen.dart';
@@ -12,21 +18,32 @@ class MainWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<NavigationProvider>(
-      builder: (context, navigationProvider, _) {
-        return Scaffold(
-          body: IndexedStack(
-            index: navigationProvider.currentIndex,
-            children: const [
-              MainScreen(),
-              CollectionScreen(),
-              MarketScreen(),
-              ProfileScreen(),
-            ],
-          ),
-          bottomNavigationBar: const GlobalBottomNavigationBar(),
-        );
-      },
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => CardProvider()),
+        ChangeNotifierProvider(create: (_) => TradeProvider()),
+        ChangeNotifierProvider(create: (_) => FavoriteProvider()),
+        ChangeNotifierProvider(create: (_) => BadgeProvider()),
+        ChangeNotifierProvider(create: (_) => ScrollNotifier()),
+      ],
+
+      child: Consumer<NavigationProvider>(
+        builder: (context, navigationProvider, _) {
+          return Scaffold(
+            body: IndexedStack(
+              index: navigationProvider.currentIndex,
+              children: const [
+                MainScreen(),
+                CollectionScreen(),
+                MarketScreen(),
+                ProfileScreen(),
+              ],
+            ),
+            bottomNavigationBar: const GlobalBottomNavigationBar(),
+          );
+        },
+      ),
     );
   }
 }

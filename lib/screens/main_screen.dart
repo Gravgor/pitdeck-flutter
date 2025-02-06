@@ -57,7 +57,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       _initializeSocket();
       _initializeUserSocket();
     });
-    print('Current cached drops: ${_cachedDrops.length}');
   }
 
   @override
@@ -149,8 +148,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = Provider.of<UserProvider>(context, listen: false);
       final token = auth.user?.token;
-
-      print('Initializing socket with token: ${token?.substring(0, 10)}...');
 
       if (token == null) {
         print('Socket error: No auth token');
