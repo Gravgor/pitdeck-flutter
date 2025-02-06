@@ -135,10 +135,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: const Icon(
-                                    Icons.person,
-                                    color: Colors.red,
-                                    size: 40,
+                                  child: Image.network(
+                                    Provider.of<UserProvider>(context)
+                                            .user
+                                            ?.image ??
+                                        'https://via.placeholder.com/150',
+
                                   ),
                                 ),
                                 const SizedBox(width: 16),
