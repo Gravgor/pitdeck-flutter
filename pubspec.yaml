@@ -2,7 +2,7 @@ name: pitdeck
 description: "Pitdeck App"
 publish_to: 'none'
 version: 0.5.455
-
+  
 environment:
   sdk: ^3.5.1
 

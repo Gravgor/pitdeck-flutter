@@ -343,6 +343,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         child: Dialog(
           backgroundColor: Colors.transparent,
           insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+
           child: TweenAnimationBuilder<double>(
             duration: const Duration(milliseconds: 500),
             tween: Tween(begin: 0.8, end: 1.0),
@@ -672,27 +673,44 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         Navigator.pop(context);
         _cachedDrops.remove(drop.id);
         _markerManager?.removeMarker(drop.id);
+        setState(() {
+          _isDropModalOpen = false;
+        });
         _showRewardsDialog(rewards, drop.rarity);
+
       } else if (response.statusCode == 403) {
+        setState(() {
+          _isDropModalOpen = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('You are too far away from this drop')),
         );
       } else if (response.statusCode == 500) {
-        print(response.body);
+        setState(() {
+          _isDropModalOpen = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('You are too far away from this drop')),
         );
       } else {
+        setState(() {
+          _isDropModalOpen = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error claiming drop')),
         );
       }
+
     } catch (e) {
       if (!mounted) return;
+      setState(() {
+        _isDropModalOpen = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error claiming drop: $e')),
       );
     }
+
   }
 
   void _showRewardsDialog(Map<String, dynamic> rewards, DropRarity rarity) {

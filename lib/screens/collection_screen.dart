@@ -22,18 +22,18 @@ class _CollectionScreenState extends State<CollectionScreen> {
   List<CardModel> _cards = [];
   String? _error;
   final TextEditingController _searchController = TextEditingController();
-  List<CardModel> _filteredCards = [];
-  final Set<String> _selectedRarities = {};
-  final Set<String> _selectedTypes = {};
+  Set<String> _selectedRarities = {};
+  Set<String> _selectedTypes = {};
   String _searchQuery = '';
   String _selectedFilter = 'all';
   bool _isCardModalOpen = false;
   late FocusNode _priceFocusNode;
+  List<CardModel> _filteredCards = [];
 
   @override
   void initState() {
     super.initState();
-    _filteredCards = _cards;
+    _filteredCards = List<CardModel>.from(_cards);
     _fetchCards();
     _startPeriodicRefresh();
     _priceFocusNode = FocusNode();
@@ -418,38 +418,11 @@ class _CollectionScreenState extends State<CollectionScreen> {
   void _applyFilters() {
     setState(() {
       _filteredCards = _cards.where((card) {
-        // Apply search filter
-        if (_searchQuery.isNotEmpty) {
-          final searchLower = _searchQuery.toLowerCase();
-          final matchesSearch = card.name.toLowerCase().contains(searchLower) ||
-              card.type.toLowerCase().contains(searchLower) ||
-              card.series.toLowerCase().contains(searchLower) ||
-              card.rarity.toLowerCase().contains(searchLower) ||
-              card.serialNumber.toLowerCase().contains(searchLower);
-          if (!matchesSearch) return false;
-        }
-
-        // Apply rarity filter
-        if (_selectedRarities.isNotEmpty &&
-            !_selectedRarities.contains(card.rarity)) {
-          return false;
-        }
-
-        // Apply type filter
-        if (_selectedTypes.isNotEmpty && !_selectedTypes.contains(card.type)) {
-          return false;
-        }
-
-        // Apply status filter
-        switch (_selectedFilter) {
-          case 'trade':
-            return card.isForTrade;
-          case 'market':
-            return card.isForSale;
-          case 'all':
-          default:
-            return true;
-        }
+        final matchesRarity = _selectedRarities.isEmpty ||
+            _selectedRarities.contains(card.rarity.toUpperCase());
+        final matchesType = _selectedTypes.isEmpty ||
+            _selectedTypes.contains(card.type.toUpperCase());
+        return matchesRarity && matchesType;
       }).toList();
     });
   }
@@ -674,9 +647,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
         ),
-        itemCount: filteredCards.length,
+        itemCount: _filteredCards.length,
         itemBuilder: (context, index) {
-          final card = filteredCards[index];
+          final card = _filteredCards[index];
           return Stack(
             children: [
               GestureDetector(
@@ -826,7 +799,6 @@ class _CollectionScreenState extends State<CollectionScreen> {
       ),
     );
   }
-
 
   void _showCardDetails(BuildContext context, String cardId) async {
     if (_isCardModalOpen) return;
@@ -983,16 +955,16 @@ class _CollectionScreenState extends State<CollectionScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             ...[
-                            Text(
-                              cardDetails.description!,
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.7),
-                                fontSize: 16,
-                                height: 1.5,
+                              Text(
+                                cardDetails.description!,
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: 16,
+                                  height: 1.5,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 24),
-                          ],
+                              const SizedBox(height: 24),
+                            ],
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
@@ -1016,18 +988,18 @@ class _CollectionScreenState extends State<CollectionScreen> {
                                       cardDetails.year.toString(),
                                       Icons.calendar_month),
                                   ...[
-                                  const Divider(
-                                      color: Colors.white10, height: 24),
-                                  _buildDetailRow('Edition',
-                                      cardDetails.edition!, Icons.book),
-                                ],
+                                    const Divider(
+                                        color: Colors.white10, height: 24),
+                                    _buildDetailRow('Edition',
+                                        cardDetails.edition!, Icons.book),
+                                  ],
                                 ],
                               ),
                             ),
                             ...[
-                            const SizedBox(height: 24),
-                            _buildCardStats(cardDetails.stats!),
-                          ],
+                              const SizedBox(height: 24),
+                              _buildCardStats(cardDetails.stats!),
+                            ],
                             const SizedBox(height: 32),
                             if (!cardDetails.isForSale &&
                                 !cardDetails.isForTrade)
@@ -2716,7 +2688,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: ['F1_DRIVER', 'F1_TEAM', 'F1_TRACK', 'F1_MOMENT']
+                children: ['F1_DRIVER', 'CIRCUIT', 'HISTORIC_MOMENT', 'TEAM']
                     .map((type) => FilterChip(
                           selected: _selectedTypes.contains(type),
                           onSelected: (selected) {
