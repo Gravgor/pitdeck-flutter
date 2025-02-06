@@ -97,7 +97,6 @@ class _MarketScreenState extends State<MarketScreen>
         backgroundColor: Colors.blue,
         child: const Icon(Icons.add, color: Colors.white),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
@@ -228,10 +227,12 @@ class _MarketScreenState extends State<MarketScreen>
             ),
             child: TabBar(
               controller: _tabController,
-              indicator: const BoxDecoration(
-                color: Color(0xFF3B82F6),
-                border: Border(),
+              indicator: BoxDecoration( // Modified indicator
+                color: const Color(0xFF3B82F6),
+                border: const Border(),
+                borderRadius: BorderRadius.zero, // Ensure no rounded corners
               ),
+
               dividerColor: Colors.transparent,
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white.withOpacity(0.5),
@@ -245,35 +246,48 @@ class _MarketScreenState extends State<MarketScreen>
                 fontWeight: FontWeight.w500,
                 fontFamily: 'Orbitron',
               ),
-              tabs: [
+                tabs: [
                 Tab(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.store_outlined, size: 16),
-                        SizedBox(width: 8),
-                        Text('MARKET'),
-                      ],
+                  child: LayoutBuilder( // Use LayoutBuilder to get available width
+                    builder: (context, constraints) => Container(
+
+                      width: constraints.maxWidth, // Set width to available width
+                      alignment: Alignment.center, // Center content within full width
+                      padding: const EdgeInsets.symmetric(horizontal: 16), // Keep existing padding
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center, // Center Row content
+                        children: [
+                          Icon(Icons.store_outlined, size: 16),
+                          SizedBox(width: 8),
+                          Text('MARKET'),
+                        ],
+                      ),
                     ),
                   ),
                 ),
                 Tab(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.swap_horiz, size: 16),
-                        SizedBox(width: 8),
-                        Text('TRADES'),
-                      ],
+                  child: LayoutBuilder( // Use LayoutBuilder for the second tab as well
+                    builder: (context, constraints) => Container(
+
+                      width: constraints.maxWidth, // Set width to available width
+                      alignment: Alignment.center, // Center content
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center, // Center Row content
+                        children: [
+                          Icon(Icons.swap_horiz, size: 16),
+                          SizedBox(width: 8),
+                          Text('TRADES'),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
+
           ),
         ],
       ),
@@ -528,93 +542,6 @@ class _MarketScreenState extends State<MarketScreen>
           onMakeOffer: _showMakeOfferModal,
         );
       },
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
-        border: Border(
-          top: BorderSide(
-            color: Colors.white.withOpacity(0.1),
-          ),
-        ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildNavItem(Icons.map_outlined, Icons.map, 'Map', false),
-              _buildNavItem(Icons.card_membership_outlined,
-                  Icons.card_membership, 'Collection', false),
-              _buildNavItem(Icons.store_outlined, Icons.store, 'Market', true),
-              _buildNavItem(
-                  Icons.person_outline, Icons.person, 'Profile', false),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData outlinedIcon, IconData filledIcon, String label,
-      bool isSelected) {
-    return GestureDetector(
-      onTap: () {
-        if (!isSelected) {
-          final int index = label == 'Collection'
-              ? 1
-              : label == 'Market'
-                  ? 2
-                  : label == 'Profile'
-                      ? 3
-                      : 0;
-          Provider.of<NavigationProvider>(context, listen: false)
-              .changePage(index);
-        }
-      },
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFF3B82F6).withOpacity(0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: isSelected
-              ? Border.all(
-                  color: const Color(0xFF3B82F6).withOpacity(0.3),
-                )
-              : null,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isSelected ? filledIcon : outlinedIcon,
-              color: isSelected
-                  ? const Color(0xFF3B82F6)
-                  : Colors.white.withOpacity(0.5),
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected
-                    ? const Color(0xFF3B82F6)
-                    : Colors.white.withOpacity(0.5),
-                fontSize: 12,
-                fontFamily: 'Orbitron',
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 

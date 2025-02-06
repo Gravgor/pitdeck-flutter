@@ -35,6 +35,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   static final Map<String, DropModel> _cachedDrops = {};
   final CacheService _cacheService = CacheService();
   bool _isInitialLoad = true;
+  bool _isDropModalOpen = false;
 
   MapboxMap? _mapboxMap;
   MarkerManager? _markerManager;
@@ -343,7 +344,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
     final auth = Provider.of<UserProvider>(context, listen: false);
     final isPremium = auth.user?.isPremium ?? false;
-    final radiusMeters = isPremium ? 1500.0 : 100.0;
+    final radiusMeters = isPremium ? 500.0 : 100.0;
     _userRadiusCircle = await _circleAnnotationManager?.create(
       CircleAnnotationOptions(
         geometry: Point(
@@ -359,11 +360,16 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   }
 
   void _showDropModal(DropModel drop) {
+    if (_isDropModalOpen) return;
+    setState(() {
+      _isDropModalOpen = true;
+    });
     final newDrop = _markerManager?.getDropForId(drop.id);
     final distance = _calculateDistance(newDrop!);
     final auth = Provider.of<UserProvider>(context, listen: false);
     final isPremium = auth.user?.isPremium ?? false;
-    final maxRange = isPremium ? 1500.0 : 100.0;
+
+    final maxRange = isPremium ? 500.0 : 100.0;
     final isInRange = distance <= maxRange;
 
     showDialog(
@@ -508,10 +514,11 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                               ),
                               if (!isPremium &&
                                   distance > 100 &&
-                                  distance <= 1500) ...[
+                                  distance <= 500) ...[
                                 const SizedBox(height: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
+
                                     horizontal: 12,
                                     vertical: 6,
                                   ),
@@ -1137,7 +1144,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           _buildEventBanner(),
         ],
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
@@ -1290,93 +1296,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   fontFamily: 'Orbitron',
                   fontWeight: FontWeight.bold,
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
-        border: Border(
-          top: BorderSide(
-            color: Colors.white.withOpacity(0.1),
-          ),
-        ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildNavItem(Icons.map_outlined, Icons.map, 'Map', true),
-              _buildNavItem(Icons.card_membership_outlined,
-                  Icons.card_membership, 'Collection', false),
-              _buildNavItem(Icons.store_outlined, Icons.store, 'Market', false),
-              _buildNavItem(
-                  Icons.person_outline, Icons.person, 'Profile', false),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData outlinedIcon, IconData filledIcon, String label,
-      bool isSelected) {
-    return GestureDetector(
-      onTap: () {
-        if (!isSelected) {
-          final int index = label == 'Collection'
-              ? 1
-              : label == 'Market'
-                  ? 2
-                  : label == 'Profile'
-                      ? 3
-                      : 0;
-          Provider.of<NavigationProvider>(context, listen: false)
-              .changePage(index);
-        }
-      },
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFF3B82F6).withOpacity(0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: isSelected
-              ? Border.all(
-                  color: const Color(0xFF3B82F6).withOpacity(0.3),
-                )
-              : null,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isSelected ? filledIcon : outlinedIcon,
-              color: isSelected
-                  ? const Color(0xFF3B82F6)
-                  : Colors.white.withOpacity(0.5),
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected
-                    ? const Color(0xFF3B82F6)
-                    : Colors.white.withOpacity(0.5),
-                fontSize: 12,
-                fontFamily: 'Orbitron',
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ],

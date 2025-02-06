@@ -82,125 +82,142 @@ class _TradesScreenState extends State<TradesScreen>
           ),
           const SizedBox(height: 24),
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            height: 56,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1A2E),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.1),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF3B82F6).withOpacity(0.1),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: TabBar(
-              controller: _tabController,
-              indicator: BoxDecoration(
-                color: const Color(0xFF3B82F6),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              indicatorSize: TabBarIndicatorSize.tab,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.grey,
-              labelStyle: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Orbitron',
-              ),
-              unselectedLabelStyle: const TextStyle(
-                fontSize: 14,
-                fontFamily: 'Orbitron',
-              ),
-              dividerColor: Colors.transparent,
-              padding: const EdgeInsets.all(4),
-              tabs: [
-                Tab(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.list_alt, size: 16),
-                        const SizedBox(width: 8),
-                        Text(
-                          'MY LISTINGS',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: _tabController.index == 0
-                                ? Colors.white
-                                : Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Tab(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.download, size: 16),
-                        const SizedBox(width: 8),
-                        Text(
-                          'RECEIVED',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: _tabController.index == 1
-                                ? Colors.white
-                                : Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Tab(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.upload, size: 16),
-                        const SizedBox(width: 8),
-                        Text(
-                          'SENT',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: _tabController.index == 2
-                                ? Colors.white
-                                : Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: const [
-                MyListingsScreen(),
-                ReceivedOffersScreen(),
-                Center(
-                    child: Text('Sent', style: TextStyle(color: Colors.white))),
-              ],
-            ),
-          ),
-        ],
+  margin: const EdgeInsets.symmetric(horizontal: 16),
+  height: 56,
+  decoration: BoxDecoration(
+    color: const Color(0xFF1A1A2E),
+    // Removed borderRadius here to make the outer container rectangular
+    border: Border.all(
+      color: Colors.white.withOpacity(0.1),
+    ),
+    boxShadow: [
+      BoxShadow(
+        color: const Color(0xFF3B82F6).withOpacity(0.1),
+        blurRadius: 12,
+        offset: const Offset(0, 4),
       ),
-    );
+    ],
+  ),
+  child: TabBar(
+    controller: _tabController,
+    indicator: const BoxDecoration( // Changed to const BoxDecoration and removed borderRadius
+      color: Color(0xFF3B82F6),
+      // Removed borderRadius from indicator BoxDecoration
+    ),
+    indicatorSize: TabBarIndicatorSize.tab,
+    labelColor: Colors.white,
+    unselectedLabelColor: Colors.grey,
+    labelStyle: const TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.bold,
+      fontFamily: 'Orbitron',
+    ),
+    unselectedLabelStyle: const TextStyle(
+      fontSize: 14,
+      fontFamily: 'Orbitron',
+    ),
+    dividerColor: Colors.transparent,
+    padding: const EdgeInsets.all(4),
+    tabs: [
+      Tab(
+        child: LayoutBuilder( // Keep LayoutBuilder for full-width indicator
+          builder: (context, constraints) => Container(
+            width: constraints.maxWidth, // Keep full width
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            // Removed borderRadius from Container BoxDecoration inside Tab
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.list_alt, size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  'MY LISTINGS',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _tabController.index == 0
+                        ? Colors.white
+                        : Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      Tab(
+        child: LayoutBuilder( // Keep LayoutBuilder for full-width indicator
+          builder: (context, constraints) => Container(
+            width: constraints.maxWidth,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            // Removed borderRadius from Container BoxDecoration inside Tab
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.download, size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  'RECEIVED',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _tabController.index == 1
+                        ? Colors.white
+                        : Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      Tab(
+        child: LayoutBuilder( // Keep LayoutBuilder for full-width indicator
+          builder: (context, constraints) => Container(
+            width: constraints.maxWidth,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            // Removed borderRadius from Container BoxDecoration inside Tab
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.upload, size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  'SENT',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _tabController.index == 2
+                        ? Colors.white
+                        : Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ],
+  ),
+),
+const SizedBox(height: 16),
+Expanded(
+  child: TabBarView(
+    controller: _tabController,
+    children: const [
+      MyListingsScreen(),
+      ReceivedOffersScreen(),
+      Center(
+          child: Text('Sent', style: TextStyle(color: Colors.white))),
+    ],
+  ),
+),
+],
+),
+);
   }
+
+
 
   Widget _buildHeaderButton({
     required IconData icon,

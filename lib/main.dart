@@ -15,6 +15,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' hide Size;
 import 'package:pitdeck/config/mapbox_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' show pi, sin, cos;
+import 'package:pitdeck/screens/main_wrapper.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -90,24 +91,33 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: navigatorKey,
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        textTheme: ThemeData.dark().textTheme.copyWith(
-              bodyLarge: const TextStyle(fontFamily: 'Orbitron'),
-              bodyMedium: const TextStyle(fontFamily: 'Orbitron'),
-              titleLarge: const TextStyle(fontFamily: 'Orbitron'),
-              titleMedium: const TextStyle(fontFamily: 'Orbitron'),
-              titleSmall: const TextStyle(fontFamily: 'Orbitron'),
-            ),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => NavigationProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => CardProvider()),
+        ChangeNotifierProvider(create: (_) => ListingProvider()),
+        ChangeNotifierProvider(create: (_) => TradeProvider()),
+        ChangeNotifierProvider(create: (_) => FavoriteProvider()),
+        ChangeNotifierProvider(create: (_) => BadgeProvider()),
+        ChangeNotifierProvider(create: (_) => ScrollNotifier()),
+      ],
+      child: MaterialApp(
+        navigatorKey: navigatorKey,
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          useMaterial3: true,
+          textTheme: ThemeData.dark().textTheme.copyWith(
+                bodyLarge: const TextStyle(fontFamily: 'Orbitron'),
+                bodyMedium: const TextStyle(fontFamily: 'Orbitron'),
+                titleLarge: const TextStyle(fontFamily: 'Orbitron'),
+                titleMedium: const TextStyle(fontFamily: 'Orbitron'),
+                titleSmall: const TextStyle(fontFamily: 'Orbitron'),
+              ),
+        ),
+        home: const MainWrapper(),
       ),
-      home: _isInitializing
-          ? _buildLoadingScreen()
-          : widget.isLoggedIn && widget.token != null
-              ? const MainScreen()
-              : const MainScreen(),
     );
   }
 
