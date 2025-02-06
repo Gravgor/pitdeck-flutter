@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pitdeck/screens/main_wrapper.dart';
 import 'dart:io' show Platform;
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/auth_provider.dart';
@@ -245,8 +246,9 @@ class _AuthScreenState extends State<AuthScreen> {
           .signInWithGoogle();
       if (!context.mounted) return;
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const MainScreen()),
+        MaterialPageRoute(builder: (context) => const MainWrapper()),
       );
+
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -263,7 +265,7 @@ class _AuthScreenState extends State<AuthScreen> {
       await Provider.of<AuthProvider>(context, listen: false).signInWithApple();
       if (!context.mounted) return;
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const MainScreen()),
+        MaterialPageRoute(builder: (context) => const MainWrapper()),
       );
     } catch (e) {
       if (!context.mounted) return;

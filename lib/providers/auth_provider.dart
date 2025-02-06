@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pitdeck/providers/user_provider.dart';
-import 'package:pitdeck/screens/main_screen.dart';
+import 'package:pitdeck/screens/main_wrapper.dart';
 import 'package:pitdeck/screens/auth/onboarding_screen.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:http/http.dart' as http;
@@ -275,9 +275,10 @@ class AuthProvider with ChangeNotifier {
           );
         } else {
           Navigator.of(navigatorKey.currentContext!).pushReplacement(
-            MaterialPageRoute(builder: (context) => const MainScreen()),
+            MaterialPageRoute(builder: (context) => const MainWrapper()),
           );
         }
+
         notifyListeners();
       } else {
         throw Exception('Failed to authenticate with Apple');
