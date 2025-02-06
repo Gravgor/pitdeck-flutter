@@ -579,21 +579,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 _buildAchievementCard(
                   'First Win',
+                  'https://via.placeholder.com/150',
                   'Win your first race',
                   Icons.emoji_events,
                   const Color(0xFFFFD700),
                 ),
+
                 _buildAchievementCard(
                   'Speed Demon',
+                  'https://via.placeholder.com/150',
                   'Complete 5 races in a row',
                   Icons.speed,
                   Colors.red,
+
                 ),
                 _buildAchievementCard(
                   'Collector',
+                  'https://via.placeholder.com/150',
                   'Collect 50 unique cards',
                   Icons.collections,
                   const Color(0xFF4B9FFF),
+
                 ),
               ],
             ),
@@ -684,7 +690,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildAchievementCard(
-      String title, String description, IconData icon, Color color) {
+      String title, String image, String description, IconData icon, Color color) {
     return Container(
       width: 200,
       margin: const EdgeInsets.only(right: 12),
@@ -706,11 +712,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 24,
+            child: Image.network(
+              image,
+              width: 24,
+              height: 24,
             ),
+
           ),
           const SizedBox(height: 12),
           Text(

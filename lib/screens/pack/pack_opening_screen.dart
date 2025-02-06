@@ -3,6 +3,7 @@ import 'package:pitdeck/models/card.dart';
 import 'package:pitdeck/models/pack.dart';
 import 'dart:math' show pi, sin;
 import 'package:pitdeck/screens/pack/pack_results_screen.dart';
+import 'package:pitdeck/utils/color_utils.dart';
 
 class PackOpeningScreen extends StatefulWidget {
   final Map<String, dynamic> sessionData;
@@ -71,135 +72,78 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
       body: SafeArea(
         child: Column(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A2E),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 8,
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0A0A1A),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: const Color(0xFF3B82F6).withOpacity(0.3),
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Opening Pack',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Orbitron',
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Select ${widget.pack.cardsPerPack - _selectedCardIds.length} more cards',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 14,
-                          fontFamily: 'Orbitron',
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            _buildHeader(),
             Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      const Color(0xFF1A1A2E),
-                      const Color(0xFF0A0A1A),
-                    ],
-                  ),
-                ),
-                child: GridView.builder(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 24,
-                  ),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.75,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 20,
-                  ),
-                  itemCount: _cardPool.length,
-                  itemBuilder: (context, index) {
-                    final card = _cardPool[index];
-                    final isSelected = _selectedCardIds.contains(card['id']);
-                    return _buildCard(card, isSelected);
-                  },
-                ),
-              ),
+              child: _buildCardGrid(),
             ),
-            if (_isSelectionComplete)
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A2E),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, -4),
-                    ),
-                  ],
-                ),
-                padding: const EdgeInsets.all(16),
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _onComplete,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3B82F6),
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 8,
-                    shadowColor: const Color(0xFF3B82F6).withOpacity(0.5),
-                  ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                          'CONFIRM SELECTION',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            fontFamily: 'Orbitron',
-                          ),
-                        ),
-                ),
-              ),
+            if (_isSelectionComplete) _buildConfirmButton(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0A0A1A),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFF3B82F6).withOpacity(0.3),
+                ),
+              ),
+              child: const Icon(
+                Icons.arrow_back,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Opening Pack',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Orbitron',
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Select ${widget.pack.cardsPerPack - _selectedCardIds.length} more cards',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 14,
+                  fontFamily: 'Orbitron',
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -210,10 +154,32 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
       body: SafeArea(
         child: Stack(
           children: [
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF1A1A2E), Color(0xFF0A0A1A)],
+                ),
+              ),
+            ),
             Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF3B82F6).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.card_giftcard,
+                      color: Color(0xFF3B82F6),
+                      size: 48,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   const Text(
                     'Your Pack Awaits',
                     style: TextStyle(
@@ -317,11 +283,40 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
     );
   }
 
+  Widget _buildCardGrid() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF1A1A2E), Color(0xFF0A0A1A)],
+        ),
+      ),
+      child: GridView.builder(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 24,
+        ),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.75,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 20,
+        ),
+        itemCount: _cardPool.length,
+        itemBuilder: (context, index) {
+          final card = _cardPool[index];
+          final isSelected = _selectedCardIds.contains(card['id']);
+          return _buildCard(card, isSelected);
+        },
+      ),
+    );
+  }
+
   Widget _buildCard(Map<String, dynamic> card, bool isSelected) {
     final isRevealed = _cardRevealed[card['id']] ?? false;
     final canSelect = !isRevealed || isSelected;
-    final remainingSelections =
-        widget.pack.cardsPerPack - _selectedCardIds.length;
+    final isLegendary = card['rarity'] == 'LEGENDARY';
 
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 300),
@@ -352,8 +347,8 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
                 ..rotateY(3.14 * (1 - value)),
               alignment: Alignment.center,
               child: value < 0.5
-                  ? _buildCardBack(remainingSelections)
-                  : _buildCardFront(card, isSelected),
+                  ? _buildCardBack()
+                  : _buildCardFront(card, isSelected, isLegendary),
             );
           },
         ),
@@ -361,15 +356,15 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
     );
   }
 
-  Widget _buildCardBack(int remainingSelections) {
+  Widget _buildCardBack() {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [Color(0xFF1A1A2E), Color(0xFF0A0A1A)],
         ),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: const Color(0xFF3B82F6).withOpacity(0.3),
           width: 2,
@@ -411,128 +406,112 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
     );
   }
 
-  Widget _buildCardFront(Map<String, dynamic> card, bool isSelected) {
+  Widget _buildCardFront(
+      Map<String, dynamic> card, bool isSelected, bool isLegendary) {
+    final rarityColor = ColorUtils.getRarityColor(card['rarity']);
+
     return Container(
       decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF1A1A2E),
+            rarityColor.withOpacity(0.05),
+            const Color(0xFF1A1A2E),
+          ],
+        ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isSelected
               ? const Color(0xFF3B82F6)
-              : _getRarityColor(card['rarity']).withOpacity(0.5),
+              : rarityColor.withOpacity(0.3),
           width: isSelected ? 3 : 2,
         ),
         boxShadow: [
-          BoxShadow(
-            color: _getRarityColor(card['rarity']).withOpacity(0.2),
-            blurRadius: 12,
-            spreadRadius: 2,
-          ),
+          if (isLegendary) ...[
+            BoxShadow(
+              color: rarityColor.withOpacity(0.2),
+              blurRadius: 16,
+              spreadRadius: 2,
+            ),
+            BoxShadow(
+              color: rarityColor.withOpacity(0.1),
+              blurRadius: 24,
+              spreadRadius: 4,
+            ),
+          ] else
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
         ],
       ),
-      child: Stack(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: Image.network(
-              card['imageUrl'],
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: double.infinity,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Center(
-                  child: CircularProgressIndicator(
-                    value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                        : null,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      _getRarityColor(card['rarity']),
-                    ),
-                  ),
-                );
-              },
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: Image.network(
+                card['imageUrl'],
+                fit: BoxFit.cover,
+              ),
             ),
           ),
-          if (isSelected)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF3B82F6).withOpacity(0.3),
-                      blurRadius: 8,
-                      spreadRadius: 0,
-                    ),
-                  ],
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  card['name'],
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Orbitron',
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                child: const Icon(
-                  Icons.check,
-                  color: Colors.white,
-                  size: 16,
-                ),
-              ),
-            ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.8),
-                  ],
-                ),
-                borderRadius: const BorderRadius.vertical(
-                  bottom: Radius.circular(14),
-                ),
-              ),
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    card['name'],
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: rarityColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                    border: isLegendary
+                        ? Border.all(
+                            color: rarityColor.withOpacity(0.3),
+                          )
+                        : null,
+                  ),
+                  child: Text(
+                    card['rarity'],
+                    style: TextStyle(
+                      color: rarityColor,
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                       fontFamily: 'Orbitron',
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getRarityColor(card['rarity']).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      card['rarity'].toUpperCase(),
-                      style: TextStyle(
-                        color: _getRarityColor(card['rarity']),
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Orbitron',
-                      ),
-                    ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '#${card['serialNumber']}',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.5),
+                    fontSize: 12,
+                    fontFamily: 'Orbitron',
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -540,21 +519,43 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
     );
   }
 
-  Color _getRarityColor(String rarity) {
-    switch (rarity.toUpperCase()) {
-      case 'COMMON':
-        return Colors.grey;
-      case 'UNCOMMON':
-        return Colors.green;
-      case 'RARE':
-        return Colors.blue;
-      case 'EPIC':
-        return Colors.purple;
-      case 'LEGENDARY':
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
+  Widget _buildConfirmButton() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A2E),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _onComplete,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF3B82F6),
+          minimumSize: const Size(double.infinity, 56),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 8,
+          shadowColor: const Color(0xFF3B82F6).withOpacity(0.5),
+        ),
+        child: _isLoading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text(
+                'CONFIRM SELECTION',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontFamily: 'Orbitron',
+                ),
+              ),
+      ),
+    );
   }
 
   void _onComplete() async {
