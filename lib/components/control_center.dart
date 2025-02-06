@@ -54,8 +54,10 @@ class ControlCenter extends StatelessWidget {
       const DailyReward(day: 3, coins: 300, isCollected: true, isToday: false),
       const DailyReward(day: 4, coins: 500, isCollected: false, isToday: true),
       const DailyReward(day: 5, coins: 750, isCollected: false, isToday: false),
-      const DailyReward(day: 6, coins: 1000, isCollected: false, isToday: false),
-      const DailyReward(day: 7, coins: 2000, isCollected: false, isToday: false),
+      const DailyReward(
+          day: 6, coins: 1000, isCollected: false, isToday: false),
+      const DailyReward(
+          day: 7, coins: 2000, isCollected: false, isToday: false),
     ];
   }
 
@@ -340,156 +342,38 @@ class ControlCenter extends StatelessWidget {
     ];
   }
 
-  Widget _buildRaceCoins(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            'CONTROL CENTER',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Orbitron',
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1A2E),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFFFFD700).withOpacity(0.3),
-              ),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.monetization_on,
-                  color: Color(0xFFFFD700),
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  _formatNumber(userProvider.user?.coins ?? 0),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Orbitron',
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildControlTile(ControlTile tile) {
-    return GestureDetector(
-      onTap: tile.onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A2E),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: tile.accentColor.withOpacity(0.3),
-            width: 1,
-          ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(15),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    tile.accentColor.withOpacity(0.1),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: tile.accentColor.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: tile.accentColor.withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Icon(
-                      tile.icon,
-                      color: tile.accentColor,
-                      size: 32,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    tile.label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontFamily: 'Orbitron',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    tile.description,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
-                      fontSize: 14,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
       decoration: BoxDecoration(
-        color: const Color(0xFF0A0A1A),
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(24),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.1),
-        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Container(
-            width: 32,
+            width: 40,
             height: 4,
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          _buildRaceCoins(context),
+          const SizedBox(height: 24),
+          _buildHeader(context),
           const SizedBox(height: 24),
           Expanded(
             child: Padding(
@@ -508,6 +392,125 @@ class ControlCenter extends StatelessWidget {
           ),
           const SizedBox(height: 24),
         ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            'CONTROL CENTER',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFB800).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFFFFB800).withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.monetization_on,
+                  color: Color(0xFFFFB800),
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  _formatNumber(userProvider.user?.coins ?? 0),
+                  style: const TextStyle(
+                    color: Color(0xFFFFB800),
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Orbitron',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildControlTile(ControlTile tile) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            tile.accentColor.withOpacity(0.15),
+            tile.accentColor.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: tile.accentColor.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: tile.onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: tile.accentColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    tile.icon,
+                    color: tile.accentColor,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  tile.label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontFamily: 'Orbitron',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  tile.description,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.5),
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

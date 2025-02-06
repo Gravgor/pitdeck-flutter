@@ -77,7 +77,7 @@ class _MarketScreenState extends State<MarketScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
+      backgroundColor: const Color(0xFF040412),
       body: Column(
         children: [
           _buildHeader(),
@@ -94,7 +94,7 @@ class _MarketScreenState extends State<MarketScreen>
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddListingModal(context),
-        backgroundColor: Colors.blue,
+        backgroundColor: const Color(0xFF3B82F6),
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
@@ -104,12 +104,18 @@ class _MarketScreenState extends State<MarketScreen>
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 64, 16, 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.white.withOpacity(0.1),
-          ),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,9 +147,7 @@ class _MarketScreenState extends State<MarketScreen>
                 ],
               ),
               IconButton(
-                onPressed: () {
-                  _showTradeManagement();
-                },
+                onPressed: () => _showTradeManagement(),
                 icon: Icon(
                   Icons.inventory_2_outlined,
                   color: Colors.white.withOpacity(0.5),
@@ -152,142 +156,53 @@ class _MarketScreenState extends State<MarketScreen>
             ],
           ),
           const SizedBox(height: 32),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 40,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0A0A1A),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.1),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.search,
-                        color: Colors.white.withOpacity(0.5),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontFamily: 'Orbitron',
-                          ),
-                          decoration: InputDecoration(
-                            hintText: 'Search by name, type...',
-                            hintStyle: TextStyle(
-                              color: Colors.white.withOpacity(0.3),
-                              fontSize: 14,
-                              fontFamily: 'Orbitron',
-                            ),
-                            border: InputBorder.none,
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                height: 40,
-                width: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0A0A1A),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.1),
-                  ),
-                ),
-                child: IconButton(
-                  onPressed: () {}, // TODO: Add filter functionality
-                  icon: Icon(
-                    Icons.tune,
-                    color: Colors.white.withOpacity(0.5),
-                    size: 20,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
           Container(
             height: 48,
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: const Color(0xFF0A0A1A),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.1),
-              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
             ),
             child: TabBar(
               controller: _tabController,
-              indicator: BoxDecoration( // Modified indicator
-                color: const Color(0xFF3B82F6),
-                border: const Border(),
-                borderRadius: BorderRadius.zero, // Ensure no rounded corners
+              indicator: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                ),
+                borderRadius: BorderRadius.circular(8),
               ),
-
               dividerColor: Colors.transparent,
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white.withOpacity(0.5),
               labelStyle: const TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.bold,
                 fontFamily: 'Orbitron',
               ),
-              unselectedLabelStyle: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                fontFamily: 'Orbitron',
-              ),
-                tabs: [
+              tabs: const [
                 Tab(
-                  child: LayoutBuilder( // Use LayoutBuilder to get available width
-                    builder: (context, constraints) => Container(
-
-                      width: constraints.maxWidth, // Set width to available width
-                      alignment: Alignment.center, // Center content within full width
-                      padding: const EdgeInsets.symmetric(horizontal: 16), // Keep existing padding
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center, // Center Row content
-                        children: [
-                          Icon(Icons.store_outlined, size: 16),
-                          SizedBox(width: 8),
-                          Text('MARKET'),
-                        ],
-                      ),
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.store_outlined, size: 16),
+                      SizedBox(width: 8),
+                      Text('MARKET'),
+                    ],
                   ),
                 ),
                 Tab(
-                  child: LayoutBuilder( // Use LayoutBuilder for the second tab as well
-                    builder: (context, constraints) => Container(
-
-                      width: constraints.maxWidth, // Set width to available width
-                      alignment: Alignment.center, // Center content
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center, // Center Row content
-                        children: [
-                          Icon(Icons.swap_horiz, size: 16),
-                          SizedBox(width: 8),
-                          Text('TRADES'),
-                        ],
-                      ),
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.swap_horiz, size: 16),
+                      SizedBox(width: 8),
+                      Text('TRADES'),
+                    ],
                   ),
                 ),
               ],
             ),
-
           ),
         ],
       ),
@@ -330,161 +245,81 @@ class _MarketScreenState extends State<MarketScreen>
 
   Widget _buildListingCard(ListingModel listing) {
     final formattedPrice = NumberFormat('#,###').format(listing.price);
-    final card = listing.card;
-    final seller = listing.seller;
-
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: InkWell(
-        onTap: () => _showCardDetailsMore(context, card),
-        borderRadius: BorderRadius.circular(12),
+        onTap: () => _showCardDetailsMore(context, listing.card),
+        borderRadius: BorderRadius.circular(16),
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      card.imageUrl,
-                      width: 120,
-                      height: 120,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          card.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color:
-                                _getRarityColor(card.rarity).withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            card.rarity,
-                            style: TextStyle(
-                              color: _getRarityColor(card.rarity),
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '#${card.serialNumber}',
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '$formattedPrice coins',
-                          style: const TextStyle(
-                            color: Colors.amber,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+            ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(16)),
+              child: Image.network(
+                listing.card.imageUrl,
+                height: 200,
+                width: double.infinity,
+                fit: BoxFit.cover,
               ),
             ),
-            Container(
-              decoration: const BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: Colors.white10),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        if (seller.image != null)
-                          Container(
-                            width: 24,
-                            height: 24,
-                            margin: const EdgeInsets.only(right: 8),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.network(
-                                seller.image!,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              seller.name ?? 'Unknown Seller',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'Level ${seller.level}',
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    ElevatedButton(
-                      onPressed: () => _showBuyCardModal(context, listing),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Buy Now',
-                        style: TextStyle(
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        listing.card.name,
+                        style: const TextStyle(
                           color: Colors.white,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF3B82F6).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: const Color(0xFF3B82F6).withOpacity(0.3),
+                          ),
+                        ),
+                        child: Text(
+                          '$formattedPrice RaceCoins',
+                          style: const TextStyle(
+                            color: Color(0xFF3B82F6),
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Orbitron',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
@@ -1020,7 +855,7 @@ class _MarketScreenState extends State<MarketScreen>
     );
   }
 
-   void _showMakeOfferModal(BuildContext context, TradeModel trade) {
+  void _showMakeOfferModal(BuildContext context, TradeModel trade) {
     Set<String> selectedCardIds = {};
     final TextEditingController noteController = TextEditingController();
     final TextEditingController coinsController = TextEditingController();
@@ -1108,7 +943,8 @@ class _MarketScreenState extends State<MarketScreen>
                         ),
                         TextButton.icon(
                           onPressed: () {
-                            _showCardSelectionModal(selectedCardIds, (selected) {
+                            _showCardSelectionModal(selectedCardIds,
+                                (selected) {
                               setState(() {
                                 selectedCardIds = selected;
                               });
@@ -1149,9 +985,12 @@ class _MarketScreenState extends State<MarketScreen>
                           scrollDirection: Axis.horizontal,
                           itemCount: selectedCardIds.length,
                           itemBuilder: (context, index) {
-                            final card = Provider.of<CardProvider>(context, listen: false)
+                            final card = Provider.of<CardProvider>(context,
+                                    listen: false)
                                 .cards
-                                .firstWhere((card) => card.serialNumber == selectedCardIds.elementAt(index));
+                                .firstWhere((card) =>
+                                    card.serialNumber ==
+                                    selectedCardIds.elementAt(index));
                             return Container(
                               width: 80,
                               margin: const EdgeInsets.only(right: 8),
@@ -1161,7 +1000,8 @@ class _MarketScreenState extends State<MarketScreen>
                                     children: [
                                       Container(
                                         decoration: BoxDecoration(
-                                          border: Border.all(color: Colors.white10),
+                                          border:
+                                              Border.all(color: Colors.white10),
                                         ),
                                         child: Image.network(
                                           card.imageUrl,
@@ -1176,18 +1016,22 @@ class _MarketScreenState extends State<MarketScreen>
                                         child: GestureDetector(
                                           onTap: () {
                                             setState(() {
-                                              selectedCardIds.remove(card.serialNumber);
+                                              selectedCardIds
+                                                  .remove(card.serialNumber);
                                             });
                                           },
                                           child: Container(
                                             padding: const EdgeInsets.all(2),
                                             decoration: BoxDecoration(
-                                              color: Colors.black.withOpacity(0.5),
-                                              border: Border.all(color: Colors.white24),
+                                              color:
+                                                  Colors.black.withOpacity(0.5),
+                                              border: Border.all(
+                                                  color: Colors.white24),
                                             ),
                                             child: Icon(
                                               Icons.close,
-                                              color: Colors.white.withOpacity(0.8),
+                                              color:
+                                                  Colors.white.withOpacity(0.8),
                                               size: 12,
                                             ),
                                           ),
@@ -1301,7 +1145,8 @@ class _MarketScreenState extends State<MarketScreen>
                         onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                          side:
+                              BorderSide(color: Colors.white.withOpacity(0.2)),
                           shape: const RoundedRectangleBorder(),
                         ),
                         child: Text(
@@ -1318,20 +1163,25 @@ class _MarketScreenState extends State<MarketScreen>
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: selectedCardIds.isNotEmpty ? () {
-                          // TODO: Implement make offer logic
-                          Navigator.pop(context);
-                        } : null,
+                        onPressed: selectedCardIds.isNotEmpty
+                            ? () {
+                                // TODO: Implement make offer logic
+                                Navigator.pop(context);
+                              }
+                            : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF3B82F6),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: const RoundedRectangleBorder(),
-                          disabledBackgroundColor: Colors.white.withOpacity(0.05),
+                          disabledBackgroundColor:
+                              Colors.white.withOpacity(0.05),
                         ),
                         child: Text(
                           'Send Offer',
                           style: TextStyle(
-                            color: selectedCardIds.isNotEmpty ? Colors.white : Colors.white.withOpacity(0.5),
+                            color: selectedCardIds.isNotEmpty
+                                ? Colors.white
+                                : Colors.white.withOpacity(0.5),
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Orbitron',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/navigation_provider.dart';
+import '../providers/user_provider.dart';
 
 class GlobalBottomNavigationBar extends StatelessWidget {
   const GlobalBottomNavigationBar({super.key});
@@ -9,12 +10,18 @@ class GlobalBottomNavigationBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
-        border: Border(
-          top: BorderSide(
-            color: Colors.white.withOpacity(0.1),
-          ),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
       child: SafeArea(
         child: Padding(
@@ -79,33 +86,30 @@ class GlobalBottomNavigationBar extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFF3B82F6).withOpacity(0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: isSelected
-              ? Border.all(
-                  color: const Color(0xFF3B82F6).withOpacity(0.3),
+          gradient: isSelected
+              ? const LinearGradient(
+                  colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 )
               : null,
+          color: isSelected ? null : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               isSelected ? filledIcon : outlinedIcon,
-              color: isSelected
-                  ? const Color(0xFF3B82F6)
-                  : Colors.white.withOpacity(0.5),
+              color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
               size: 24,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isSelected
-                    ? const Color(0xFF3B82F6)
-                    : Colors.white.withOpacity(0.5),
+                color:
+                    isSelected ? Colors.white : Colors.white.withOpacity(0.5),
                 fontSize: 12,
                 fontFamily: 'Orbitron',
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,

@@ -101,9 +101,20 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -334,8 +345,17 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
   Widget _buildActions(TradeOfferModel offer) {
     if (!offer.isPending) return const SizedBox.shrink();
 
-    return Padding(
+    return Container(
       padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF3B82F6).withOpacity(0.1),
+            const Color(0xFF2563EB).withOpacity(0.05),
+          ],
+        ),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [

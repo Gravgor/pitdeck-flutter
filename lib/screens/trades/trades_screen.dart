@@ -102,9 +102,10 @@ class _TradesScreenState extends State<TradesScreen>
             child: TabBar(
               controller: _tabController,
               indicator: const BoxDecoration(
-                // Changed to const BoxDecoration and removed borderRadius
                 color: Color(0xFF3B82F6),
-                // Removed borderRadius from indicator BoxDecoration
+                gradient: LinearGradient(
+                  colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                ),
               ),
               indicatorSize: TabBarIndicatorSize.tab,
               labelColor: Colors.white,
@@ -113,6 +114,7 @@ class _TradesScreenState extends State<TradesScreen>
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Orbitron',
+                letterSpacing: 0.5,
               ),
               unselectedLabelStyle: const TextStyle(
                 fontSize: 14,
