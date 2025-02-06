@@ -16,86 +16,28 @@ import 'package:pitdeck/config/mapbox_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' show pi, sin, cos;
 import 'package:pitdeck/screens/main_wrapper.dart';
+import 'package:pitdeck/services/cache_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MapboxOptions.setAccessToken(MapboxConfig.accessToken);
+  await SharedPreferences.getInstance();
 
-  final prefs = await SharedPreferences.getInstance();
-  final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-  final token = prefs.getString('token');
-
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => UserProvider()),
-        ChangeNotifierProvider(create: (_) => NavigationProvider()),
-        ChangeNotifierProvider(create: (_) => CardProvider()),
-        ChangeNotifierProvider(create: (_) => ListingProvider()),
-        ChangeNotifierProvider(create: (_) => TradeProvider()),
-        ChangeNotifierProvider(create: (_) => FavoriteProvider()),
-        ChangeNotifierProvider(create: (_) => BadgeProvider()),
-        ChangeNotifierProvider(create: (_) => ScrollNotifier()),
-      ],
-      child: MyApp(isLoggedIn: isLoggedIn, token: token),
-    ),
-  );
+  runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
-  final bool isLoggedIn;
-  final String? token;
-
-  const MyApp({super.key, required this.isLoggedIn, this.token});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
-  bool _isInitializing = true;
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat();
-    _initializeUser();
-  }
-
-  Future<void> _initializeUser() async {
-    if (widget.isLoggedIn && widget.token != null) {
-      try {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        await authProvider.getUserDetails();
-      } catch (e) {
-        print('Error fetching user details: $e');
-      }
-    }
-    setState(() {
-      _isInitializing = false;
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CardProvider()),
         ChangeNotifierProvider(create: (_) => ListingProvider()),
         ChangeNotifierProvider(create: (_) => TradeProvider()),
@@ -116,149 +58,22 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                 titleSmall: const TextStyle(fontFamily: 'Orbitron'),
               ),
         ),
-        home: const MainWrapper(),
-      ),
-    );
-  }
-
-  Widget _buildLoadingScreen() {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
-      body: Stack(
-        children: [
-          Image.asset(
-            'assets/images/racing_bg.jpg',
-            width: double.infinity,
-            height: double.infinity,
-            fit: BoxFit.cover,
-          ),
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color(0xFF0A0A1A).withOpacity(0.7),
-                  const Color(0xFF0A0A1A).withOpacity(0.9),
-                  const Color(0xFF0A0A1A),
-                ],
+        home: FutureBuilder(
+          future: CacheService().initialize(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              return const MainWrapper();
+            }
+            return const Scaffold(
+              backgroundColor: Color(0xFF040412),
+              body: Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFF4B9FFF),
+                ),
               ),
-            ),
-          ),
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Container(
-                      width: 240,
-                      height: 240,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFF4B9FFF).withOpacity(0.1),
-                          width: 1,
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 200,
-                      width: 200,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: List.generate(3, (index) {
-                          return AnimatedBuilder(
-                            animation: _controller,
-                            builder: (context, child) {
-                              return Transform.rotate(
-                                angle: (_controller.value * 2 * pi) +
-                                    (index * pi / 1.5),
-                                child: Transform.translate(
-                                  offset: Offset(
-                                    sin(_controller.value * 2 * pi + index) *
-                                        30,
-                                    cos(_controller.value * 2 * pi + index) *
-                                        30,
-                                  ),
-                                  child: Container(
-                                    width: 80,
-                                    height: 120,
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                        color: const Color(0xFF4B9FFF),
-                                        width: 1,
-                                      ),
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [
-                                          const Color(0xFF4B9FFF)
-                                              .withOpacity(0.2),
-                                          Colors.transparent,
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        }),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 40),
-                ShaderMask(
-                  shaderCallback: (bounds) => const LinearGradient(
-                    colors: [
-                      Color(0xFFFF4B5C),
-                      Color(0xFF4B9FFF),
-                    ],
-                  ).createShader(bounds),
-                  child: const Text(
-                    'PITDECK',
-                    style: TextStyle(
-                      fontFamily: 'Orbitron',
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 4,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: const Color(0xFF4B9FFF),
-                      width: 1,
-                    ),
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF4B9FFF).withOpacity(0.1),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                  child: const Text(
-                    'LOADING',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontFamily: 'Orbitron',
-                      letterSpacing: 4,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
     );
   }
