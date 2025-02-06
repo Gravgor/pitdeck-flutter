@@ -87,21 +87,78 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        // Dismiss keyboard when tapping outside
-        FocusScope.of(context).unfocus();
-      },
-      child: Scaffold(
-        backgroundColor: const Color(0xFF0A0A1A),
-        body: Column(
-          children: [
-            _buildHeader(),
-            _buildFilterChips(),
-            const SizedBox(height: 8),
-            Expanded(child: _buildCardGrid()),
-          ],
+    final cardProvider = Provider.of<CardProvider>(context);
+    // Compute the list to display: if no filters, use the full list.
+    final List<CardModel> displayCards =
+        (_selectedRarities.isEmpty && _selectedTypes.isEmpty)
+            ? cardProvider.cards
+            : _filteredCards;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF040412),
+      appBar: AppBar(
+        title: const Text(
+          'Collection',
+          style: TextStyle(fontFamily: 'Orbitron'),
         ),
+        backgroundColor: const Color(0xFF1A1A2E),
+      ),
+      body: GridView.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          childAspectRatio: 0.7,
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
+        ),
+        itemCount: displayCards.length,
+        itemBuilder: (context, index) {
+          final card = displayCards[index];
+          return Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.white10),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ClipRRect(
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(8)),
+                  child: Image.network(
+                    card.imageUrl,
+                    height: 100,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        card.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        '#${card.serialNumber}',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
