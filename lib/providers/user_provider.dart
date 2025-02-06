@@ -5,14 +5,33 @@ import 'dart:convert';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../models/user.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UserProvider with ChangeNotifier {
   User? _user;
+  String? _token;
+  bool _isLoggedIn = false;
   final String _baseUrl = 'https://api.pitdeck.app/api';
   IO.Socket? _socket;
   bool isSocketConnected = false;
 
   User? get user => _user;
+  String? get token => _token;
+  bool get isLoggedIn => _isLoggedIn;
+
+  Future<void> initializeFromCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    _token = prefs.getString('token');
+    _isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+
+    if (_isLoggedIn && _token != null) {
+      try {
+        await fetchUserProfile();
+      } catch (e) {
+        await logout();
+      }
+    }
+  }
 
   Future<void> connectUserSocket() async {
     if (_user?.token == null) return;
@@ -61,25 +80,42 @@ class UserProvider with ChangeNotifier {
     });
   }
 
-  Future<void> fetchUserProfile(String userId) async {
+  Future<void> fetchUserProfile() async {
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/users/$userId'),
+        Uri.parse('$_baseUrl/users/me'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${_user!.token}',
+          'Authorization': 'Bearer $_token',
         },
       );
 
       if (response.statusCode == 200) {
         final userData = json.decode(response.body);
-        _user = User.fromJson(userData, token: _user!.token);
+        _user = User.fromJson(userData, token: _token);
         notifyListeners();
       }
     } catch (e) {
       rethrow;
     }
   }
+
+  Future<void> fetchUserProfileID(String userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/users/$userId'),
+      );
+      if (response.statusCode == 200) {
+        final userData = json.decode(response.body);
+        _user = User.fromJson(userData, token: _token);
+        notifyListeners();
+      }
+    } catch (e) {
+      rethrow;
+    }
+
+  }
+
 
   Future<void> fetchUserDetails(String userId, String token) async {
     try {
@@ -135,7 +171,6 @@ class UserProvider with ChangeNotifier {
     }
   }
 
-
   Future<void> clearUser() async {
     _socket?.dispose();
     _user = null;
@@ -153,5 +188,25 @@ class UserProvider with ChangeNotifier {
   void dispose() {
     _socket?.dispose();
     super.dispose();
+  }
+
+  Future<void> login(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', token);
+    await prefs.setBool('isLoggedIn', true);
+    _token = token;
+    _isLoggedIn = true;
+    await fetchUserProfile();
+    notifyListeners();
+  }
+
+  Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    await prefs.setBool('isLoggedIn', false);
+    _token = null;
+    _user = null;
+    _isLoggedIn = false;
+    notifyListeners();
   }
 }

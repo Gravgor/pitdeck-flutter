@@ -59,16 +59,18 @@ class MyApp extends StatelessWidget {
               ),
         ),
         home: FutureBuilder(
-          future: CacheService().initialize(),
+          future: Future.wait([
+            CacheService().initialize(),
+            Provider.of<UserProvider>(context, listen: false)
+                .initializeFromCache(),
+          ]),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.done) {
-              final isLoggedIn = snapshot.data?.getBool('isLoggedIn') ?? false;
-              final token = snapshot.data?.getString('token');
-              if (isLoggedIn && token != null) {
-                return const MainWrapper();
-              } else {
-                return const AuthScreen();
-              }
+              final prefs = snapshot.data?[0] as SharedPreferences;
+              return prefs.getBool('isLoggedIn') != null &&
+                      prefs.getBool('isLoggedIn') == true
+                  ? const MainWrapper()
+                  : const AuthScreen();
 
             }
             return const Scaffold(

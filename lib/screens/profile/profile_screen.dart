@@ -38,7 +38,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadUserData() async {
     if (!widget.isCurrentUser && widget.userId != null) {
       await Provider.of<UserProvider>(context, listen: false)
-          .fetchUserProfile(widget.userId!);
+          .fetchUserProfileID(widget.userId!);
     }
   }
 
