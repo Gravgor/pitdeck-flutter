@@ -507,6 +507,8 @@ class _CollectionScreenState extends State<CollectionScreen> {
         itemCount: _filteredCards.length,
         itemBuilder: (context, index) {
           final card = _filteredCards[index];
+          final isLegendary = card.rarity == 'LEGENDARY';
+
           return GestureDetector(
             onTap: () => _showCardDetails(context, card.id),
             child: Container(
@@ -518,25 +520,39 @@ class _CollectionScreenState extends State<CollectionScreen> {
                 ),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
+                  if (isLegendary) ...[
+                    BoxShadow(
+                      color: ColorUtils.getRarityColor(card.rarity)
+                          .withOpacity(0.2),
+                      blurRadius: 16,
+                      spreadRadius: 2,
+                    ),
+                    BoxShadow(
+                      color: ColorUtils.getRarityColor(card.rarity)
+                          .withOpacity(0.1),
+                      blurRadius: 24,
+                      spreadRadius: 4,
+                    ),
+                  ] else
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
                 ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(16),
-                    ),
-                    child: Image.network(
-                      card.imageUrl,
-                      height: 180,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(16)),
+                    child: AspectRatio(
+                      aspectRatio: 1.2, // Makes image slightly smaller
+                      child: Image.network(
+                        card.imageUrl,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                   Padding(
@@ -548,46 +564,50 @@ class _CollectionScreenState extends State<CollectionScreen> {
                           card.name,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 16,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Orbitron',
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: ColorUtils.getRarityColor(card.rarity)
+                                .withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                            border: isLegendary
+                                ? Border.all(
+                                    color:
+                                        ColorUtils.getRarityColor(card.rarity)
+                                            .withOpacity(0.3),
+                                    width: 1,
+                                  )
+                                : null,
+                          ),
+                          child: Text(
+                            card.rarity,
+                            style: TextStyle(
+                              color: ColorUtils.getRarityColor(card.rarity),
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Orbitron',
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: ColorUtils.getRarityColor(card.rarity)
-                                    .withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                card.rarity,
-                                style: TextStyle(
-                                  color: ColorUtils.getRarityColor(card.rarity),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'Orbitron',
-                                ),
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              '#${card.serialNumber}',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.5),
-                                fontSize: 12,
-                                fontFamily: 'Orbitron',
-                              ),
-                            ),
-                          ],
+                        Text(
+                          '#${card.serialNumber}',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 12,
+                            fontFamily: 'Orbitron',
+                          ),
                         ),
                       ],
                     ),
