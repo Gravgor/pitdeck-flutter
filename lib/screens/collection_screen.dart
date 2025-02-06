@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pitdeck/models/card.dart';
-import 'package:pitdeck/screens/packs_screen.dart';
+import 'package:pitdeck/screens/pack/packs_screen.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/navigation_provider.dart';
@@ -426,7 +426,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
               card.type.toLowerCase().contains(searchLower) ||
               card.series.toLowerCase().contains(searchLower) ||
               card.rarity.toLowerCase().contains(searchLower) ||
-              card.serialNumber!.toLowerCase().contains(searchLower);
+              card.serialNumber.toLowerCase().contains(searchLower);
           if (!matchesSearch) return false;
         }
 
@@ -624,7 +624,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
         return card.name.toLowerCase().contains(query) ||
             card.type.toLowerCase().contains(query) ||
             card.rarity.toLowerCase().contains(query) ||
-            card.serialNumber!.toLowerCase().contains(query);
+            card.serialNumber.toLowerCase().contains(query);
       }
       return true;
     }).toList();
@@ -1069,17 +1069,17 @@ class _CollectionScreenState extends State<CollectionScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (cardDetails.description != null) ...[
-                              Text(
-                                cardDetails.description!,
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
-                                  fontSize: 16,
-                                  height: 1.5,
-                                ),
+                            ...[
+                            Text(
+                              cardDetails.description!,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                                fontSize: 16,
+                                height: 1.5,
                               ),
-                              const SizedBox(height: 24),
-                            ],
+                            ),
+                            const SizedBox(height: 24),
+                          ],
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
@@ -1102,19 +1102,19 @@ class _CollectionScreenState extends State<CollectionScreen> {
                                       'Year',
                                       cardDetails.year.toString(),
                                       Icons.calendar_month),
-                                  if (cardDetails.edition != null) ...[
-                                    const Divider(
-                                        color: Colors.white10, height: 24),
-                                    _buildDetailRow('Edition',
-                                        cardDetails.edition!, Icons.book),
-                                  ],
+                                  ...[
+                                  const Divider(
+                                      color: Colors.white10, height: 24),
+                                  _buildDetailRow('Edition',
+                                      cardDetails.edition!, Icons.book),
+                                ],
                                 ],
                               ),
                             ),
-                            if (cardDetails.stats != null) ...[
-                              const SizedBox(height: 24),
-                              _buildCardStats(cardDetails.stats!),
-                            ],
+                            ...[
+                            const SizedBox(height: 24),
+                            _buildCardStats(cardDetails.stats!),
+                          ],
                             const SizedBox(height: 32),
                             if (!cardDetails.isForSale &&
                                 !cardDetails.isForTrade)
@@ -1309,7 +1309,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
               const SizedBox(height: 12),
             ],
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -1336,16 +1336,16 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
   void _removeFromMarketplace(CardDetailModel card) {
     Provider.of<CardProvider>(context, listen: false)
-        .removeFromMarketplace(card.id!);
+        .removeFromMarketplace(card.id);
     _fetchCards();
   }
 
   void _showListForSaleModal(CardDetailModel card) {
     final TextEditingController priceController = TextEditingController();
     final bool isEditing = card.isForSale; // Check if card is already listed
-    int _cardPrice = 0;
+    int cardPrice = 0;
     if (isEditing) {
-      priceController.text = _cardPrice.toString();
+      priceController.text = cardPrice.toString();
     }
 
     final List<Map<String, dynamic>> mockPriceHistory = [
@@ -1582,7 +1582,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
                                     int.tryParse(priceController.text) ?? 0;
                                 Provider.of<CardProvider>(context,
                                         listen: false)
-                                    .sellCard(card.id!, price);
+                                    .sellCard(card.id, price);
                                 Navigator.pop(context);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
@@ -1624,7 +1624,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
   void _showListForTradeModal(CardDetailModel selectedCard) {
     final TextEditingController coinsController = TextEditingController();
     final TextEditingController noteController = TextEditingController();
-    final selectedCardIds = <String>{selectedCard.id!};
+    final selectedCardIds = <String>{selectedCard.id};
     final bool isEditing = selectedCard.isForTrade;
     int tradeCoins = 0;
     String tradeNote = '';
@@ -1761,8 +1761,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
                           itemBuilder: (context, index) {
                             final cardId = selectedCardIds.elementAt(index);
                             final cardDetail = cardProvider.cardDetails[cardId];
-                            if (cardDetail == null)
+                            if (cardDetail == null) {
                               return const SizedBox.shrink();
+                            }
 
                             return Container(
                               width: 90,
@@ -2152,7 +2153,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
                                   .toLowerCase()
                                   .contains(searchLower) ||
                               card.type.toLowerCase().contains(searchLower) ||
-                              card.serialNumber!
+                              card.serialNumber
                                   .toLowerCase()
                                   .contains(searchLower);
                         }).toList();

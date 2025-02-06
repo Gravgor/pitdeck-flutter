@@ -12,8 +12,8 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  bool _isLoading = false;
-  bool _obscurePassword = true;
+  final bool _isLoading = false;
+  final bool _obscurePassword = true;
 
   @override
   void dispose() {

@@ -1,5 +1,4 @@
 import 'package:pitdeck/models/card.dart';
-import 'package:pitdeck/models/user.dart';
 
 enum TradeOfferStatus { pending, accepted, declined, cancelled }
 

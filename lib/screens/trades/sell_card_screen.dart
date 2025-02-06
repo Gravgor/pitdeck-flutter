@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/card_provider.dart';
-import '../providers/listing_provider.dart';
-import '../models/card.dart';
-import '../utils/color_utils.dart';
+import '../../providers/card_provider.dart';
+import '../../providers/listing_provider.dart';
+import '../../models/card.dart';
+import '../../utils/color_utils.dart';
 
 class SellCardScreen extends StatefulWidget {
   const SellCardScreen({super.key});

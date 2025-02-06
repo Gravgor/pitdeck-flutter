@@ -1,24 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/card_provider.dart';
-import '../providers/trade_provider.dart';
-import '../models/card.dart';
-import '../models/trade.dart';
-import '../utils/color_utils.dart';
+import '../../providers/card_provider.dart';
+import '../../providers/trade_provider.dart';
+import '../../models/card.dart';
+import '../../utils/color_utils.dart';
 
-class MakeOfferScreen extends StatefulWidget {
-  final TradeModel originalTrade;
-
-  const MakeOfferScreen({
-    super.key,
-    required this.originalTrade,
-  });
+class CreateTradeScreen extends StatefulWidget {
+  const CreateTradeScreen({super.key});
 
   @override
-  State<MakeOfferScreen> createState() => _MakeOfferScreenState();
+  State<CreateTradeScreen> createState() => _CreateTradeScreenState();
 }
 
-class _MakeOfferScreenState extends State<MakeOfferScreen> {
+class _CreateTradeScreenState extends State<CreateTradeScreen> {
   final Set<CardModel> selectedCards = {};
   final _coinsController = TextEditingController();
   final _noteController = TextEditingController();
@@ -32,13 +26,12 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
     super.dispose();
   }
 
-  Future<void> _makeOffer() async {
+  Future<void> _createTrade() async {
     if (selectedCards.isEmpty) return;
 
     setState(() => _isLoading = true);
     try {
-      await Provider.of<TradeProvider>(context, listen: false).makeOffer(
-        tradeId: widget.originalTrade.id,
+      await Provider.of<TradeProvider>(context, listen: false).createTrade(
         offeredCardIds: selectedCards.map((card) => card.id).toList(),
         coinsOffered: int.tryParse(_coinsController.text) ?? 0,
         note: _noteController.text,
@@ -46,11 +39,11 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
       if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Offer made successfully!')),
+        const SnackBar(content: Text('Trade created successfully!')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error making offer: $e')),
+        SnackBar(content: Text('Error creating trade: $e')),
       );
     } finally {
       setState(() => _isLoading = false);
@@ -65,7 +58,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: const Text(
-          'Make Offer',
+          'Create Trade',
           style: TextStyle(
             color: Colors.white,
             fontFamily: 'Orbitron',
@@ -75,89 +68,12 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
       ),
       body: Column(
         children: [
-          _buildOriginalOffer(),
           _buildSelectedCards(),
           _buildCardSelection(),
-          _buildOfferOptions(),
+          _buildTradeOptions(),
         ],
       ),
       bottomNavigationBar: _buildBottomBar(),
-    );
-  }
-
-  Widget _buildOriginalOffer() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
-        border: Border(
-          bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Original Trade',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Orbitron',
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 100,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: widget.originalTrade.offeredCards.length,
-              itemBuilder: (context, index) {
-                final card = widget.originalTrade.offeredCards[index];
-                return Container(
-                  width: 80,
-                  margin: const EdgeInsets.only(right: 8),
-                  child: Column(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          card.imageUrl,
-                          height: 80,
-                          width: 80,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        card.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-          if (widget.originalTrade.coinsOffered > 0)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                '+ ${widget.originalTrade.coinsOffered} coins',
-                style: const TextStyle(
-                  color: Colors.amber,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-        ],
-      ),
     );
   }
 
@@ -177,12 +93,11 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Your Offer (${selectedCards.length}/$maxCards)',
+            'Selected Cards (${selectedCards.length}/$maxCards)',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              fontFamily: 'Orbitron',
             ),
           ),
           const SizedBox(height: 8),
@@ -199,14 +114,40 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
                     children: [
                       Column(
                         children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              card.imageUrl,
-                              height: 80,
-                              width: 80,
-                              fit: BoxFit.cover,
-                            ),
+                          Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  card.imageUrl,
+                                  height: 80,
+                                  width: 80,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Positioned(
+                                top: 2,
+                                right: 2,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 1,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.7),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    '#${card.serialNumber}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -314,7 +255,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
                             ),
                             child: Image.network(
                               card.imageUrl,
-                              height: 100,
+                              height: 90,
                               width: double.infinity,
                               fit: BoxFit.cover,
                             ),
@@ -356,6 +297,15 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
                                     ),
                                   ),
                                 ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '#${card.serialNumber}',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade400,
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -389,7 +339,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
     );
   }
 
-  Widget _buildOfferOptions() {
+  Widget _buildTradeOptions() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -461,7 +411,8 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
         ),
       ),
       child: ElevatedButton(
-        onPressed: selectedCards.isNotEmpty && !_isLoading ? _makeOffer : null,
+        onPressed:
+            selectedCards.isNotEmpty && !_isLoading ? _createTrade : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF3B82F6),
           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -480,9 +431,10 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
                 ),
               )
             : const Text(
-                'Make Offer',
+                'Create Trade',
                 style: TextStyle(
                   fontSize: 16,
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Orbitron',
                 ),

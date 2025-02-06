@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import '../../models/trade.dart';
 import '../../models/card.dart';
 import '../../utils/color_utils.dart';
-import '../../screens/make_offer_screen.dart';
+import '../trades/make_offer_screen.dart';
 
 class TradeCard extends StatelessWidget {
   final TradeModel trade;

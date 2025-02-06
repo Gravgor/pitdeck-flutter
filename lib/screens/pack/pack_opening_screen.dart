@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pitdeck/models/card.dart';
 import 'package:pitdeck/models/pack.dart';
 import 'dart:math' show pi, sin;
-import 'package:pitdeck/screens/pack_results_screen.dart';
+import 'package:pitdeck/screens/pack/pack_results_screen.dart';
 
 class PackOpeningScreen extends StatefulWidget {
   final Map<String, dynamic> sessionData;

@@ -1,9 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../screens/main_screen.dart';
 import '../screens/collection_screen.dart';
-import '../screens/market_screen.dart';
-import '../screens/profile_screen.dart';
+import '../screens/trades/market_screen.dart';
+import '../screens/profile/profile_screen.dart';
 import '../main.dart';
 
 class NavigationProvider with ChangeNotifier {

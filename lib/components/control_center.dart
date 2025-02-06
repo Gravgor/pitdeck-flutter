@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pitdeck/providers/user_provider.dart';
 import 'dart:ui';
-import 'package:pitdeck/screens/packs_screen.dart';
+import 'package:pitdeck/screens/pack/packs_screen.dart';
 import 'package:provider/provider.dart';
 
 class ControlTile {
@@ -49,13 +49,13 @@ class ControlCenter extends StatelessWidget {
 
   List<DailyReward> _getDailyRewards() {
     return [
-      DailyReward(day: 1, coins: 100, isCollected: true, isToday: false),
-      DailyReward(day: 2, coins: 200, isCollected: true, isToday: false),
-      DailyReward(day: 3, coins: 300, isCollected: true, isToday: false),
-      DailyReward(day: 4, coins: 500, isCollected: false, isToday: true),
-      DailyReward(day: 5, coins: 750, isCollected: false, isToday: false),
-      DailyReward(day: 6, coins: 1000, isCollected: false, isToday: false),
-      DailyReward(day: 7, coins: 2000, isCollected: false, isToday: false),
+      const DailyReward(day: 1, coins: 100, isCollected: true, isToday: false),
+      const DailyReward(day: 2, coins: 200, isCollected: true, isToday: false),
+      const DailyReward(day: 3, coins: 300, isCollected: true, isToday: false),
+      const DailyReward(day: 4, coins: 500, isCollected: false, isToday: true),
+      const DailyReward(day: 5, coins: 750, isCollected: false, isToday: false),
+      const DailyReward(day: 6, coins: 1000, isCollected: false, isToday: false),
+      const DailyReward(day: 7, coins: 2000, isCollected: false, isToday: false),
     ];
   }
 

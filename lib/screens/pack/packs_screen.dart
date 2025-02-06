@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
 import 'package:pitdeck/models/pack.dart';
-import 'package:pitdeck/screens/pack_opening_screen.dart';
+import 'package:pitdeck/screens/pack/pack_opening_screen.dart';
 import 'dart:math' show pi, sin;
 
 class PacksScreen extends StatefulWidget {

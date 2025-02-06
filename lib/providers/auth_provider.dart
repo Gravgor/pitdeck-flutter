@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:pitdeck/providers/user_provider.dart';
 import 'package:pitdeck/screens/main_screen.dart';
-import 'package:pitdeck/screens/onboarding_screen.dart';
+import 'package:pitdeck/screens/auth/onboarding_screen.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/user.dart';

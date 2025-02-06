@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:pitdeck/screens/packs_screen.dart';
-import '../models/card.dart';
-import '../utils/color_utils.dart';
+import 'package:pitdeck/screens/pack/packs_screen.dart';
+import '../../models/card.dart';
+import '../../utils/color_utils.dart';
 import 'dart:math' show min;
 
 class PackResultsScreen extends StatelessWidget {

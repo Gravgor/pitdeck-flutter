@@ -9,7 +9,7 @@ import 'package:pitdeck/main.dart';
 class CardProvider with ChangeNotifier {
   final String _baseUrl = 'https://api.pitdeck.app/api';
   List<CardModel> _cards = [];
-  Map<String, CardDetailModel> _cardDetails = {};
+  final Map<String, CardDetailModel> _cardDetails = {};
 
   List<CardModel> get cards => _cards;
   Map<String, CardDetailModel> get cardDetails => _cardDetails;

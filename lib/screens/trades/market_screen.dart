@@ -3,16 +3,16 @@ import 'package:pitdeck/models/listing.dart';
 import 'package:pitdeck/models/trade.dart';
 import 'package:pitdeck/providers/card_provider.dart';
 import 'package:pitdeck/providers/trade_provider.dart';
-import 'package:pitdeck/screens/my_listings_screen.dart';
-import 'package:pitdeck/screens/trades_screen.dart';
-import '../models/card.dart';
+import 'package:pitdeck/screens/trades/my_listings_screen.dart';
+import 'package:pitdeck/screens/trades/trades_screen.dart';
+import '../../models/card.dart';
 import 'package:provider/provider.dart';
-import '../providers/navigation_provider.dart';
-import '../providers/listing_provider.dart';
+import '../../providers/navigation_provider.dart';
+import '../../providers/listing_provider.dart';
 import 'package:intl/intl.dart';
-import '../screens/widgets/trade_card.dart';
-import '../screens/sell_card_screen.dart';
-import '../screens/create_trade_screen.dart';
+import '../widgets/trade_card.dart';
+import 'sell_card_screen.dart';
+import 'create_trade_screen.dart';
 
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});

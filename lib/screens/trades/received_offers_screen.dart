@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/trade_provider.dart';
-import '../models/trade_offer.dart';
-import '../utils/color_utils.dart';
+import '../../providers/trade_provider.dart';
+import '../../models/trade_offer.dart';
+import '../../utils/color_utils.dart';
 
 class ReceivedOffersScreen extends StatefulWidget {
   const ReceivedOffersScreen({super.key});

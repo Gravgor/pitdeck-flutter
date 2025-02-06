@@ -9,8 +9,8 @@ import 'package:pitdeck/config/mapbox_config.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pitdeck/screens/collection_screen.dart';
-import 'package:pitdeck/screens/market_screen.dart';
-import 'package:pitdeck/screens/packs_screen.dart';
+import 'package:pitdeck/screens/trades/market_screen.dart';
+import 'package:pitdeck/screens/pack/packs_screen.dart';
 import 'package:pitdeck/services/cache_service.dart';
 import 'package:pitdeck/services/socket_service.dart';
 import 'package:provider/provider.dart';
@@ -40,17 +40,20 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   MarkerManager? _markerManager;
   geo.Position? _userLocation;
   Timer? _locationTimer;
-  CircleAnnotationManager? _circleAnnotationManager;
-  bool _isLoading = false;
+  final bool _isLoading = false;
   IO.Socket? _socket;
   Timer? _socketReconnectTimer;
   bool _isSocketConnecting = false;
   final _retryDelays = [2, 5, 10, 30];
+
   int _retryAttempt = 0;
 
   final baseUrl = 'https://api.pitdeck.app/api';
 
   StreamSubscription<geo.Position>? _locationStreamSubscription;
+
+  CircleAnnotationManager? _circleAnnotationManager;
+  CircleAnnotation? _userRadiusCircle;
 
   @override
   void initState() {
@@ -73,6 +76,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     _socket?.dispose();
     super.dispose();
   }
+
 
   Future<void> _loadCachedState() async {
     final cachedDrops = await _cacheService.getCachedDrops();
@@ -119,10 +123,14 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       setState(() {
         _userLocation = position;
       });
+
+      await _addRadiusCircle(Position(position.longitude, position.latitude));
+
       _socket?.emit('location:update', {
         'latitude': position.latitude,
         'longitude': position.longitude,
       });
+
       await _mapboxMap?.setCamera(
         CameraOptions(
           center: Point(
@@ -264,45 +272,12 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     }
   }
 
-  bool _areListsEqual(List<String> list1, List<String> list2) {
-    if (list1.length != list2.length) return false;
-    for (int i = 0; i < list1.length; i++) {
-      if (!list2.contains(list1[i])) return false;
-    }
-    return true;
-  }
-
-  Future<void> _updateRangeCircle(geo.Position position) async {
-    await _circleAnnotationManager?.deleteAll();
-
-    final auth = Provider.of<UserProvider>(context, listen: false);
-    final isPremium = auth.user?.isPremium ?? false;
-
-    final zoom =
-        await _mapboxMap?.getCameraState().then((state) => state.zoom) ?? 15.0;
-
-    final options = CircleAnnotationOptions(
-      geometry: Point(
-        coordinates: Position(position.longitude, position.latitude),
-      ),
-      circleRadius: isPremium ? 5000 / zoom : 1000 / zoom,
-      circleColor: Colors.blue.value,
-      circleOpacity: 0.2,
-      circleStrokeWidth: 2.0,
-      circleStrokeColor: Colors.blue.value,
-      circleStrokeOpacity: 0.5,
-      circleBlur: 1.0,
-    );
-
-    await _circleAnnotationManager?.create(options);
-  }
-
   Future<void> _startLocationUpdates() async {
     _locationStreamSubscription?.cancel();
 
-    final geo.LocationSettings locationSettings = geo.LocationSettings(
+    const geo.LocationSettings locationSettings = geo.LocationSettings(
       accuracy: geo.LocationAccuracy.high,
-      distanceFilter: 10, // Update every 10 meters
+      distanceFilter: 10,
     );
 
     _locationStreamSubscription = geo.Geolocator.getPositionStream(
@@ -312,6 +287,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         setState(() {
           _userLocation = position;
         });
+
+        _addRadiusCircle(Position(position.longitude, position.latitude));
 
         _socket?.emit('location:update', {
           'latitude': position.latitude,
@@ -348,12 +325,37 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   Future<void> _onMapCreated(MapboxMap mapboxMap) async {
     _mapboxMap = mapboxMap;
     await _enableLocationComponent();
+    _circleAnnotationManager =
+        await mapboxMap.annotations.createCircleAnnotationManager();
     final pointAnnotationManager =
         await mapboxMap.annotations.createPointAnnotationManager();
     _markerManager = MarkerManager(pointAnnotationManager, _showDropModal);
-    // _circleAnnotationManager =
-    //     await mapboxMap.annotations.createCircleAnnotationManager();
     await _getCurrentLocation();
+  }
+
+  Future<void> _addRadiusCircle(Position position) async {
+    if (_circleAnnotationManager == null) return;
+
+    // Remove existing circle if any
+    if (_userRadiusCircle != null) {
+      await _circleAnnotationManager?.delete(_userRadiusCircle!);
+    }
+
+    final auth = Provider.of<UserProvider>(context, listen: false);
+    final isPremium = auth.user?.isPremium ?? false;
+    final radiusMeters = isPremium ? 1500.0 : 100.0;
+    _userRadiusCircle = await _circleAnnotationManager?.create(
+      CircleAnnotationOptions(
+        geometry: Point(
+          coordinates: Position(position.lng, position.lat),
+        ),
+        circleRadius: radiusMeters,
+        circleColor: const Color(0xFF4B9FFF).withOpacity(0.1).value,
+        circleStrokeWidth: 2.0,
+        circleStrokeColor: const Color(0xFF4B9FFF).value,
+        circleStrokeOpacity: 0.8,
+      ),
+    );
   }
 
   void _showDropModal(DropModel drop) {
@@ -522,19 +524,19 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                                           .withOpacity(0.3),
                                     ),
                                   ),
-                                  child: Row(
+                                  child: const Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(
+                                      Icon(
                                         Icons.star,
                                         color: Color(0xFFFFB800),
                                         size: 16,
                                       ),
-                                      const SizedBox(width: 8),
+                                      SizedBox(width: 8),
                                       Text(
                                         'Get Premium to Reach',
                                         style: TextStyle(
-                                          color: const Color(0xFFFFB800),
+                                          color: Color(0xFFFFB800),
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
                                           fontFamily: 'Orbitron',
@@ -861,7 +863,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildFinalReward(List<dynamic> rewardsList, DropRarity rarity) {
-
     return Dialog.fullscreen(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -1117,44 +1118,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     }
   }
 
-  Color _getRarityColorString(String rarity) {
-    switch (rarity) {
-      case 'COMMON':
-        return Colors.grey;
-      case 'UNCOMMON':
-        return Colors.green;
-      case 'RARE':
-        return Colors.blue;
-      case 'EPIC':
-        return Colors.purple;
-      case 'LEGENDARY':
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  void _testDropAnimation() {
-    final mockRewards = {
-      "rewards": [
-        {
-          "type": "CARD",
-          "card": {
-            "id": "test123",
-            "name": "Lewis Hamilton",
-            "imageUrl": "https://picsum.photos/400/300",
-            "serialNumber": "123/999",
-            "rarity": "LEGENDARY",
-            "series": "2024 Season",
-            "year": "2024"
-          }
-        }
-      ]
-    };
-
-    _showRewardsDialog(mockRewards, DropRarity.LEGENDARY);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1186,8 +1149,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-
-
   Widget _buildRefreshButton() {
     return Positioned(
       left: 16,
@@ -1205,7 +1166,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                 builder: (context) => BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
                   child: Center(
-                    child: Container(
+                    child: SizedBox(
                       width: 200,
                       height: 200,
                       child: Stack(
@@ -1337,7 +1298,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-   Widget _buildBottomNavigationBar() {
+  Widget _buildBottomNavigationBar() {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A2E),
@@ -1354,9 +1315,11 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildNavItem(Icons.map_outlined, Icons.map, 'Map', true),
-              _buildNavItem(Icons.card_membership_outlined, Icons.card_membership, 'Collection', false),
+              _buildNavItem(Icons.card_membership_outlined,
+                  Icons.card_membership, 'Collection', false),
               _buildNavItem(Icons.store_outlined, Icons.store, 'Market', false),
-              _buildNavItem(Icons.person_outline, Icons.person, 'Profile', false),
+              _buildNavItem(
+                  Icons.person_outline, Icons.person, 'Profile', false),
             ],
           ),
         ),
@@ -1364,7 +1327,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildNavItem(IconData outlinedIcon, IconData filledIcon, String label, bool isSelected) {
+  Widget _buildNavItem(IconData outlinedIcon, IconData filledIcon, String label,
+      bool isSelected) {
     return GestureDetector(
       onTap: () {
         if (!isSelected) {
@@ -1375,32 +1339,41 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   : label == 'Profile'
                       ? 3
                       : 0;
-          Provider.of<NavigationProvider>(context, listen: false).changePage(index);
+          Provider.of<NavigationProvider>(context, listen: false)
+              .changePage(index);
         }
       },
       behavior: HitTestBehavior.opaque,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF3B82F6).withOpacity(0.1) : Colors.transparent,
+          color: isSelected
+              ? const Color(0xFF3B82F6).withOpacity(0.1)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-          border: isSelected ? Border.all(
-            color: const Color(0xFF3B82F6).withOpacity(0.3),
-          ) : null,
+          border: isSelected
+              ? Border.all(
+                  color: const Color(0xFF3B82F6).withOpacity(0.3),
+                )
+              : null,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               isSelected ? filledIcon : outlinedIcon,
-              color: isSelected ? const Color(0xFF3B82F6) : Colors.white.withOpacity(0.5),
+              color: isSelected
+                  ? const Color(0xFF3B82F6)
+                  : Colors.white.withOpacity(0.5),
               size: 24,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? const Color(0xFF3B82F6) : Colors.white.withOpacity(0.5),
+                color: isSelected
+                    ? const Color(0xFF3B82F6)
+                    : Colors.white.withOpacity(0.5),
                 fontSize: 12,
                 fontFamily: 'Orbitron',
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -1438,12 +1411,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       ),
     );
   }
-}
-
-extension on Position? {
-  // ignore: recursive_getters
-  get longitude => this?.longitude ?? 0;
-  get latitude => this?.latitude ?? 0;
 }
 
 class MarkerManager {

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:pitdeck/models/trade.dart';
-import 'package:pitdeck/screens/received_offers_screen.dart';
-import '../models/card.dart';
+import 'package:pitdeck/screens/trades/received_offers_screen.dart';
+import '../../models/card.dart';
 import 'package:provider/provider.dart';
-import '../providers/trade_provider.dart';
-import '../providers/user_provider.dart';
+import '../../providers/trade_provider.dart';
+import '../../providers/user_provider.dart';
 import 'my_listings_screen.dart';
 
 class TradesScreen extends StatefulWidget {
