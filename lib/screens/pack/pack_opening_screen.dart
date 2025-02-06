@@ -502,15 +502,6 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
                     ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '#${card['serialNumber']}',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
-                    fontSize: 12,
-                    fontFamily: 'Orbitron',
-                  ),
-                ),
               ],
             ),
           ),

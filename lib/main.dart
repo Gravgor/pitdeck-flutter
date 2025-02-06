@@ -17,8 +17,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' show pi, sin, cos;
 import 'package:pitdeck/screens/main_wrapper.dart';
 import 'package:pitdeck/services/cache_service.dart';
+import 'package:pitdeck/providers/achievement_provider.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +46,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => FavoriteProvider()),
         ChangeNotifierProvider(create: (_) => BadgeProvider()),
         ChangeNotifierProvider(create: (_) => ScrollNotifier()),
+        ChangeNotifierProvider(create: (_) => AchievementProvider()),
       ],
       child: MaterialApp(
         navigatorKey: navigatorKey,
