@@ -10,6 +10,7 @@ import 'package:pitdeck/models/badge.dart';
 import 'package:pitdeck/providers/scroll_notifier.dart';
 import 'package:pitdeck/screens/collection_screen.dart';
 import 'package:pitdeck/screens/profile/settings_screen.dart';
+import 'package:pitdeck/providers/achievement_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String? userId;
@@ -35,6 +36,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _initializeUserSocket();
     }
     _loadUserData();
+    _loadAchievements();
   }
 
   Future<void> _initializeUserSocket() async {
@@ -46,6 +48,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!widget.isCurrentUser && widget.userId != null) {
       await Provider.of<UserProvider>(context, listen: false)
           .fetchUserProfileID(widget.userId!);
+    }
+  }
+
+  Future<void> _loadAchievements() async {
+    final auth = Provider.of<UserProvider>(context, listen: false);
+    if (auth.user?.token != null) {
+      await Provider.of<AchievementProvider>(context, listen: false)
+          .fetchUserAchievements(auth.user!.token!);
     }
   }
 
@@ -140,7 +150,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             .user
                                             ?.image ??
                                         'https://via.placeholder.com/150',
-
                                   ),
                                 ),
                                 const SizedBox(width: 16),
@@ -545,65 +554,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Recent Achievements',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Orbitron',
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  // Navigate to achievements
-                },
-                child: Text(
-                  'View All',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
-                    fontSize: 14,
-                    fontFamily: 'Orbitron',
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildAchievementCard(
-                  'First Win',
-                  'https://via.placeholder.com/150',
-                  'Win your first race',
-                  Icons.emoji_events,
-                  const Color(0xFFFFD700),
-                ),
-
-                _buildAchievementCard(
-                  'Speed Demon',
-                  'https://via.placeholder.com/150',
-                  'Complete 5 races in a row',
-                  Icons.speed,
-                  Colors.red,
-
-                ),
-                _buildAchievementCard(
-                  'Collector',
-                  'https://via.placeholder.com/150',
-                  'Collect 50 unique cards',
-                  Icons.collections,
-                  const Color(0xFF4B9FFF),
-
-                ),
-              ],
-            ),
-          ),
+          _buildAchievementsSection(),
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -689,8 +640,152 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildAchievementCard(
-      String title, String image, String description, IconData icon, Color color) {
+  Widget _buildAchievementsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Recent Achievements',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Orbitron',
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                // Navigate to achievements screen
+              },
+              child: Text(
+                'View All',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
+                  fontSize: 14,
+                  fontFamily: 'Orbitron',
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Consumer<AchievementProvider>(
+          builder: (context, provider, child) {
+            if (provider.isLoading) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFF3B82F6),
+                ),
+              );
+            }
+
+            if (provider.error != null) {
+              return Center(
+                child: Text(
+                  'Failed to load achievements',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 14,
+                    fontFamily: 'Orbitron',
+                  ),
+                ),
+              );
+            }
+
+            if (provider.achievements.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0A0A1A),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.1),
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.emoji_events_outlined,
+                      color: Colors.white.withOpacity(0.3),
+                      size: 48,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No Achievements Yet',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Orbitron',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Complete challenges to earn achievements',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.5),
+                        fontSize: 14,
+                        fontFamily: 'Orbitron',
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: provider.achievements.take(3).map((achievement) {
+                  return _buildAchievementCard(
+                    achievement.achievement.title,
+                    achievement.achievement.imageUrl,
+                    achievement.achievement.description,
+                    _getAchievementIcon(achievement.achievement.type),
+                    _getAchievementColor(achievement.achievement.type),
+                  );
+                }).toList(),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  IconData _getAchievementIcon(String type) {
+    switch (type) {
+      case 'SPEED':
+        return Icons.speed;
+      case 'COLLECTION':
+        return Icons.collections;
+      case 'VICTORY':
+        return Icons.emoji_events;
+      default:
+        return Icons.stars;
+    }
+  }
+
+  Color _getAchievementColor(String type) {
+    switch (type) {
+      case 'SPEED':
+        return Colors.red;
+      case 'COLLECTION':
+        return const Color(0xFF4B9FFF);
+      case 'VICTORY':
+        return const Color(0xFFFFD700);
+      default:
+        return const Color(0xFF3B82F6);
+    }
+  }
+
+  Widget _buildAchievementCard(String title, String image, String description,
+      IconData icon, Color color) {
     return Container(
       width: 200,
       margin: const EdgeInsets.only(right: 12),
@@ -717,7 +812,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: 24,
               height: 24,
             ),
-
           ),
           const SizedBox(height: 12),
           Text(
