@@ -69,7 +69,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-
   Future<void> _loadCachedState() async {
     final cachedDrops = await _cacheService.getCachedDrops();
     final isInitialLoad = await _cacheService.getInitialLoad();
@@ -115,8 +114,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       setState(() {
         _userLocation = position;
       });
-
-
 
       _socket?.emit('location:update', {
         'latitude': position.latitude,
@@ -278,7 +275,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           _userLocation = position;
         });
 
-
         _socket?.emit('location:update', {
           'latitude': position.latitude,
           'longitude': position.longitude,
@@ -320,7 +316,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     await _getCurrentLocation();
   }
 
-
   void _showDropModal(DropModel drop) {
     if (_isDropModalOpen) return;
     setState(() {
@@ -337,13 +332,12 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.5),
       builder: (context) => BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Dialog(
           backgroundColor: Colors.transparent,
           insetPadding: const EdgeInsets.symmetric(horizontal: 16),
-
           child: TweenAnimationBuilder<double>(
             duration: const Duration(milliseconds: 500),
             tween: Tween(begin: 0.8, end: 1.0),
@@ -352,14 +346,22 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
               scale: value,
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A2E),
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF1A1A2E),
+                      _getRarityColor(newDrop.rarity).withOpacity(0.05),
+                      const Color(0xFF1A1A2E),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: _getRarityColor(newDrop.rarity).withOpacity(0.3),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: _getRarityColor(newDrop.rarity).withOpacity(0.1),
+                      color: _getRarityColor(newDrop.rarity).withOpacity(0.2),
                       blurRadius: 20,
                       spreadRadius: 5,
                     ),
@@ -378,250 +380,245 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Row(
-                        children: [
-                          TweenAnimationBuilder<double>(
-                            duration: const Duration(milliseconds: 800),
-                            tween: Tween(begin: 0.0, end: 1.0),
-                            curve: Curves.elasticOut,
-                            builder: (context, value, child) => Transform.scale(
-                              scale: value,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _getRarityColor(newDrop.rarity)
-                                      .withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: _getRarityColor(newDrop.rarity)
-                                        .withOpacity(0.3),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.auto_awesome,
-                                      color: _getRarityColor(newDrop.rarity),
-                                      size: 16,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      newDrop.rarity.toString().split('.').last,
-                                      style: TextStyle(
-                                        color: _getRarityColor(newDrop.rarity),
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        fontFamily: 'Orbitron',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          const Spacer(),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isInRange
-                                      ? const Color(0xFF10B981).withOpacity(0.1)
-                                      : const Color(0xFFEF4444)
-                                          .withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: isInRange
-                                        ? const Color(0xFF10B981)
-                                            .withOpacity(0.3)
-                                        : const Color(0xFFEF4444)
-                                            .withOpacity(0.3),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      isInRange
-                                          ? Icons.near_me
-                                          : Icons.location_off,
-                                      color: isInRange
-                                          ? const Color(0xFF10B981)
-                                          : const Color(0xFFEF4444),
-                                      size: 16,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '${distance.toStringAsFixed(0)}m away',
-                                      style: TextStyle(
-                                        color: isInRange
-                                            ? const Color(0xFF10B981)
-                                            : const Color(0xFFEF4444),
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: 'Orbitron',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (!isPremium &&
-                                  distance > 100 &&
-                                  distance <= 500) ...[
-                                const SizedBox(height: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFB800)
-                                        .withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: const Color(0xFFFFB800)
-                                          .withOpacity(0.3),
-                                    ),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.star,
-                                        color: Color(0xFFFFB800),
-                                        size: 16,
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'Get Premium to Reach',
-                                        style: TextStyle(
-                                          color: Color(0xFFFFB800),
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: 'Orbitron',
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                    _buildDropHeader(newDrop, distance, isInRange, isPremium),
                     const SizedBox(height: 24),
-                    TweenAnimationBuilder<double>(
-                      duration: const Duration(milliseconds: 800),
-                      tween: Tween(begin: 0.0, end: 1.0),
-                      curve: Curves.elasticOut,
-                      builder: (context, value, child) => Transform.scale(
-                        scale: value,
-                        child: Container(
-                          height: 280,
-                          width: MediaQuery.of(context).size.width,
-                          margin: EdgeInsets.zero,
-                          decoration: BoxDecoration(
-                            color: _getRarityColor(newDrop.rarity)
-                                .withOpacity(0.05),
-                            border: Border(
-                              top: BorderSide(
-                                color: _getRarityColor(newDrop.rarity)
-                                    .withOpacity(0.2),
-                              ),
-                              bottom: BorderSide(
-                                color: _getRarityColor(newDrop.rarity)
-                                    .withOpacity(0.2),
-                              ),
-                            ),
-                          ),
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Icon(
-                                Icons.card_giftcard,
-                                color: _getRarityColor(newDrop.rarity)
-                                    .withOpacity(0.2),
-                                size: 80,
-                              ),
-                              if (!isInRange)
-                                Icon(
-                                  Icons.lock,
-                                  color: _getRarityColor(newDrop.rarity)
-                                      .withOpacity(0.3),
-                                  size: 40,
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
+                    _buildDropContent(newDrop, isInRange),
                     const SizedBox(height: 24),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: TweenAnimationBuilder<double>(
-                        duration: const Duration(milliseconds: 600),
-                        tween: Tween(begin: 0.0, end: 1.0),
-                        curve: Curves.easeOutCubic,
-                        builder: (context, value, child) => Transform.scale(
-                          scale: value,
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 32),
-                              child: ElevatedButton(
-                                onPressed:
-                                    isInRange ? () => _openDrop(newDrop) : null,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: isInRange
-                                      ? _getRarityColor(newDrop.rarity)
-                                      : const Color(0xFF2A2A3E),
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  elevation: 0,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      isInRange ? Icons.lock_open : Icons.lock,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      isInRange ? 'Open Drop' : 'Too Far Away',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                        fontFamily: 'Orbitron',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                    _buildDropButton(newDrop, isInRange),
+                    const SizedBox(height: 32),
                   ],
                 ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropHeader(
+      DropModel drop, double distance, bool isInRange, bool isPremium) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 800),
+                tween: Tween(begin: 0.0, end: 1.0),
+                curve: Curves.elasticOut,
+                builder: (context, value, child) => Transform.scale(
+                  scale: value,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _getRarityColor(drop.rarity).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _getRarityColor(drop.rarity).withOpacity(0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.auto_awesome,
+                          color: _getRarityColor(drop.rarity),
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          drop.rarity.toString().split('.').last,
+                          style: TextStyle(
+                            color: _getRarityColor(drop.rarity),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            fontFamily: 'Orbitron',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const Spacer(),
+              _buildDistanceIndicator(distance, isInRange, isPremium),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDistanceIndicator(
+      double distance, bool isInRange, bool isPremium) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: isInRange
+                ? const Color(0xFF10B981).withOpacity(0.1)
+                : const Color(0xFFEF4444).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isInRange
+                  ? const Color(0xFF10B981).withOpacity(0.3)
+                  : const Color(0xFFEF4444).withOpacity(0.3),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isInRange ? Icons.near_me : Icons.location_off,
+                color: isInRange
+                    ? const Color(0xFF10B981)
+                    : const Color(0xFFEF4444),
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${distance.toStringAsFixed(0)}m away',
+                style: TextStyle(
+                  color: isInRange
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFFEF4444),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Orbitron',
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (!isPremium && distance > 100 && distance <= 500) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFB800).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFFFFB800).withOpacity(0.3),
+              ),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.star,
+                  color: Color(0xFFFFB800),
+                  size: 18,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Get Premium to Reach',
+                  style: TextStyle(
+                    color: Color(0xFFFFB800),
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Orbitron',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDropContent(DropModel drop, bool isInRange) {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 800),
+      tween: Tween(begin: 0.0, end: 1.0),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) => Transform.scale(
+        scale: value,
+        child: Container(
+          height: 280,
+          width: MediaQuery.of(context).size.width,
+          margin: EdgeInsets.zero,
+          decoration: BoxDecoration(
+            color: _getRarityColor(drop.rarity).withOpacity(0.05),
+            border: Border(
+              top: BorderSide(
+                color: _getRarityColor(drop.rarity).withOpacity(0.2),
+              ),
+              bottom: BorderSide(
+                color: _getRarityColor(drop.rarity).withOpacity(0.2),
+              ),
+            ),
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Icon(
+                Icons.card_giftcard,
+                color: _getRarityColor(drop.rarity).withOpacity(0.2),
+                size: 80,
+              ),
+              if (!isInRange)
+                Icon(
+                  Icons.lock,
+                  color: _getRarityColor(drop.rarity).withOpacity(0.3),
+                  size: 40,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropButton(DropModel drop, bool isInRange) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: TweenAnimationBuilder<double>(
+        duration: const Duration(milliseconds: 600),
+        tween: Tween(begin: 0.0, end: 1.0),
+        curve: Curves.easeOutCubic,
+        builder: (context, value, child) => Transform.scale(
+          scale: value,
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: isInRange ? () => _openDrop(drop) : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isInRange
+                    ? _getRarityColor(drop.rarity)
+                    : const Color(0xFF2A2A3E),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    isInRange ? Icons.lock_open : Icons.lock,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isInRange ? 'Open Drop' : 'Too Far Away',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      fontFamily: 'Orbitron',
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -677,7 +674,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           _isDropModalOpen = false;
         });
         _showRewardsDialog(rewards, drop.rarity);
-
       } else if (response.statusCode == 403) {
         setState(() {
           _isDropModalOpen = false;
@@ -700,7 +696,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           const SnackBar(content: Text('Error claiming drop')),
         );
       }
-
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -710,7 +705,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         SnackBar(content: Text('Error claiming drop: $e')),
       );
     }
-
   }
 
   void _showRewardsDialog(Map<String, dynamic> rewards, DropRarity rarity) {
@@ -1288,27 +1282,51 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     return Positioned(
       right: 16,
       bottom: 25,
-      child: FloatingActionButton(
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => TweenAnimationBuilder<double>(
-              duration: const Duration(milliseconds: 500),
-              tween: Tween(begin: 1.0, end: 0.0),
-              curve: Curves.easeOutExpo,
-              builder: (context, value, child) => Transform.translate(
-                offset: Offset(0, 100 * value),
-                child: const ControlCenter(),
-              ),
-            ),
-          );
-        },
-        backgroundColor: const Color(0xFF1A1A2E),
-        child: const Icon(Icons.dashboard_customize, color: Color(0xFF3B82F6)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            heroTag: 'controlCenter',
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => TweenAnimationBuilder<double>(
+                  duration: const Duration(milliseconds: 500),
+                  tween: Tween(begin: 1.0, end: 0.0),
+                  curve: Curves.easeOutExpo,
+                  builder: (context, value, child) => Transform.translate(
+                    offset: Offset(0, 100 * value),
+                    child: const ControlCenter(),
+                  ),
+                ),
+              );
+            },
+            backgroundColor: const Color(0xFF1A1A2E),
+            child:
+                const Icon(Icons.dashboard_customize, color: Color(0xFF3B82F6)),
+          ),
+        ],
       ),
     );
+  }
+
+  // Add this method to test the modal
+  void _showTestDropModal() {
+    final testDrop = DropModel(
+      id: '1',
+      latitude: 0,
+      type: DropType.STANDARD,
+      longitude: 0,
+      rarity: DropRarity.LEGENDARY,
+      createdAt: DateTime.now(),
+      expiresAt: DateTime.now().add(Duration(days: 1)),
+      isActive: true,
+      rewards: [],
+    );
+    _showDropModal(testDrop);
   }
 }
 
