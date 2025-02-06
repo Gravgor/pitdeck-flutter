@@ -18,20 +18,11 @@ class MainWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => UserProvider()),
-        ChangeNotifierProvider(create: (_) => CardProvider()),
-        ChangeNotifierProvider(create: (_) => TradeProvider()),
-        ChangeNotifierProvider(create: (_) => FavoriteProvider()),
-        ChangeNotifierProvider(create: (_) => BadgeProvider()),
-        ChangeNotifierProvider(create: (_) => ScrollNotifier()),
-      ],
-
-      child: Consumer<NavigationProvider>(
+      return Consumer<NavigationProvider>(
         builder: (context, navigationProvider, _) {
           return Scaffold(
             body: IndexedStack(
+
               index: navigationProvider.currentIndex,
               children: const [
                 MainScreen(),
@@ -41,9 +32,9 @@ class MainWrapper extends StatelessWidget {
               ],
             ),
             bottomNavigationBar: const GlobalBottomNavigationBar(),
-          );
-        },
-      ),
+        );
+      },
     );
   }
 }
+

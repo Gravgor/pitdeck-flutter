@@ -35,8 +35,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => NavigationProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => NavigationProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CardProvider()),
         ChangeNotifierProvider(create: (_) => ListingProvider()),
@@ -58,30 +58,30 @@ class MyApp extends StatelessWidget {
                 titleSmall: const TextStyle(fontFamily: 'Orbitron'),
               ),
         ),
-        home: FutureBuilder(
-          future: Future.wait([
-            CacheService().initialize(),
-            Provider.of<UserProvider>(context, listen: false)
-                .initializeFromCache(),
-          ]),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done) {
-              final prefs = snapshot.data?[0] as SharedPreferences;
-              return prefs.getBool('isLoggedIn') != null &&
-                      prefs.getBool('isLoggedIn') == true
-                  ? const MainWrapper()
-                  : const AuthScreen();
-
-            }
-            return const Scaffold(
-              backgroundColor: Color(0xFF040412),
-              body: Center(
-                child: CircularProgressIndicator(
-                  color: Color(0xFF4B9FFF),
+        home: Builder(
+          builder: (context) => FutureBuilder(
+            future: Future.wait([
+              CacheService().initialize(),
+              Provider.of<UserProvider>(context, listen: false)
+                  .initializeFromCache(),
+            ]),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                final prefs = snapshot.data?[0] as SharedPreferences;
+                return prefs.getBool('isLoggedIn') ?? false
+                    ? const MainWrapper()
+                    : const AuthScreen();
+              }
+              return const Scaffold(
+                backgroundColor: Color(0xFF040412),
+                body: Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF4B9FFF),
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );

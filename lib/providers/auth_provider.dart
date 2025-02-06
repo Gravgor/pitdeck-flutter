@@ -223,7 +223,7 @@ class AuthProvider with ChangeNotifier {
         }),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         final data = json.decode(response.body);
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', data['token']);
