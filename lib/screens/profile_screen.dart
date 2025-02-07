@@ -247,19 +247,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Row(
                               children: [
                                 _buildBadgePreview(
-                                  Icons.speed,
-                                  Colors.red,
+                                  'https://pitdeck-app.s3.eu-north-1.amazonaws.com/users/badges/betatestpiddeck.png'
                                 ),
                                 const SizedBox(width: 8),
                                 _buildBadgePreview(
-                                  Icons.emoji_events,
-                                  Color(0xFFFFD700),
+                                  'https://pitdeck-app.s3.eu-north-1.amazonaws.com/users/badges/betatestpiddeck.png'
                                 ),
                                 const SizedBox(width: 8),
+
                                 _buildBadgePreview(
-                                  Icons.local_fire_department,
-                                  Color(0xFF4B9FFF),
+                                  'https://pitdeck-app.s3.eu-north-1.amazonaws.com/users/badges/betatestpiddeck.png'
                                 ),
+
                               ],
                             ),
                             const SizedBox(height: 16),
@@ -325,22 +324,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildBadgePreview(IconData icon, Color color) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.5)),
-      ),
-      child: Icon(
-        icon,
-        color: color,
-        size: 20,
+  Widget _buildBadgePreview(String badgeUrl) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.network(
+        'https://pitdeck-app.s3.eu-north-1.amazonaws.com/users/badges/betatestpiddeck.png',
+        width: 40,
+        height: 40,
+        fit: BoxFit.cover,
       ),
     );
   }
+
 
   void _showEditBioModal() {
     final TextEditingController bioController = TextEditingController(

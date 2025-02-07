@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pitdeck/screens/collection_screen.dart';
 import 'package:pitdeck/screens/pack/packs_screen.dart';
 import '../../models/card.dart';
 import '../../utils/color_utils.dart';
@@ -302,7 +303,7 @@ class PackResultsScreen extends StatelessWidget {
         onTap: () => _showAllCards(context),
         child: Container(
           width: 180,
-          height: 60,
+          height: 50,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             gradient: LinearGradient(
@@ -372,10 +373,11 @@ class PackResultsScreen extends StatelessWidget {
         const SizedBox(height: 12),
         TextButton(
           onPressed: () {
-            Navigator.of(context).popUntil(
-              (route) => route.settings.name == '/collection',
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const CollectionScreen()),
             );
           },
+
           style: TextButton.styleFrom(
             foregroundColor: Colors.white.withOpacity(0.7),
             minimumSize: const Size(double.infinity, 56),
