@@ -18,6 +18,8 @@ import 'dart:math';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:pitdeck/components/control_center.dart';
 import 'package:pitdeck/screens/widgets/main/topbar_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pitdeck/screens/daily_login_rewards.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -48,6 +50,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   StreamSubscription<geo.Position>? _locationStreamSubscription;
 
+  bool _hasUnclaimedReward = false;
+
   @override
   void initState() {
     super.initState();
@@ -56,6 +60,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeSocket();
       _initializeUserSocket();
+      _checkDailyReward();
     });
   }
 
@@ -1116,6 +1121,52 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           _buildControlCenter(),
           _buildRefreshButton(),
           _buildEventBanner(),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 710,
+            left: 16,
+            child: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A2E),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.1),
+                    ),
+                  ),
+                  child: IconButton(
+                    onPressed: _showDailyReward,
+                    icon: const Icon(
+                      Icons.calendar_today_rounded,
+                      color: Color(0xFF3B82F6),
+                    ),
+                  ),
+
+                ),
+                if (_hasUnclaimedReward)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFEF4444),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Text(
+                        '1',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -1328,7 +1379,39 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
     _showDropModal(testDrop);
   }
+
+  Future<void> _checkDailyReward() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lastRewardDate = prefs.getString('lastRewardDate');
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day).toString();
+
+      setState(() {
+        _hasUnclaimedReward = lastRewardDate != today;
+      });
+    } catch (e) {
+      print('Error checking daily reward: $e');
+    }
+  }
+
+  void _showDailyReward() {
+    final token = Provider.of<UserProvider>(context, listen: false).user?.token;
+    if (token != null) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        barrierColor: Colors.black.withOpacity(0.5),
+        builder: (BuildContext context) {
+          return DailyLoginRewardsPopup(token: token);
+        },
+      );
+    } else {
+      print('No token found');
+    }
+  }
 }
+
 
 class MarkerManager {
   final Map<String, DropModel> _markerDrops = {};
