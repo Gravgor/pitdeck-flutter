@@ -34,11 +34,12 @@ class DailyRewardService {
         },
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         return json.decode(response.body);
       } else {
         throw Exception(json.decode(response.body)['message']);
       }
+
     } catch (e) {
       throw Exception('Failed to claim daily reward: $e');
     }
@@ -54,7 +55,7 @@ class DailyRewardService {
         },
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         return json.decode(response.body);
       } else {
         throw Exception(json.decode(response.body)['message']);
