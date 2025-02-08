@@ -1122,8 +1122,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           _buildRefreshButton(),
           _buildEventBanner(),
           Positioned(
-            top: MediaQuery.of(context).padding.top + 710,
-            left: 16,
+           left: 16,
+             bottom: 25,
             child: Stack(
               children: [
                 Container(
@@ -1364,21 +1364,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-  // Add this method to test the modal
-  void _showTestDropModal() {
-    final testDrop = DropModel(
-      id: '1',
-      latitude: 0,
-      type: DropType.STANDARD,
-      longitude: 0,
-      rarity: DropRarity.LEGENDARY,
-      createdAt: DateTime.now(),
-      expiresAt: DateTime.now().add(Duration(days: 1)),
-      isActive: true,
-      rewards: [],
-    );
-    _showDropModal(testDrop);
-  }
 
   Future<void> _checkDailyReward() async {
     try {
