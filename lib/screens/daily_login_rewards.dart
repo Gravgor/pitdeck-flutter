@@ -76,6 +76,14 @@ class _DailyLoginRewardsPopupState extends State<DailyLoginRewardsPopup>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Center(
