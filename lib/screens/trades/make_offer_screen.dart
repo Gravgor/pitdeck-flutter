@@ -404,9 +404,12 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
             controller: _coinsController,
             keyboardType: TextInputType.number,
             style: const TextStyle(color: Colors.white),
+            autofocus: false,
+            onTapOutside: (_) => FocusScope.of(context).unfocus(),
             decoration: InputDecoration(
               hintText: 'Add coins to offer (optional)',
               hintStyle: TextStyle(color: Colors.grey.shade400),
+
               prefixIcon:
                   const Icon(Icons.monetization_on, color: Colors.amber),
               border: OutlineInputBorder(
@@ -428,7 +431,10 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
             controller: _noteController,
             style: const TextStyle(color: Colors.white),
             maxLines: 2,
+            autofocus: false,
+            onTapOutside: (_) => FocusScope.of(context).unfocus(),
             decoration: InputDecoration(
+
               hintText: 'Add a note (optional)',
               hintStyle: TextStyle(color: Colors.grey.shade400),
               prefixIcon: const Icon(Icons.note, color: Colors.grey),

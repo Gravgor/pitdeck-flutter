@@ -217,6 +217,8 @@ class _SellCardScreenState extends State<SellCardScreen> {
         controller: _priceController,
         keyboardType: TextInputType.number,
         style: const TextStyle(color: Colors.white),
+        autofocus: false,
+        onTapOutside: (_) => FocusScope.of(context).unfocus(),
         decoration: InputDecoration(
           hintText: 'Enter price in coins',
           hintStyle: TextStyle(color: Colors.grey.shade400),

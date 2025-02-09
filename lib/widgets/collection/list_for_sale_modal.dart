@@ -99,6 +99,8 @@ class _ListForSaleModalState extends State<ListForSaleModal> {
                       child: TextField(
                         controller: _priceController,
                         keyboardType: TextInputType.number,
+                        autofocus: false,
+                        onTapOutside: (_) => FocusScope.of(context).unfocus(),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
