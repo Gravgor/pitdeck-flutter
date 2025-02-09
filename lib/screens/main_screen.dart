@@ -1122,8 +1122,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           _buildRefreshButton(),
           _buildEventBanner(),
           Positioned(
-           left: 16,
-             bottom: 25,
+            left: 16,
+            bottom: 25,
             child: Stack(
               children: [
                 Container(
@@ -1141,7 +1141,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                       color: Color(0xFF3B82F6),
                     ),
                   ),
-
                 ),
                 if (_hasUnclaimedReward)
                   Positioned(
@@ -1364,7 +1363,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-
   Future<void> _checkDailyReward() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -1385,18 +1383,19 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     if (token != null) {
       showDialog(
         context: context,
-        barrierDismissible: false,
+        barrierDismissible: true,
         barrierColor: Colors.black.withOpacity(0.5),
         builder: (BuildContext context) {
-          return DailyLoginRewardsPopup(token: token);
+          return PopScope(
+            canPop: true,
+            child: DailyLoginRewardsPopup(token: token),
+          );
         },
+
       );
-    } else {
-      print('No token found');
     }
   }
 }
-
 
 class MarkerManager {
   final Map<String, DropModel> _markerDrops = {};
