@@ -29,6 +29,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
   final _searchController = TextEditingController();
   bool _isLoading = false;
   static const int maxCards = 8;
+  String _selectedFilter = 'all';
 
   @override
   void dispose() {
@@ -38,7 +39,7 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
     super.dispose();
   }
 
-  Future<List<CardModel>> _getAvailableCards() async {
+  Future<List<CardModel>> _getFilteredCards() async {
     final cardProvider = Provider.of<CardProvider>(context, listen: false);
     final tradeProvider = Provider.of<TradeProvider>(context, listen: false);
     final listingProvider =
@@ -48,35 +49,39 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
     final cardsInTrades = await tradeProvider.getActiveTradeCardIds();
     final cardsInMarketplace = await listingProvider.getListedCardIds();
 
-    return userCards
-        .where((card) =>
-            !cardsInTrades.contains(card.id) &&
-            !cardsInMarketplace.contains(card.id))
-        .toList();
-  }
+    List<CardModel> filteredCards;
+    switch (_selectedFilter) {
+      case 'trade':
+        filteredCards =
+            userCards.where((card) => cardsInTrades.contains(card.id)).toList();
+        break;
+      case 'market':
+        filteredCards = userCards
+            .where((card) => cardsInMarketplace.contains(card.id))
+            .toList();
+        break;
+      default: // 'all'
+        filteredCards = userCards
+            .where((card) =>
+                !cardsInTrades.contains(card.id) &&
+                !cardsInMarketplace.contains(card.id))
+            .toList();
+    }
 
-  Future<List<CardModel>> _getFilteredCards() async {
-    final cards = await _getAvailableCards();
-
-    return cards.where((card) {
+    return filteredCards.where((card) {
       if (selectedRarities.isNotEmpty &&
           !selectedRarities.contains(card.rarity)) {
         return false;
       }
-
-      // Apply type filter
       if (selectedTypes.isNotEmpty && !selectedTypes.contains(card.type)) {
         return false;
       }
-
-      // Apply search filter
       if (_searchController.text.isNotEmpty) {
         final searchTerm = _searchController.text.toLowerCase();
         return card.name.toLowerCase().contains(searchTerm) ||
             card.type.toLowerCase().contains(searchTerm) ||
             card.serialNumber.toString().contains(searchTerm);
       }
-
       return true;
     }).toList();
   }

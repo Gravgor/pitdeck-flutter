@@ -322,10 +322,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   }
 
   void _showDropModal(DropModel drop) {
-    if (_isDropModalOpen) return;
-    setState(() {
-      _isDropModalOpen = true;
-    });
     final newDrop = _markerManager?.getDropForId(drop.id);
     final distance = _calculateDistance(newDrop!);
     final auth = Provider.of<UserProvider>(context, listen: false);
