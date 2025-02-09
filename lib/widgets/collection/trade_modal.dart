@@ -9,12 +9,13 @@ class TradeModal extends StatefulWidget {
 
   const TradeModal({super.key, required this.card});
 
-
   @override
   State<TradeModal> createState() => _TradeModalState();
 }
 
 class _TradeModalState extends State<TradeModal> {
+  String _tradeId = '';
+  TextEditingController _coinsOfferedController = TextEditingController();
   bool _isLoading = false;
 
   @override
@@ -22,19 +23,17 @@ class _TradeModalState extends State<TradeModal> {
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF1A1A2E),
+            const Color(0xFF0F0F1E),
+            const Color(0xFF0A0A1A),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 16,
-            offset: const Offset(0, -4),
-          ),
-        ],
+        border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.1)),
       ),
       child: Column(
         children: [
@@ -43,7 +42,7 @@ class _TradeModalState extends State<TradeModal> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: const Color(0xFF3B82F6).withOpacity(0.2),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -53,20 +52,31 @@ class _TradeModalState extends State<TradeModal> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Open Trade',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Orbitron',
+                ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                  ).createShader(bounds),
+                  child: const Text(
+                    'Open Trade',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Orbitron',
+                    ),
                   ),
                 ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: Icon(
-                    Icons.close,
-                    color: Colors.white.withOpacity(0.5),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(
+                      Icons.close,
+                      color: Colors.white.withOpacity(0.7),
+                    ),
                   ),
                 ),
               ],
@@ -80,23 +90,45 @@ class _TradeModalState extends State<TradeModal> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Your Card',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontFamily: 'Orbitron',
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3B82F6).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: const Color(0xFF3B82F6).withOpacity(0.3),
+                        ),
+                      ),
+                      child: const Text(
+                        'Your Card',
+                        style: TextStyle(
+                          color: Color(0xFF3B82F6),
+                          fontSize: 14,
+                          fontFamily: 'Orbitron',
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
                     _buildCardPreview(widget.card),
                     const SizedBox(height: 32),
-                    const Text(
-                      'Trade ID',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontFamily: 'Orbitron',
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3B82F6).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: const Color(0xFF3B82F6).withOpacity(0.3),
+                        ),
+                      ),
+                      child: const Text(
+                        'Coins Offered (optional)',
+                        style: TextStyle(
+                          color: Color(0xFF3B82F6),
+                          fontSize: 14,
+                          fontFamily: 'Orbitron',
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -105,20 +137,34 @@ class _TradeModalState extends State<TradeModal> {
                       decoration: BoxDecoration(
                         color: const Color(0xFF0A0A1A),
                         borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFF3B82F6).withOpacity(0.2),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF3B82F6).withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
                       child: TextField(
+                        controller: _coinsOfferedController,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                           fontFamily: 'Orbitron',
                         ),
-                        decoration: const InputDecoration(
+                        autofocus: false,
+                        onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                        decoration: InputDecoration(
                           border: InputBorder.none,
-                          hintText: 'Enter trade ID',
+                          hintText: 'Enter coins offered',
                           hintStyle: TextStyle(
-                            color: Colors.grey,
+                            color: Colors.white.withOpacity(0.3),
                             fontFamily: 'Orbitron',
                           ),
+
                         ),
                         onChanged: (value) => setState(() => _tradeId = value),
                       ),
@@ -135,10 +181,12 @@ class _TradeModalState extends State<TradeModal> {
                   _isLoading || _tradeId.isEmpty ? null : _createTradeOffer,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF3B82F6),
+                foregroundColor: Colors.white,
                 minimumSize: const Size(double.infinity, 56),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
+                elevation: 0,
               ),
               child: _isLoading
                   ? const SizedBox(
@@ -164,8 +212,6 @@ class _TradeModalState extends State<TradeModal> {
       ),
     );
   }
-
-  String _tradeId = '';
 
   Widget _buildCardPreview(CardDetailModel card) {
     return Container(
@@ -228,17 +274,16 @@ class _TradeModalState extends State<TradeModal> {
   }
 
   Future<void> _createTradeOffer() async {
-    /*
     setState(() => _isLoading = true);
     try {
       await Provider.of<TradeProvider>(context, listen: false)
-          .createTradeOffer(widget.card.id, _tradeId);
+          .createTrade(offeredCardIds: [widget.card.id], coinsOffered: 0);
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      // Handle error
+      print(e);
     } finally {
       if (mounted) setState(() => _isLoading = false);
-    }*/
+    }
     Navigator.pop(context);
   }
 }
