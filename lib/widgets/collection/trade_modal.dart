@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pitdeck/utils/color_utils.dart';
 import '../../models/card.dart';
 import '../../models/trade_offer.dart';
 import '../../providers/trade_provider.dart';
@@ -252,16 +253,19 @@ class _TradeModalState extends State<TradeModal> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6).withOpacity(0.1),
+                    color: ColorUtils.getRarityColor(card.rarity)
+                        .withOpacity(0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
+
                   child: Text(
                     card.rarity,
-                    style: const TextStyle(
-                      color: Color(0xFF3B82F6),
+                    style: TextStyle(
+                      color: ColorUtils.getRarityColor(card.rarity),
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                       fontFamily: 'Orbitron',
+
                     ),
                   ),
                 ),

@@ -24,19 +24,17 @@ class TradeCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF1A1A2E),
+            const Color(0xFF0F0F1E),
+            const Color(0xFF0A0A1A),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.1)),
       ),
       child: Column(
         children: [
@@ -54,26 +52,40 @@ class TradeCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          if (trade.sender.image != null)
-            Container(
-              width: 40,
-              height: 40,
-              margin: const EdgeInsets.only(right: 12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.1),
-                  width: 2,
-                ),
+          Container(
+            width: 40,
+            height: 40,
+            margin: const EdgeInsets.only(right: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFF3B82F6).withOpacity(0.3),
+                width: 2,
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(18),
-                child: Image.network(
-                  trade.sender.image!,
-                  fit: BoxFit.cover,
-                ),
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF3B82F6).withOpacity(0.1),
+                  Colors.transparent,
+                ],
               ),
             ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: trade.sender.image != null
+                  ? Image.network(
+                      trade.sender.image!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.person,
+                        color: Color(0xFF3B82F6),
+                      ),
+                    )
+                  : const Icon(
+                      Icons.person,
+                      color: Color(0xFF3B82F6),
+                    ),
+            ),
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,13 +101,14 @@ class TradeCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFF3B82F6).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFF3B82F6).withOpacity(0.3),
+                    ),
                   ),
                   child: Text(
                     'Level ${trade.sender.level}',
@@ -111,14 +124,11 @@ class TradeCard extends StatelessWidget {
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 6,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: ColorUtils.getTradeStatusColor(trade.status, null)
                   .withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: ColorUtils.getTradeStatusColor(trade.status, null)
                     .withOpacity(0.3),
@@ -145,18 +155,28 @@ class TradeCard extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'Offering:',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
-              fontSize: 14,
-              fontFamily: 'Orbitron',
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF3B82F6).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: const Color(0xFF3B82F6).withOpacity(0.3),
+              ),
+            ),
+            child: const Text(
+              'Offering',
+              style: TextStyle(
+                color: Color(0xFF3B82F6),
+                fontSize: 14,
+                fontFamily: 'Orbitron',
+              ),
             ),
           ),
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 180,
+          height: 160,
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
@@ -170,34 +190,39 @@ class TradeCard extends StatelessWidget {
   }
 
   Widget _buildCardItem(BuildContext context, CardDetailModel card) {
-    final isLegendary = card.rarity == 'LEGENDARY';
+    final isLegendary = card.rarity.toUpperCase() == 'LEGENDARY';
+    final rarityColor = ColorUtils.getRarityColor(card.rarity);
 
     return GestureDetector(
       onTap: () => onCardTap(context, card),
       child: Container(
-        width: 140,
+        width: 120,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF0A0A1A), Color(0xFF070711)],
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFF0A0A1A),
+              if (isLegendary) rarityColor.withOpacity(0.1),
+              const Color(0xFF070711),
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            if (isLegendary) ...[
-              BoxShadow(
-                color: ColorUtils.getRarityColor(card.rarity).withOpacity(0.2),
-                blurRadius: 16,
-                spreadRadius: 2,
-              ),
-              BoxShadow(
-                color: ColorUtils.getRarityColor(card.rarity).withOpacity(0.1),
-                blurRadius: 24,
-                spreadRadius: 4,
-              ),
-            ],
-          ],
+          border: Border.all(
+            color: isLegendary
+                ? rarityColor.withOpacity(0.3)
+                : Colors.white.withOpacity(0.1),
+          ),
+          boxShadow: isLegendary
+              ? [
+                  BoxShadow(
+                    color: rarityColor.withOpacity(0.2),
+                    blurRadius: 16,
+                    spreadRadius: 0,
+                  ),
+                ]
+              : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,11 +235,16 @@ class TradeCard extends StatelessWidget {
                 child: Image.network(
                   card.imageUrl,
                   fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: Colors.white.withOpacity(0.1),
+                    child: const Icon(Icons.image_not_supported,
+                        color: Colors.white54),
+                  ),
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -222,47 +252,30 @@ class TradeCard extends StatelessWidget {
                     card.name,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 14,
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                       fontFamily: 'Orbitron',
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: ColorUtils.getRarityColor(card.rarity)
-                          .withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                      border: isLegendary
-                          ? Border.all(
-                              color: ColorUtils.getRarityColor(card.rarity)
-                                  .withOpacity(0.3),
-                            )
-                          : null,
+                      color: rarityColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: rarityColor.withOpacity(0.3)),
                     ),
                     child: Text(
                       card.rarity,
                       style: TextStyle(
-                        color: ColorUtils.getRarityColor(card.rarity),
-                        fontSize: 12,
+                        color: rarityColor,
+                        fontSize: 10,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Orbitron',
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '#${card.serialNumber}',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
-                      fontSize: 12,
-                      fontFamily: 'Orbitron',
                     ),
                   ),
                 ],
@@ -288,17 +301,13 @@ class TradeCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.monetization_on,
-            color: Color(0xFFFFB800),
-            size: 20,
-          ),
+          const Icon(Icons.monetization_on, color: Color(0xFFFFB800), size: 20),
           const SizedBox(width: 8),
           Text(
             '$formattedCoins coins',
             style: const TextStyle(
               color: Color(0xFFFFB800),
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.bold,
               fontFamily: 'Orbitron',
             ),
@@ -322,10 +331,8 @@ class TradeCard extends StatelessWidget {
             child: Text(
               trade.note ?? 'No note provided',
               style: TextStyle(
-                color: trade.note != null
-                    ? Colors.white.withOpacity(0.7)
-                    : Colors.white.withOpacity(0.3),
-                fontSize: 14,
+                color: Colors.white.withOpacity(trade.note != null ? 0.7 : 0.3),
+                fontSize: 12,
                 fontStyle: FontStyle.italic,
                 fontFamily: 'Orbitron',
               ),
@@ -338,18 +345,17 @@ class TradeCard extends StatelessWidget {
             onPressed: () => _showMakeOfferModal(context, trade),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF3B82F6),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 12,
-              ),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
               ),
+              elevation: 0,
             ),
             child: const Text(
               'Make Offer',
               style: TextStyle(
-                color: Colors.white,
+                fontSize: 12,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Orbitron',
               ),

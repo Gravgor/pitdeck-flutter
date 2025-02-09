@@ -5,6 +5,7 @@ import '../../providers/trade_provider.dart';
 import '../../models/card.dart';
 import '../../models/trade.dart';
 import '../../utils/color_utils.dart';
+import 'package:intl/intl.dart';
 
 class MakeOfferScreen extends StatefulWidget {
   final TradeModel originalTrade;
@@ -64,12 +65,18 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
-          'Make Offer',
-          style: TextStyle(
-            color: Colors.white,
-            fontFamily: 'Orbitron',
-            fontWeight: FontWeight.bold,
+        title: ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+          ).createShader(bounds),
+          child: const Text(
+            'Make Offer',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontFamily: 'Orbitron',
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ),
@@ -89,7 +96,14 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF1A1A2E),
+            const Color(0xFF0F0F1E),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
         border: Border(
           bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
         ),
@@ -97,46 +111,143 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Original Trade',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Orbitron',
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF3B82F6).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: const Color(0xFF3B82F6).withOpacity(0.3),
+              ),
+            ),
+            child: const Text(
+              'Original Trade',
+              style: TextStyle(
+                color: Color(0xFF3B82F6),
+                fontSize: 14,
+                fontFamily: 'Orbitron',
+              ),
             ),
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 100,
+            height: 120,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: widget.originalTrade.offeredCards.length,
               itemBuilder: (context, index) {
                 final card = widget.originalTrade.offeredCards[index];
+                final rarityColor = ColorUtils.getRarityColor(card.rarity);
+                final isLegendary = card.rarity.toUpperCase() == 'LEGENDARY';
+
                 return Container(
-                  width: 80,
+                  width: 100,
                   margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF0A0A1A),
+                        if (isLegendary) rarityColor.withOpacity(0.1),
+                        const Color(0xFF070711),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isLegendary
+                          ? rarityColor.withOpacity(0.3)
+                          : Colors.white.withOpacity(0.1),
+                    ),
+                    boxShadow: isLegendary
+                        ? [
+                            BoxShadow(
+                              color: rarityColor.withOpacity(0.2),
+                              blurRadius: 16,
+                              spreadRadius: 0,
+                            ),
+                          ]
+                        : null,
+                  ),
                   child: Column(
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          card.imageUrl,
-                          height: 80,
-                          width: 80,
-                          fit: BoxFit.cover,
-                        ),
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12),
+                            ),
+                            child: Image.network(
+                              card.imageUrl,
+                              height: 80,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.7),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '#${card.serialNumber}',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.8),
+                                  fontSize: 8,
+                                  fontFamily: 'Orbitron',
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        card.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              card.name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Orbitron',
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: rarityColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(
+                                    color: rarityColor.withOpacity(0.3)),
+                              ),
+                              child: Text(
+                                card.rarity,
+                                style: TextStyle(
+                                  color: rarityColor,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Orbitron',
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -145,15 +256,35 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
             ),
           ),
           if (widget.originalTrade.coinsOffered > 0)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                '+ ${widget.originalTrade.coinsOffered} coins',
-                style: const TextStyle(
-                  color: Colors.amber,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFB800).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFFFFB800).withOpacity(0.3),
                 ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.monetization_on,
+                    color: Color(0xFFFFB800),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${NumberFormat('#,###').format(widget.originalTrade.coinsOffered)} coins',
+                    style: const TextStyle(
+                      color: Color(0xFFFFB800),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Orbitron',
+                    ),
+                  ),
+                ],
               ),
             ),
         ],
@@ -165,10 +296,17 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
     if (selectedCards.isEmpty) return const SizedBox.shrink();
 
     return Container(
-      height: 140,
+      height: 160,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF1A1A2E),
+            const Color(0xFF0F0F1E),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
         border: Border(
           bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
         ),
@@ -176,47 +314,144 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Your Offer (${selectedCards.length}/$maxCards)',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Orbitron',
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF3B82F6).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: const Color(0xFF3B82F6).withOpacity(0.3),
+              ),
+            ),
+            child: Text(
+              'Your Offer (${selectedCards.length}/$maxCards)',
+              style: const TextStyle(
+                color: Color(0xFF3B82F6),
+                fontSize: 14,
+                fontFamily: 'Orbitron',
+              ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Expanded(
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: selectedCards.length,
               itemBuilder: (context, index) {
                 final card = selectedCards.elementAt(index);
+                final rarityColor = ColorUtils.getRarityColor(card.rarity);
+                final isLegendary = card.rarity.toUpperCase() == 'LEGENDARY';
+
                 return Container(
-                  width: 80,
+                  width: 100,
                   margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF0A0A1A),
+                        if (isLegendary) rarityColor.withOpacity(0.1),
+                        const Color(0xFF070711),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isLegendary
+                          ? rarityColor.withOpacity(0.3)
+                          : Colors.white.withOpacity(0.1),
+                    ),
+                    boxShadow: isLegendary
+                        ? [
+                            BoxShadow(
+                              color: rarityColor.withOpacity(0.2),
+                              blurRadius: 16,
+                              spreadRadius: 0,
+                            ),
+                          ]
+                        : null,
+                  ),
                   child: Stack(
                     children: [
                       Column(
                         children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              card.imageUrl,
-                              height: 80,
-                              width: 80,
-                              fit: BoxFit.cover,
-                            ),
+                          Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(12),
+                                ),
+                                child: Image.network(
+                                  card.imageUrl,
+                                  height: 80,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.7),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    '#${card.serialNumber}',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.8),
+                                      fontSize: 8,
+                                      fontFamily: 'Orbitron',
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            card.name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
+                          Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  card.name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Orbitron',
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: rarityColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                        color: rarityColor.withOpacity(0.3)),
+                                  ),
+                                  child: Text(
+                                    card.rarity,
+                                    style: TextStyle(
+                                      color: rarityColor,
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'Orbitron',
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -226,13 +461,16 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
                         child: IconButton(
                           icon: Container(
                             padding: const EdgeInsets.all(2),
-                            decoration: const BoxDecoration(
-                              color: Colors.red,
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.9),
                               shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.2),
+                              ),
                             ),
                             child: const Icon(
                               Icons.close,
-                              size: 14,
+                              size: 12,
                               color: Colors.white,
                             ),
                           ),
@@ -393,62 +631,112 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
-        border: Border(
-          top: BorderSide(color: Colors.white.withOpacity(0.1)),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF1A1A2E),
+            const Color(0xFF0F0F1E),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextField(
-            controller: _coinsController,
-            keyboardType: TextInputType.number,
-            style: const TextStyle(color: Colors.white),
-            autofocus: false,
-            onTapOutside: (_) => FocusScope.of(context).unfocus(),
-            decoration: InputDecoration(
-              hintText: 'Add coins to offer (optional)',
-              hintStyle: TextStyle(color: Colors.grey.shade400),
-
-              prefixIcon:
-                  const Icon(Icons.monetization_on, color: Colors.amber),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF3B82F6).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: const Color(0xFF3B82F6).withOpacity(0.3),
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF3B82F6)),
+            ),
+            child: const Text(
+              'Additional Options',
+              style: TextStyle(
+                color: Color(0xFF3B82F6),
+                fontSize: 14,
+                fontFamily: 'Orbitron',
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _noteController,
-            style: const TextStyle(color: Colors.white),
-            maxLines: 2,
-            autofocus: false,
-            onTapOutside: (_) => FocusScope.of(context).unfocus(),
-            decoration: InputDecoration(
-
-              hintText: 'Add a note (optional)',
-              hintStyle: TextStyle(color: Colors.grey.shade400),
-              prefixIcon: const Icon(Icons.note, color: Colors.grey),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0A0A1A),
+              borderRadius: BorderRadius.circular(12),
+              border:
+                  Border.all(color: const Color(0xFF3B82F6).withOpacity(0.2)),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF3B82F6).withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: _coinsController,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontFamily: 'Orbitron',
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+              autofocus: false,
+              onTapOutside: (_) => FocusScope.of(context).unfocus(),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: 'Add coins to offer',
+                hintStyle: TextStyle(
+                  color: Colors.white.withOpacity(0.3),
+                  fontFamily: 'Orbitron',
+                ),
+                prefixIcon: Icon(
+                  Icons.monetization_on,
+                  color: const Color(0xFFFFB800).withOpacity(0.7),
+                ),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF3B82F6)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0A0A1A),
+              borderRadius: BorderRadius.circular(12),
+              border:
+                  Border.all(color: const Color(0xFF3B82F6).withOpacity(0.2)),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF3B82F6).withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: _noteController,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontFamily: 'Orbitron',
+              ),
+              autofocus: false,
+              onTapOutside: (_) => FocusScope.of(context).unfocus(),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: 'Add a note (optional)',
+                hintStyle: TextStyle(
+                  color: Colors.white.withOpacity(0.3),
+                  fontFamily: 'Orbitron',
+                ),
+                prefixIcon: Icon(
+                  Icons.note_alt_outlined,
+                  color: Colors.white.withOpacity(0.3),
+                ),
               ),
             ),
           ),
@@ -461,32 +749,40 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF1A1A2E),
+            const Color(0xFF0F0F1E),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
         border: Border(
           top: BorderSide(color: Colors.white.withOpacity(0.1)),
         ),
       ),
       child: ElevatedButton(
-        onPressed: selectedCards.isNotEmpty && !_isLoading ? _makeOffer : null,
+        onPressed: selectedCards.isEmpty || _isLoading ? null : _makeOffer,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF3B82F6),
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          foregroundColor: Colors.white,
+          minimumSize: const Size(double.infinity, 56),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          disabledBackgroundColor: Colors.grey.withOpacity(0.2),
+          elevation: 0,
         ),
         child: _isLoading
             ? const SizedBox(
-                height: 20,
-                width: 20,
+                height: 24,
+                width: 24,
                 child: CircularProgressIndicator(
+                  color: Colors.white,
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
             : const Text(
-                'Make Offer',
+                'MAKE OFFER',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
