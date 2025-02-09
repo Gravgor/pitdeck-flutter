@@ -114,25 +114,28 @@ class _AuthScreenState extends State<AuthScreen>
       backgroundColor: const Color(0xFF0A0A1A),
       body: Stack(
         children: [
+          // Background Image
           Image.asset(
-            'assets/images/racing_bg.jpg',
+            'assets/images/racing_bg.jpg', // Racing car background
             width: double.infinity,
             height: double.infinity,
             fit: BoxFit.cover,
           ),
+          // Gradient Overlay
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
                 colors: [
-                  const Color(0xFF0A0A1A).withOpacity(0.7),
-                  const Color(0xFF0A0A1A).withOpacity(0.9),
-                  const Color(0xFF0A0A1A),
+                  const Color(0xFF1A237E).withOpacity(0.9),
+                  const Color(0xFF0D47A1).withOpacity(0.85),
+                  const Color(0xFF0A0A1A).withOpacity(0.95),
                 ],
               ),
             ),
           ),
+          // Rest of the UI
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -151,47 +154,23 @@ class _AuthScreenState extends State<AuthScreen>
                               alignment: Alignment.center,
                               children: [
                                 Container(
+                                  width: 160,
+                                  height: 160,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: RadialGradient(
+                                      colors: [
+                                        const Color(0xFF4B9FFF)
+                                            .withOpacity(0.2),
+                                        Colors.transparent,
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Image.asset(
+                                  'assets/icon/icon.png',
                                   width: 120,
                                   height: 120,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: const Color(0xFF4B9FFF),
-                                      width: 1,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFF4B9FFF)
-                                            .withOpacity(0.2),
-                                        blurRadius: 20,
-                                        spreadRadius: 5,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  width: 100,
-                                  height: 100,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: const Color(0xFFFF4B5C),
-                                      width: 1,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFFFF4B5C)
-                                            .withOpacity(0.2),
-                                        blurRadius: 20,
-                                        spreadRadius: 5,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.speed_rounded,
-                                  size: 48,
-                                  color: Color(0xFF4B9FFF),
                                 ),
                               ],
                             ),
@@ -203,7 +182,7 @@ class _AuthScreenState extends State<AuthScreen>
                   const SizedBox(height: 32),
                   ShaderMask(
                     shaderCallback: (bounds) => const LinearGradient(
-                      colors: [Color(0xFFFF4B5C), Color(0xFF4B9FFF)],
+                      colors: [Color(0xFFFFFFFF), Color(0xFFE3F2FD)],
                     ).createShader(bounds),
                     child: const Text(
                       'PITDECK',
@@ -230,13 +209,6 @@ class _AuthScreenState extends State<AuthScreen>
                           Colors.transparent,
                         ],
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF4B9FFF).withOpacity(0.1),
-                          blurRadius: 20,
-                          spreadRadius: 1,
-                        ),
-                      ],
                     ),
                     child: const Text(
                       'RACING CARDS EVOLVED',
