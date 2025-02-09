@@ -473,6 +473,30 @@ class TradeProvider with ChangeNotifier {
     }
   }
 
+  Future<List<String>> getActiveTradeCardIds() async {
+    final userProvider = Provider.of<UserProvider>(
+      navigatorKey.currentContext!,
+      listen: false,
+
+    );
+    final token = userProvider.user?.token;
+    final response = await http.get(
+      Uri.parse('$_baseUrl/marketplace/trades/active-trade-card-ids'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> cardIds = json.decode(response.body);
+      return cardIds.map((id) => id.toString()).toList();
+    } else {
+      throw Exception('Failed to get active trade card ids');
+    }
+  }
+
+
+
   @override
   void dispose() {
     _socket.dispose();

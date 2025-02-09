@@ -306,50 +306,77 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
   void _applyFilters() {
     final cardProvider = Provider.of<CardProvider>(context, listen: false);
+    final allCards = cardProvider.cards;
+
     setState(() {
-      if (_selectedRarities.isEmpty && _selectedTypes.isEmpty) {
-        _filteredCards = List<CardModel>.from(cardProvider.cards);
-      } else {
-        _filteredCards = cardProvider.cards.where((card) {
-          final matchesRarity = _selectedRarities.isEmpty ||
-              _selectedRarities.contains(card.rarity.toUpperCase());
-          final matchesType = _selectedTypes.isEmpty ||
-              _selectedTypes.contains(card.type.toUpperCase());
-          return matchesRarity && matchesType;
-        }).toList();
-      }
+      _filteredCards = allCards.where((card) {
+        // Filter by selected view (all, trade, market)
+        switch (_selectedFilter) {
+          case 'trade':
+            if (!card.isForTrade) return false;
+            break;
+          case 'market':
+            if (!card.isForSale) return false;
+
+            break;
+          default: // 'all'
+            if (card.isForTrade || card.isForSale) return false;
+        }
+
+
+        // Apply rarity filter
+        if (_selectedRarities.isNotEmpty &&
+            !_selectedRarities.contains(card.rarity)) {
+          return false;
+        }
+
+        // Apply type filter
+        if (_selectedTypes.isNotEmpty && !_selectedTypes.contains(card.type)) {
+          return false;
+        }
+
+        // Apply search filter
+        if (_searchQuery.isNotEmpty) {
+          final searchTerm = _searchQuery.toLowerCase();
+          return card.name.toLowerCase().contains(searchTerm) ||
+              card.type.toLowerCase().contains(searchTerm) ||
+              card.serialNumber.toString().contains(searchTerm);
+        }
+
+        return true;
+      }).toList();
     });
   }
 
   Widget _buildFilterChips() {
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            _buildFilterChip(
-              label: 'All',
-              value: 'all',
-              count: _cards
-                  .where((card) => !card.isForTrade && !card.isForSale)
-                  .length,
-            ),
-            const SizedBox(width: 12),
-            _buildFilterChip(
-              label: 'In Trade',
-              value: 'trade',
-              count: _cards.where((card) => card.isForTrade).length,
-            ),
-            const SizedBox(width: 12),
-            _buildFilterChip(
-              label: 'Listed',
-              value: 'market',
-              count: _cards.where((card) => card.isForSale).length,
-            ),
-          ],
-        ),
+      child: Row(
+        children: [
+          _buildFilterChip(
+            label: 'Available',
+            value: 'all',
+            count: _cards
+                .where((card) => !card.isForTrade && !card.isForSale)
+                .length,
+          ),
+          const SizedBox(width: 8),
+
+          _buildFilterChip(
+            label: 'In Trade',
+            value: 'trade',
+            count: _cards.where((card) => card.isForTrade).length,
+          ),
+          const SizedBox(width: 8),
+
+          _buildFilterChip(
+            label: 'Listed',
+            value: 'market',
+            count: _cards.where((card) => card.isForSale).length,
+
+          ),
+        ],
       ),
     );
   }
