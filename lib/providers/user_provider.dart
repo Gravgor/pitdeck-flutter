@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:pitdeck/main.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../models/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../screens/main_wrapper.dart';
 
 class UserProvider with ChangeNotifier {
   User? _user;
@@ -94,10 +96,13 @@ class UserProvider with ChangeNotifier {
         final userData = json.decode(response.body);
         _user = User.fromJson(userData, token: _token);
         notifyListeners();
+      } else if (response.statusCode == 401) {
+        await logout();
       }
     } catch (e) {
       rethrow;
     }
+
   }
 
   Future<void> fetchUserProfileID(String userId) async {
@@ -207,6 +212,13 @@ class UserProvider with ChangeNotifier {
     _token = null;
     _user = null;
     _isLoggedIn = false;
+    await DefaultCacheManager().removeFile('user_details');
+    await DefaultCacheManager().removeFile('daily_reward_status');
+    Navigator.of(navigatorKey.currentContext!).pushReplacement(
+      MaterialPageRoute(builder: (context) => const MainWrapper()),
+    );
     notifyListeners();
   }
 }
+
+

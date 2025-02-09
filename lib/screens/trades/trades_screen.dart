@@ -22,7 +22,7 @@ class _TradesScreenState extends State<TradesScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -34,187 +34,16 @@ class _TradesScreenState extends State<TradesScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
+      backgroundColor: const Color(0xFF040412),
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 60),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Trade Management',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Orbitron',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Manage your trades',
-                      style: TextStyle(
-                        color: Colors.grey.shade400,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.white.withOpacity(0.1),
-                    padding: const EdgeInsets.all(8),
-                  ),
-                  icon: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            height: 56,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1A2E),
-              // Removed borderRadius here to make the outer container rectangular
-              border: Border.all(
-                color: Colors.white.withOpacity(0.1),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF3B82F6).withOpacity(0.1),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: TabBar(
-              controller: _tabController,
-              indicator: const BoxDecoration(
-                color: Color(0xFF3B82F6),
-                gradient: LinearGradient(
-                  colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
-                ),
-              ),
-              indicatorSize: TabBarIndicatorSize.tab,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.grey,
-              labelStyle: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Orbitron',
-                letterSpacing: 0.5,
-              ),
-              unselectedLabelStyle: const TextStyle(
-                fontSize: 14,
-                fontFamily: 'Orbitron',
-              ),
-              dividerColor: Colors.transparent,
-              padding: const EdgeInsets.all(4),
-              tabs: [
-                Tab(
-                  child: LayoutBuilder(
-                    // Keep LayoutBuilder for full-width indicator
-                    builder: (context, constraints) => Container(
-                      width: constraints.maxWidth, // Keep full width
-                      alignment: Alignment.center,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      // Removed borderRadius from Container BoxDecoration inside Tab
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.list_alt, size: 16),
-                          const SizedBox(width: 8),
-                          Text(
-                            'MY LISTINGS',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: _tabController.index == 0
-                                  ? Colors.white
-                                  : Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Tab(
-                  child: LayoutBuilder(
-                    // Keep LayoutBuilder for full-width indicator
-                    builder: (context, constraints) => Container(
-                      width: constraints.maxWidth,
-                      alignment: Alignment.center,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      // Removed borderRadius from Container BoxDecoration inside Tab
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.download, size: 16),
-                          const SizedBox(width: 8),
-                          Text(
-                            'RECEIVED',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: _tabController.index == 1
-                                  ? Colors.white
-                                  : Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Tab(
-                  child: LayoutBuilder(
-                    // Keep LayoutBuilder for full-width indicator
-                    builder: (context, constraints) => Container(
-                      width: constraints.maxWidth,
-                      alignment: Alignment.center,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      // Removed borderRadius from Container BoxDecoration inside Tab
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.upload, size: 16),
-                          const SizedBox(width: 8),
-                          Text(
-                            'SENT',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: _tabController.index == 2
-                                  ? Colors.white
-                                  : Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
+          _buildHeader(),
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: const [
                 MyListingsScreen(),
                 ReceivedOffersScreen(),
-                SentOffersScreen(),
               ],
             ),
           ),
@@ -223,39 +52,127 @@ class _TradesScreenState extends State<TradesScreen>
     );
   }
 
-  Widget _buildHeaderButton({
-    required IconData icon,
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF3B82F6) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 64, 16, 16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? Colors.white : Colors.grey,
-              size: 20,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Trade Management',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Orbitron',
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Manage your trades and offers',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.5),
+                      fontSize: 14,
+                      fontFamily: 'Orbitron',
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SentOffersScreen(),
+                      ),
+                    ),
+                    icon: Icon(
+                      Icons.upload,
+                      color: Colors.white.withOpacity(0.5),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(
+                      Icons.close,
+                      color: Colors.white.withOpacity(0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+          Container(
+            height: 48,
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0A0A1A),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
             ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.grey,
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              dividerColor: Colors.transparent,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white.withOpacity(0.5),
+              labelStyle: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
+                fontFamily: 'Orbitron',
               ),
+              tabs: const [
+                Tab(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.list_alt, size: 16),
+                      SizedBox(width: 8),
+                      Text('MY LISTINGS'),
+                    ],
+                  ),
+                ),
+                Tab(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.download, size: 16),
+                      SizedBox(width: 8),
+                      Text('RECEIVED'),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

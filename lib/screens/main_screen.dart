@@ -20,6 +20,7 @@ import 'package:pitdeck/components/control_center.dart';
 import 'package:pitdeck/screens/widgets/main/topbar_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pitdeck/screens/daily_login_rewards.dart';
+import 'package:pitdeck/services/daily_reward_service.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -51,6 +52,9 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   StreamSubscription<geo.Position>? _locationStreamSubscription;
 
   bool _hasUnclaimedReward = false;
+  Map<String, dynamic>? _rewardStatus;
+
+  @override
 
   @override
   void initState() {
@@ -1361,17 +1365,22 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   Future<void> _checkDailyReward() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final lastRewardDate = prefs.getString('lastRewardDate');
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day).toString();
-
-      setState(() {
-        _hasUnclaimedReward = lastRewardDate != today;
-      });
+      final token =
+          Provider.of<UserProvider>(context, listen: false).user?.token;
+      if (token == null) return;
+      final rewardService =
+          Provider.of<DailyRewardService>(context, listen: false);
+      final status = await rewardService.getDailyRewardStatus(token);
+      if (mounted) {
+        setState(() {
+          _rewardStatus = status;
+          _hasUnclaimedReward = status['canClaim'];
+        });
+      }
     } catch (e) {
       print('Error checking daily reward: $e');
     }
+
   }
 
   void _showDailyReward() {
@@ -1387,7 +1396,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             child: DailyLoginRewardsPopup(token: token),
           );
         },
-
       );
     }
   }

@@ -283,35 +283,94 @@ class _MarketScreenState extends State<MarketScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text(
+                    listing.card.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Orbitron',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        listing.card.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Orbitron',
-                        ),
-                      ),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
+                          horizontal: 8,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF3B82F6).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
+                          color: _getRarityColor(listing.card.rarity)
+                              .withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                            color: const Color(0xFF3B82F6).withOpacity(0.3),
+                            color: _getRarityColor(listing.card.rarity)
+                                .withOpacity(0.3),
                           ),
                         ),
                         child: Text(
-                          '$formattedPrice RaceCoins',
-                          style: const TextStyle(
-                            color: Color(0xFF3B82F6),
-                            fontSize: 14,
+                          listing.card.rarity,
+                          style: TextStyle(
+                            color: _getRarityColor(listing.card.rarity),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '#${listing.card.serialNumber}',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.5),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Price',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$formattedPrice RC',
+                            style: const TextStyle(
+                              color: Color(0xFF3B82F6),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Orbitron',
+                            ),
+                          ),
+                        ],
+                      ),
+                      ElevatedButton(
+                        onPressed: () => _showBuyCardModal(context, listing),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF3B82F6),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          'BUY NOW',
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Orbitron',
                           ),
@@ -537,7 +596,6 @@ class _MarketScreenState extends State<MarketScreen>
       ),
     );
   }
-
 
   void _showCardDetailsMore(BuildContext context, CardDetailModel card) {
     showDialog(
@@ -1005,7 +1063,6 @@ class _MarketScreenState extends State<MarketScreen>
                           color: Colors.white,
                           fontFamily: 'Orbitron',
                         ),
-
                         decoration: InputDecoration(
                           hintText: 'Enter amount',
                           hintStyle: TextStyle(
@@ -1044,7 +1101,6 @@ class _MarketScreenState extends State<MarketScreen>
                           color: Colors.white,
                           fontFamily: 'Orbitron',
                         ),
-
                         decoration: InputDecoration(
                           hintText: 'Add a note (optional)',
                           hintStyle: TextStyle(
@@ -1131,7 +1187,8 @@ class _MarketScreenState extends State<MarketScreen>
   void _showCardSelectionModal(
       Set<String> selectedCardIds, Function(Set<String>) onConfirm) {
     final TextEditingController searchController = TextEditingController();
-    final userCards = Provider.of<CardProvider>(context, listen: false).getUserCards();
+    final userCards =
+        Provider.of<CardProvider>(context, listen: false).getUserCards();
     List<CardModel> filteredCards = List<CardModel>.from(userCards);
 
     showModalBottomSheet(
@@ -1179,7 +1236,8 @@ class _MarketScreenState extends State<MarketScreen>
                       ),
                       const SizedBox(height: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
                           color: const Color(0xFF3B82F6).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -1204,7 +1262,8 @@ class _MarketScreenState extends State<MarketScreen>
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: IconButton(
-                      icon: Icon(Icons.close, color: Colors.white.withOpacity(0.7)),
+                      icon: Icon(Icons.close,
+                          color: Colors.white.withOpacity(0.7)),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
@@ -1216,7 +1275,8 @@ class _MarketScreenState extends State<MarketScreen>
                 decoration: BoxDecoration(
                   color: const Color(0xFF0A0A1A),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.2)),
+                  border: Border.all(
+                      color: const Color(0xFF3B82F6).withOpacity(0.2)),
                   boxShadow: [
                     BoxShadow(
                       color: const Color(0xFF3B82F6).withOpacity(0.1),
@@ -1252,10 +1312,14 @@ class _MarketScreenState extends State<MarketScreen>
                       } else {
                         filteredCards = userCards.where((card) {
                           final searchLower = value.toLowerCase();
-                          return card.name.toLowerCase().contains(searchLower) ||
+                          return card.name
+                                  .toLowerCase()
+                                  .contains(searchLower) ||
                               card.type.toLowerCase().contains(searchLower) ||
                               card.rarity.toLowerCase().contains(searchLower) ||
-                              card.serialNumber.toLowerCase().contains(searchLower);
+                              card.serialNumber
+                                  .toLowerCase()
+                                  .contains(searchLower);
                         }).toList();
                       }
                     });
@@ -1274,7 +1338,8 @@ class _MarketScreenState extends State<MarketScreen>
                   itemCount: filteredCards.length,
                   itemBuilder: (context, index) {
                     final card = filteredCards[index];
-                    final isSelected = selectedCardIds.contains(card.serialNumber);
+                    final isSelected =
+                        selectedCardIds.contains(card.serialNumber);
 
                     return GestureDetector(
                       onTap: () {
@@ -1293,9 +1358,9 @@ class _MarketScreenState extends State<MarketScreen>
                           color: const Color(0xFF0A0A1A),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isSelected 
-                              ? const Color(0xFF3B82F6) 
-                              : Colors.white.withOpacity(0.1),
+                            color: isSelected
+                                ? const Color(0xFF3B82F6)
+                                : Colors.white.withOpacity(0.1),
                             width: isSelected ? 2 : 1,
                           ),
                           boxShadow: [
@@ -1325,7 +1390,8 @@ class _MarketScreenState extends State<MarketScreen>
                                 Padding(
                                   padding: const EdgeInsets.all(8),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         card.name,
@@ -1345,8 +1411,10 @@ class _MarketScreenState extends State<MarketScreen>
                                           vertical: 2,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: _getRarityColor(card.rarity).withOpacity(0.2),
-                                          borderRadius: BorderRadius.circular(4),
+                                          color: _getRarityColor(card.rarity)
+                                              .withOpacity(0.2),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
                                         ),
                                         child: Text(
                                           card.rarity,
@@ -1374,7 +1442,8 @@ class _MarketScreenState extends State<MarketScreen>
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF3B82F6).withOpacity(0.3),
+                                        color: const Color(0xFF3B82F6)
+                                            .withOpacity(0.3),
                                         blurRadius: 4,
                                         spreadRadius: 0,
                                       ),
@@ -1412,8 +1481,6 @@ class _MarketScreenState extends State<MarketScreen>
                       ),
                       child: Text(
                         'Cancel',
-
-
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.7),
                           fontWeight: FontWeight.bold,

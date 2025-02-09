@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:pitdeck/models/trade.dart';
+import 'package:pitdeck/widgets/trade/trade_card.dart';
 import 'package:provider/provider.dart';
 import '../../providers/trade_provider.dart';
 import '../../models/trade_offer.dart';
@@ -68,54 +70,57 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
   @override
   Widget build(BuildContext context) {
     return _isLoading
-        ? const Center(child: CircularProgressIndicator())
+        ? const Center(
+            child: CircularProgressIndicator(
+              color: Color(0xFF3B82F6),
+            ),
+          )
         : Consumer<TradeProvider>(
             builder: (context, tradeProvider, _) {
-              final List<TradeOfferModel> offers = tradeProvider
-                  .receivedOffers.values
-                  .toList()
+              final offers = tradeProvider.receivedOffers.values
                   .expand((list) => list)
                   .toList();
 
               if (offers.isEmpty) {
-                return const Center(
-                  child: Text(
-                    'No offers received',
-                    style: TextStyle(color: Colors.grey),
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.inbox_outlined,
+                        size: 48,
+                        color: Colors.white.withOpacity(0.2),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No offers received',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.5),
+                          fontSize: 16,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                    ],
                   ),
                 );
               }
 
-              return ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: offers.length,
-                itemBuilder: (context, index) {
-                  return _buildOfferCard(offers[index]);
-                },
+              return RefreshIndicator(
+                onRefresh: _loadOffers,
+                color: const Color(0xFF3B82F6),
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: offers.length,
+                  itemBuilder: (context, index) =>
+                      _buildOfferCard(offers[index]),
+                ),
               );
             },
           );
   }
 
   Widget _buildOfferCard(TradeOfferModel offer) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return TradeCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -123,45 +128,24 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
           _buildOfferedCards(offer),
           if (offer.coins > 0) _buildCoinsOffered(offer),
           if (offer.note?.isNotEmpty ?? false) _buildNote(offer),
-          _buildActions(offer),
+          if (offer.isPending) _buildActions(offer),
         ],
       ),
     );
   }
 
   Widget _buildOfferHeader(TradeOfferModel offer) {
-    return Padding(
+    return Container(
       padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
+        ),
+      ),
       child: Row(
         children: [
-          if (offer.user.image != null)
-            Container(
-              width: 40,
-              height: 40,
-              margin: const EdgeInsets.only(right: 12),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Image.network(
-                  offer.user.image!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: Colors.grey.shade800,
-                    child: const Icon(Icons.person, color: Colors.white),
-                  ),
-                ),
-              ),
-            )
-          else
-            Container(
-              width: 40,
-              height: 40,
-              margin: const EdgeInsets.only(right: 12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade800,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(Icons.person, color: Colors.white),
-            ),
+          _buildUserAvatar(offer.user as UserModel),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,35 +156,71 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
+                    fontFamily: 'Orbitron',
                   ),
                 ),
+                const SizedBox(height: 4),
                 Text(
                   'Expires in ${_formatTimeLeft(offer.expiresAt)}',
                   style: TextStyle(
                     color: Colors.grey.shade400,
                     fontSize: 12,
+                    fontFamily: 'Orbitron',
                   ),
                 ),
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: ColorUtils.getTradeOfferStatusColor(offer.status)
-                  .withOpacity(0.2),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              offer.statusText,
-              style: TextStyle(
-                color: ColorUtils.getTradeOfferStatusColor(offer.status),
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
+          _buildStatusChip(offer.status),
         ],
+      ),
+    );
+  }
+
+  Widget _buildUserAvatar(UserModel user) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF3B82F6).withOpacity(0.1),
+            const Color(0xFF2563EB).withOpacity(0.05),
+          ],
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: user.image != null
+            ? Image.network(
+                user.image!,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.person, color: Colors.white),
+              )
+            : const Icon(Icons.person, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(TradeOfferStatus status) {
+    final color = ColorUtils.getTradeOfferStatusColor(status);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Text(
+        status.toString().split('.').last,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'Orbitron',
+        ),
       ),
     );
   }
@@ -343,8 +363,6 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
   }
 
   Widget _buildActions(TradeOfferModel offer) {
-    if (!offer.isPending) return const SizedBox.shrink();
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -354,23 +372,32 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
             const Color(0xFF2563EB).withOpacity(0.05),
           ],
         ),
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+        borderRadius: const BorderRadius.vertical(
+          bottom: Radius.circular(16),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           TextButton(
             onPressed: () => _declineOffer(offer.id),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
             child: const Text(
               'Decline',
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(
+                fontFamily: 'Orbitron',
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           ElevatedButton(
             onPressed: () => _acceptOffer(offer.id),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF3B82F6),
+              elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -379,8 +406,8 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
               'Accept',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 12,
                 fontFamily: 'Orbitron',
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),

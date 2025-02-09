@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:pitdeck/models/card.dart';
+import 'package:pitdeck/widgets/trade/trade_card.dart';
 import 'package:provider/provider.dart';
 import '../../providers/trade_provider.dart';
 import '../../models/trade.dart';
 import '../../utils/color_utils.dart';
+
 
 class MyListingsScreen extends StatefulWidget {
   const MyListingsScreen({super.key});
@@ -71,7 +74,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildOfferedCards(trade),
-                    if (trade.coinsOffered > 0) _buildCoinsOffered(trade),
+                    if (trade.coinsOffered > 0) _buildCoinsOffered(trade.coinsOffered),
                     _buildTradeNote(trade),
                     _buildReceivedOffers(trade),
                   ],
@@ -87,217 +90,285 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return _isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : Consumer<TradeProvider>(
-            builder: (context, tradeProvider, _) {
-              final listings = tradeProvider.myListings;
-
-              if (listings.isEmpty) {
-                return const Center(
-                  child: Text(
-                    'No active listings',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                );
-              }
-
-              return ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: listings.length,
-                itemBuilder: (context, index) {
-                  final trade = listings[index];
-                  return _buildListingCard(trade);
-                },
-              );
-            },
+    return Consumer<TradeProvider>(
+      builder: (context, tradeProvider, _) {
+        if (_isLoading) {
+          return const Center(
+            child: CircularProgressIndicator(
+              color: Color(0xFF3B82F6),
+            ),
           );
+        }
+
+        final listings = tradeProvider.myListings;
+        if (listings.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.list_alt_outlined,
+                  size: 48,
+                  color: Colors.white.withOpacity(0.2),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No active listings',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.5),
+                    fontSize: 16,
+                    fontFamily: 'Orbitron',
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: listings.length,
+          itemBuilder: (context, index) => _buildListingCard(listings[index]),
+        );
+      },
+    );
   }
 
   Widget _buildListingCard(TradeModel trade) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return TradeCard(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
                       'Trade Listing',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Orbitron',
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${trade.offeredCards.length} cards in trade',
-                      style: TextStyle(
-                        color: Colors.grey.shade400,
-                        fontSize: 12,
-                      ),
-                    ),
+                    _buildStatusChip(trade.status),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: ColorUtils.getTradeStatusColor(trade.status, null)
-                        .withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    trade.status.toString().split('.').last,
-                    style: TextStyle(
-                      color: ColorUtils.getTradeStatusColor(trade.status, null),
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+                const SizedBox(height: 16),
+                _buildCardsList(trade.offeredCards),
+                if (trade.coinsOffered > 0)
+                  _buildCoinsOffered(trade.coinsOffered),
+                if (trade.note != null) _buildNote(trade.note!),
               ],
             ),
           ),
-          SizedBox(
-            height: 180,
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              scrollDirection: Axis.horizontal,
-              itemCount: trade.offeredCards.length,
-              itemBuilder: (context, index) {
-                final card = trade.offeredCards[index];
-                return Container(
-                  width: 120,
-                  margin: const EdgeInsets.only(right: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          card.imageUrl,
-                          height: 120,
-                          width: 120,
-                          fit: BoxFit.cover,
-                        ),
+          _buildCardActions(trade),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(TradeStatus status) {
+    final color = ColorUtils.getTradeStatusColor(status, null);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Text(
+        status.toString().split('.').last,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'Orbitron',
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardsList(List<CardDetailModel> cards) {
+    return SizedBox(
+      height: 180,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: cards.length,
+        itemBuilder: (context, index) {
+          final card = cards[index];
+          return Container(
+            width: 120,
+            margin: const EdgeInsets.only(right: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        card.imageUrl,
+                        height: 120,
+                        width: 120,
+                        fit: BoxFit.cover,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        card.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Container(
+                    ),
+                    Positioned(
+                      bottom: 4,
+                      left: 4,
+                      child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
+                          horizontal: 6,
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: ColorUtils.getRarityColor(card.rarity)
-                              .withOpacity(0.2),
+                          color: Colors.black.withOpacity(0.7),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          card.rarity,
-                          style: TextStyle(
-                            color: ColorUtils.getRarityColor(card.rarity),
+                          '#${card.serialNumber}',
+                          style: const TextStyle(
+                            color: Colors.white,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '#${card.serialNumber}',
-                        style: TextStyle(
-                          color: Colors.grey.shade400,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  card.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
                   ),
-                );
-              },
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                _buildRarityChip(card.rarity),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildRarityChip(String rarity) {
+    final color = ColorUtils.getRarityColor(rarity);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        rarity,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCoinsOffered(int coins) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.monetization_on,
+            color: Colors.amber,
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$coins coins',
+            style: const TextStyle(
+              color: Colors.amber,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            child: Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _showListingDetails(context, trade),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3B82F6),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'See Details',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Orbitron',
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: () => _cancelListing(trade.id),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.red.withOpacity(0.1),
-                    padding: const EdgeInsets.all(12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  icon: const Icon(
-                    Icons.close,
-                    color: Colors.red,
-                    size: 20,
-                  ),
-                ),
-              ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNote(String note) {
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        note,
+        style: TextStyle(
+          color: Colors.white.withOpacity(0.7),
+          fontSize: 14,
+          fontStyle: FontStyle.italic,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardActions(TradeModel trade) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF3B82F6).withOpacity(0.1),
+            const Color(0xFF2563EB).withOpacity(0.05),
+          ],
+        ),
+        borderRadius: const BorderRadius.vertical(
+          bottom: Radius.circular(16),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          TextButton(
+            onPressed: () => _showListingDetails(context, trade),
+            child: const Text(
+              'View Details',
+              style: TextStyle(
+                color: Color(0xFF3B82F6),
+                fontFamily: 'Orbitron',
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: () => _cancelListing(trade.id),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.withOpacity(0.1),
+              foregroundColor: Colors.red,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                fontFamily: 'Orbitron',
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -410,26 +481,6 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                 ),
               );
             },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCoinsOffered(TradeModel trade) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          const Icon(Icons.monetization_on, color: Colors.amber),
-          const SizedBox(width: 8),
-          Text(
-            '${trade.coinsOffered} coins offered',
-            style: const TextStyle(
-              color: Colors.amber,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
           ),
         ],
       ),
