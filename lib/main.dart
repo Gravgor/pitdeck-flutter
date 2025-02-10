@@ -5,6 +5,7 @@ import 'package:pitdeck/providers/scroll_notifier.dart';
 import 'package:pitdeck/screens/auth/auth_screen.dart';
 import 'package:pitdeck/screens/main_screen.dart';
 import 'package:pitdeck/screens/user_profile_screen.dart';
+import 'package:pitdeck/services/daily_reward_service.dart';
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/auth_provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
@@ -49,6 +50,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ScrollNotifier()),
         ChangeNotifierProvider(create: (_) => AchievementProvider()),
         ChangeNotifierProvider(create: (_) => BadgeProvider()),
+        ChangeNotifierProvider(create: (_) => DailyRewardService()),
       ],
       child: MaterialApp(
         navigatorKey: navigatorKey,

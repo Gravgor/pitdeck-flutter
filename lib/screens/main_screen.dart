@@ -1384,6 +1384,12 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           builder: (context) => CupertinoAlertDialog(
                 title: const Text('Error'),
                 content: Text('Error checking daily reward: $e'),
+                actions: [
+                  CupertinoDialogAction(
+                    child: const Text('OK'),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
               ));
       print('Error checking daily reward: $e');
     }
