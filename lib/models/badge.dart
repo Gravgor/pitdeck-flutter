@@ -23,12 +23,14 @@ class BadgeModel {
 
 
   factory BadgeModel.fromJson(Map<String, dynamic> json) {
+    print(json);
     return BadgeModel(
       id: json['_id'] ?? json['id'],
       name: json['name'],
       description: json['description'],
       imageUrl: json['imageUrl'],
       type: json['type'],
+
       rarity: json['rarity'],
       earnedAt: json['earnedAt'] != null
           ? DateTime.parse(json['earnedAt'])

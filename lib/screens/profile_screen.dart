@@ -24,6 +24,7 @@ class ProfileScreen extends StatefulWidget {
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
+
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
@@ -62,12 +63,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadBadges() async {
+    
     final auth = Provider.of<UserProvider>(context, listen: false);
+
+
     if (auth.user?.token != null) {
       await Provider.of<BadgeProvider>(context, listen: false)
           .fetchUserBadges(auth.user!.token, auth.user!.id);
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {

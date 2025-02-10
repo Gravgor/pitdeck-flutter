@@ -76,6 +76,7 @@ class MyApp extends StatelessWidget {
                 return prefs.getBool('isLoggedIn') ?? false
                     ? const MainWrapper()
                     : const AuthScreen();
+                    //: const MainWrapper();
                    // : const UserProfileScreen(userId: '1');
 
 
