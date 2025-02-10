@@ -283,10 +283,13 @@ class _ListForSaleModalState extends State<ListForSaleModal> {
           .createListing(cardId: widget.card.id, price: price);
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      // Handle error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error creating listing: $e')),
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+
   }
 
   @override
