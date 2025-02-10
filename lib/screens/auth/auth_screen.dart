@@ -114,7 +114,6 @@ class _AuthScreenState extends State<AuthScreen>
       backgroundColor: const Color(0xFF0A0A1A),
       body: Stack(
         children: [
-          // Background Image
           Image.asset(
             'assets/images/racing_bg.jpg', // Racing car background
             width: double.infinity,

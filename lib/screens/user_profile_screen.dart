@@ -6,7 +6,6 @@ import '../models/user.dart';
 class UserProfileScreen extends StatefulWidget {
   final String userId;
 
-
   const UserProfileScreen({
     super.key,
     required this.userId,
@@ -18,6 +17,7 @@ class UserProfileScreen extends StatefulWidget {
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
   bool _isLoading = true;
+  bool _isCurrentUser = false;
   User? _user;
 
   @override
@@ -31,8 +31,38 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       setState(() => _isLoading = true);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       _user = await userProvider.fetchAnotherUser(widget.userId);
+
+      if (_user == null) {
+        // Mock data for testing
+        _user = User(
+          id: widget.userId,
+          name: 'Test User',
+          image: 'https://picsum.photos/200',
+          bio:
+              'This is a mock user profile for testing purposes. The real user was not found.',
+          level: 42,
+          coins: 15000,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          token: '1234567890',
+        );
+      }
+
       setState(() => _isLoading = false);
     } catch (e) {
+      // If there's an error, use mock data
+      _user = User(
+        id: widget.userId,
+        name: 'Error Test User',
+        image: 'https://picsum.photos/200',
+        bio:
+            'This is a mock user profile shown due to an error loading the real profile.',
+        level: 7,
+        coins: 500,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        token: '1234567890',
+      );
       setState(() => _isLoading = false);
     }
   }
@@ -42,198 +72,145 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     if (_isLoading) {
       return const Scaffold(
         backgroundColor: Color(0xFF040412),
-        body: Center(
-          child: CircularProgressIndicator(color: Color(0xFF3B82F6)),
-        ),
-      );
-    }
-
-    if (_user == null) {
-      return Scaffold(
-        backgroundColor: const Color(0xFF040412),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 48,
-                color: Colors.white.withOpacity(0.5),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'User not found',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.5),
-                  fontSize: 16,
-                  fontFamily: 'Orbitron',
-                ),
-              ),
-            ],
-          ),
-        ),
+        body:
+            Center(child: CircularProgressIndicator(color: Color(0xFF3B82F6))),
       );
     }
 
     return Scaffold(
       backgroundColor: const Color(0xFF040412),
-      body: CustomScrollView(
-        slivers: [
-          _buildHeader(),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildUserInfo(),
-                  const SizedBox(height: 24),
-                  _buildStats(),
-                  const SizedBox(height: 24),
-                  _buildCollection(),
-                ],
-              ),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.network(
+              'https://images.unsplash.com/photo-1494976388531-d1058494cdd8',
+              fit: BoxFit.cover,
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return SliverAppBar(
-      expandedHeight: 200,
-      pinned: true,
-      backgroundColor: const Color(0xFF1A1A2E),
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                const Color(0xFF1A1A2E),
-                const Color(0xFF3B82F6).withOpacity(0.1),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+          Positioned.fill(
+            child: Container(
+              color: const Color(0xFF040412).withOpacity(0.85),
             ),
           ),
-        ),
-        title: Text(
-          _user!.name ?? 'Unknown User',
-          style: const TextStyle(
-            fontFamily: 'Orbitron',
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUserInfo() {
-    return Row(
-      children: [
-        if (_user?.image != null)
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(40),
-              border: Border.all(
-                color: const Color(0xFF3B82F6),
-                width: 2,
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(38),
-              child: Image.network(
-                _user!.image!,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Column(
             children: [
-              Text(
-                _user?.name ?? 'Unknown User',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Orbitron',
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Level ${_user?.level ?? 0}',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.5),
-                  fontSize: 16,
-                  fontFamily: 'Orbitron',
-                ),
-              ),
-              if (_user?.bio != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  _user!.bio!,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                    fontSize: 14,
+              Container(
+                color: const Color(0xFF0A0A1A).withOpacity(0.8),
+                child: SafeArea(
+                  bottom: false,
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.arrow_back,
+                                  color: Colors.white),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                            if (!_isCurrentUser)
+                              Row(
+                                children: [
+                                  _buildActionButton(
+                                    icon: Icons.person_add,
+                                    label: 'Add Friend',
+                                    onTap: () {
+                                      // TODO: Implement friend request
+                                    },
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _buildActionButton(
+                                    icon: Icons.mail_outline,
+                                    label: 'Message',
+                                    onTap: () {
+                                      // TODO: Implement messaging
+                                    },
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 80,
+                                  height: 80,
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: Colors.red.withOpacity(0.5),
+                                      width: 2,
+                                    ),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Image.network(
+                                    _user?.image ??
+                                        'https://via.placeholder.com/150',
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _user?.name ?? 'Unknown User',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: 'Orbitron',
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          _buildInfoChip(
+                                            icon: Icons.military_tech,
+                                            label: 'LVL ${_user?.level ?? 0}',
+                                            color: const Color(0xFF4B9FFF),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          _buildInfoChip(
+                                            icon: Icons.monetization_on,
+                                            label: '${_user?.coins ?? 0} RC',
+                                            color: const Color(0xFFFFD700),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                _buildBadgePreview('badge_url_1'),
+                                const SizedBox(width: 8),
+                                _buildBadgePreview('badge_url_2'),
+                                const SizedBox(width: 8),
+                                _buildBadgePreview('badge_url_3'),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStats() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Stats Overview',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Orbitron',
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _buildStatItem(
-                icon: Icons.card_membership,
-                value: '0',//_user?.cards?.length.toString() ?? '0',
-                label: 'Cards',
-                color: const Color(0xFF3B82F6),
-
-
               ),
-              _buildStatItem(
-                icon: Icons.auto_awesome,
-                value: '0',//_user?.legendaryCards?.toString() ?? '0',
-                label: 'Legendary',
-                color: const Color(0xFFFFD700),
-
-              ),
-              _buildStatItem(
-                icon: Icons.monetization_on,
-                value: _user?.coins?.toString() ?? '0',
-                label: 'RC',
-                color: const Color(0xFF10B981),
+              Expanded(
+                child: _buildMainContent(),
               ),
             ],
           ),
@@ -242,40 +219,29 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Widget _buildStatItem({
+  Widget _buildActionButton({
     required IconData icon,
-    required String value,
     required String label,
-    required Color color,
+    required VoidCallback onTap,
   }) {
-    return Expanded(
+    return GestureDetector(
+      onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(12),
-        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
+          color: const Color(0xFF3B82F6),
+          borderRadius: BorderRadius.circular(8),
         ),
-        child: Column(
+        child: Row(
           children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                color: color,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Orbitron',
-              ),
-            ),
-            const SizedBox(height: 4),
+            Icon(icon, color: Colors.white, size: 16),
+            const SizedBox(width: 6),
             Text(
               label,
-              style: TextStyle(
-                color: color.withOpacity(0.7),
+              style: const TextStyle(
+                color: Colors.white,
                 fontSize: 12,
+                fontWeight: FontWeight.bold,
                 fontFamily: 'Orbitron',
               ),
             ),
@@ -285,140 +251,175 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Widget _buildCollection() {
-    //if (_user?.recentCards == null || _user!.recentCards!.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A2E),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
-        ),
-        child: Center(
-          child: Column(
-            children: [
-              Icon(
-                Icons.card_membership_outlined,
-                size: 48,
-                color: Colors.white.withOpacity(0.2),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'No cards to display',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.5),
-                  fontSize: 16,
-                  fontFamily: 'Orbitron',
-                ),
-              ),
-            ],
+  Widget _buildInfoChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 14),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMainContent() {
+    if (_user == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: Colors.white.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'User not found',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 16,
+                fontFamily: 'Orbitron',
+              ),
+            ),
+          ],
         ),
       );
     }
 
-    /*return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Recent Collection',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Orbitron',
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 24),
+                _buildCollection(),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 0.75,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-          ),
-          itemCount: 1, //_user!.recentCards!.length,
-          itemBuilder: (context, index) {
-            return Container(
-              color: Colors.red,
-            );
-            /*final card = _user!.recentCards![index];
-            return Container(
-
-
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A2E),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(16),
-                    ),
-                    child: AspectRatio(
-                      aspectRatio: 1,
-                      child: Image.network(
-                        card.imageUrl,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          card.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Orbitron',
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: ColorUtils.getRarityColor(card.rarity)
-                                .withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(
-                              color: ColorUtils.getRarityColor(card.rarity)
-                                  .withOpacity(0.3),
-                            ),
-                          ),
-                          child: Text(
-                            card.rarity,
-                            style: TextStyle(
-                              color: ColorUtils.getRarityColor(card.rarity),
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Orbitron',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );*/
-          },
         ),
       ],
-    );*/
+    );
   }
 
+  
+ 
+  Widget _buildCollection() {
+    //if (_user?.recentCards == null || _user!.recentCards!.isEmpty) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A2E),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(
+              Icons.card_membership_outlined,
+              size: 48,
+              color: Colors.white.withOpacity(0.2),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No cards to display',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 16,
+                fontFamily: 'Orbitron',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
+  Widget _buildBadgePreview(String badgeUrl) {
+    // Mock badge data
+    final mockBadges = [
+      {
+        'url':
+            'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Racing%20Car.png',
+        'name': 'Speed Demon',
+        'color': const Color(0xFFFF4B4B),
+      },
+      {
+        'url':
+            'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Trophy.png',
+        'name': 'Champion',
+        'color': const Color(0xFFFFD700),
+      },
+      {
+        'url':
+            'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Crown.png',
+        'name': 'Elite',
+        'color': const Color(0xFF4B9FFF),
+      },
+    ];
+
+    // Find mock badge data based on url
+    final badgeIndex = int.tryParse(badgeUrl.split('_').last) ?? 1;
+    final badge = mockBadges[badgeIndex - 1];
+
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            badge['color'] as Color,
+            (badge['color'] as Color).withOpacity(0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: (badge['color'] as Color).withOpacity(0.3),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (badge['color'] as Color).withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Tooltip(
+        message: badge['name'] as String,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Image.network(
+            badge['url'] as String,
+            width: 36,
+            height: 36,
+            fit: BoxFit.contain,
+          ),
+        ),
+      ),
+    );
+  }
+}

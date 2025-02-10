@@ -4,6 +4,7 @@ import 'package:pitdeck/providers/favorite_provider.dart';
 import 'package:pitdeck/providers/scroll_notifier.dart';
 import 'package:pitdeck/screens/auth/auth_screen.dart';
 import 'package:pitdeck/screens/main_screen.dart';
+import 'package:pitdeck/screens/user_profile_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/auth_provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
@@ -73,8 +74,10 @@ class MyApp extends StatelessWidget {
                 final prefs = snapshot.data?[0] as SharedPreferences;
                 return prefs.getBool('isLoggedIn') ?? false
                     ? const MainWrapper()
-                    //: const MainWrapper();
                     : const AuthScreen();
+                   // : const UserProfileScreen(userId: '1');
+
+
 
               }
 
