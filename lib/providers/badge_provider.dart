@@ -36,4 +36,23 @@ class BadgeProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> fetchUserBadges(String token, String userId) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+      final response = await http.get(Uri.parse('$_baseUrl/badges/user/$userId'), headers: {
+        'Authorization': 'Bearer $token',
+      });
+      _badges = (response.body as List)
+          .map((json) => BadgeModel.fromJson(json))
+          .toList();
+    } catch (e) {
+      _badges = [];
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+
+  }
 }

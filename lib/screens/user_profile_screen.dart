@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../models/user.dart';
+import '../providers/badge_provider.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final String userId;
@@ -195,11 +196,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             const SizedBox(height: 16),
                             Row(
                               children: [
-                                _buildBadgePreview('badge_url_1'),
-                                const SizedBox(width: 8),
-                                _buildBadgePreview('badge_url_2'),
-                                const SizedBox(width: 8),
-                                _buildBadgePreview('badge_url_3'),
+                                _buildBadges(),
                               ],
                             ),
                           ],
@@ -323,8 +320,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  
- 
   Widget _buildCollection() {
     //if (_user?.recentCards == null || _user!.recentCards!.isEmpty) {
     return Container(
@@ -358,68 +353,35 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Widget _buildBadgePreview(String badgeUrl) {
-    // Mock badge data
-    final mockBadges = [
-      {
-        'url':
-            'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Racing%20Car.png',
-        'name': 'Speed Demon',
-        'color': const Color(0xFFFF4B4B),
-      },
-      {
-        'url':
-            'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Trophy.png',
-        'name': 'Champion',
-        'color': const Color(0xFFFFD700),
-      },
-      {
-        'url':
-            'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Crown.png',
-        'name': 'Elite',
-        'color': const Color(0xFF4B9FFF),
-      },
-    ];
-
-    // Find mock badge data based on url
-    final badgeIndex = int.tryParse(badgeUrl.split('_').last) ?? 1;
-    final badge = mockBadges[badgeIndex - 1];
-
-    return Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            badge['color'] as Color,
-            (badge['color'] as Color).withOpacity(0.1),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: (badge['color'] as Color).withOpacity(0.3),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: (badge['color'] as Color).withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.network(
+        badgeUrl,
+        width: 40,
+        height: 40,
+        fit: BoxFit.cover,
       ),
-      child: Tooltip(
-        message: badge['name'] as String,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Image.network(
-            badge['url'] as String,
-            width: 36,
-            height: 36,
-            fit: BoxFit.contain,
-          ),
-        ),
-      ),
+
+    );
+  }
+
+  Widget _buildBadges() {
+    return Consumer<BadgeProvider>(
+      builder: (context, provider, child) {
+        if (provider.badges.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final badges = provider.badges.take(5).toList();
+        return Row(
+          children: badges.map((badge) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _buildBadgePreview(badge.imageUrl),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 }

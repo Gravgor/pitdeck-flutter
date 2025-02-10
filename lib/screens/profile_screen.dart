@@ -37,7 +37,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     _loadUserData();
     _loadAchievements();
+    _loadBadges();
   }
+
 
   Future<void> _initializeUserSocket() async {
     final auth = Provider.of<UserProvider>(context, listen: false);
@@ -55,7 +57,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final auth = Provider.of<UserProvider>(context, listen: false);
     if (auth.user?.token != null) {
       await Provider.of<AchievementProvider>(context, listen: false)
-          .fetchUserAchievements(auth.user!.token!);
+          .fetchUserAchievements(auth.user!.token);
+    }
+  }
+
+  Future<void> _loadBadges() async {
+    final auth = Provider.of<UserProvider>(context, listen: false);
+    if (auth.user?.token != null) {
+      await Provider.of<BadgeProvider>(context, listen: false)
+          .fetchUserBadges(auth.user!.token, auth.user!.id);
     }
   }
 
@@ -244,26 +254,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ],
                             ),
                             const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                _buildBadgePreview(
-                                  'https://pitdeck-app.s3.eu-north-1.amazonaws.com/users/badges/betatestpiddeck.png'
-                                ),
-                                const SizedBox(width: 8),
-                                _buildBadgePreview(
-                                  'https://pitdeck-app.s3.eu-north-1.amazonaws.com/users/badges/betatestpiddeck.png'
-                                ),
-                                const SizedBox(width: 8),
-
-                                _buildBadgePreview(
-                                  'https://pitdeck-app.s3.eu-north-1.amazonaws.com/users/badges/betatestpiddeck.png'
-                                ),
-
-                              ],
+                            Consumer<BadgeProvider>(
+                              builder: (context, provider, child) {
+                                if (provider.badges.isEmpty) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Row(
+                                  children: [
+                                    _buildBadgePreview(
+                                      provider.badges[0].imageUrl,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _buildBadgePreview(
+                                      provider.badges[1].imageUrl,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _buildBadgePreview(
+                                      provider.badges[2].imageUrl,
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
                             const SizedBox(height: 16),
+
                             GestureDetector(
                               onTap: widget.isCurrentUser
+
                                   ? _showEditBioModal
                                   : null,
                               child: Container(
