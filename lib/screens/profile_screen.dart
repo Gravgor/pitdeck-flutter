@@ -253,29 +253,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 16),
-                            Consumer<BadgeProvider>(
-                              builder: (context, provider, child) {
-                                if (provider.badges.isEmpty) {
-                                  return const SizedBox.shrink();
-                                }
-                                return Row(
-                                  children: [
-                                    _buildBadgePreview(
-                                      provider.badges[0].imageUrl,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    _buildBadgePreview(
-                                      provider.badges[1].imageUrl,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    _buildBadgePreview(
-                                      provider.badges[2].imageUrl,
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
+                             const SizedBox(height: 16),
+            Consumer<BadgeProvider>(
+              builder: (context, provider, child) {
+                if (provider.badges.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return _buildBadges();
+              },
+            ),
                             const SizedBox(height: 16),
 
                             GestureDetector(
@@ -345,14 +331,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: Image.network(
-        'https://pitdeck-app.s3.eu-north-1.amazonaws.com/users/badges/betatestpiddeck.png',
+        badgeUrl,
         width: 40,
         height: 40,
         fit: BoxFit.cover,
       ),
+
     );
   }
 
+  Widget _buildBadges() {
+    return Consumer<BadgeProvider>(
+      builder: (context, provider, child) {
+        if (provider.badges.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final badges = provider.badges.take(5).toList();
+        return Row(
+          children: badges.map((badge) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _buildBadgePreview(badge.imageUrl),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
 
   void _showEditBioModal() {
     final TextEditingController bioController = TextEditingController(
