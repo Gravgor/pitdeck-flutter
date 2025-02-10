@@ -313,6 +313,7 @@ class _DailyLoginRewardsPopupState extends State<DailyLoginRewardsPopup>
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Orbitron',
+                  color: Colors.white,
                 ),
               ),
       ),
