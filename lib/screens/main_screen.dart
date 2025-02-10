@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' hide Size;
@@ -1378,10 +1379,16 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         });
       }
     } catch (e) {
+      showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+                title: const Text('Error'),
+                content: Text('Error checking daily reward: $e'),
+              ));
       print('Error checking daily reward: $e');
     }
-
   }
+
 
   void _showDailyReward() {
     final token = Provider.of<UserProvider>(context, listen: false).user?.token;

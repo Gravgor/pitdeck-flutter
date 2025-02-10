@@ -215,11 +215,17 @@ class UserProvider with ChangeNotifier {
     super.dispose();
   }
 
+  Future<void> refreshUser() async {
+    await fetchUserProfile();
+    notifyListeners();
+  }
+
   Future<void> login(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('token', token);
     await prefs.setBool('isLoggedIn', true);
     _token = token;
+
     _isLoggedIn = true;
     await fetchUserProfile();
     notifyListeners();

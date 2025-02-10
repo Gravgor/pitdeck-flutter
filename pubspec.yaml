@@ -1,7 +1,7 @@
 name: pitdeck
 description: "Pitdeck App"
 publish_to: 'none'
-version: 0.5.813
+version: 0.5.815
 
 
 
@@ -32,6 +32,8 @@ dependencies:
   redis: ^4.0.0
   google_sign_in: ^6.2.2
   sign_in_with_apple: ^6.1.4
+  image_picker: ^1.1.2
+
 
 dev_dependencies:
   flutter_test:

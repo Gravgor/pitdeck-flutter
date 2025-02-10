@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pitdeck/models/card.dart';
 import 'package:pitdeck/screens/pack/packs_screen.dart';
@@ -635,7 +636,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
   void _showCardDetails(BuildContext context, String cardId) {
     final card = Provider.of<CardProvider>(context, listen: false)
         .fetchCardDetails(cardId);
-
+   
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,

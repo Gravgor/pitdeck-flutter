@@ -1,6 +1,9 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -63,7 +66,7 @@ class SettingsScreen extends StatelessWidget {
                         'Profile Picture',
                         Icons.person,
                         onTap: () {
-                          // Handle profile picture change
+                          _updateProfilePicture(context);
                         },
                       ),
                       _buildSettingItem(
@@ -388,5 +391,79 @@ class SettingsScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _updateProfilePicture(BuildContext context) async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+      if (image == null) return;
+
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final token = userProvider.user?.token;
+
+      if (token == null) {
+        throw Exception('Not authenticated');
+      }
+
+      // Create form data
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('https://api.pitdeck.app/api/users/profile-picture/update'),
+      );
+
+      request.headers.addAll({
+        'Authorization': 'Bearer $token',
+      });
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'image',
+          image.path,
+        ),
+      );
+
+      // Send the request
+      final response = await request.send();
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Success - refresh user data
+        await userProvider.refreshUser();
+      } else {
+        // Show native error dialog
+        if (!context.mounted) return;
+        showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: const Text('Error'),
+            content: const Text(
+                'Failed to update profile picture. Please try again.'),
+            actions: [
+              CupertinoDialogAction(
+                child: const Text('OK'),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      showCupertinoDialog(
+        context: context,
+        builder: (context) => CupertinoAlertDialog(
+          title: const Text('Error'),
+          content:
+              const Text('An unexpected error occurred. Please try again.'),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('OK'),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      );
+    }
   }
 }
