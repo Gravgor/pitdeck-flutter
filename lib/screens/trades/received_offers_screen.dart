@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pitdeck/models/trade.dart';
 import 'package:pitdeck/widgets/trade/trade_card.dart';
+import 'package:pitdeck/widgets/user_avatar.dart';
 import 'package:provider/provider.dart';
 import '../../providers/trade_provider.dart';
 import '../../models/trade_offer.dart';
@@ -178,29 +179,10 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
   }
 
   Widget _buildUserAvatar(UserModel user) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF3B82F6).withOpacity(0.1),
-            const Color(0xFF2563EB).withOpacity(0.05),
-          ],
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: user.image != null
-            ? Image.network(
-                user.image!,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    const Icon(Icons.person, color: Colors.white),
-              )
-            : const Icon(Icons.person, color: Colors.white),
-      ),
+    return UserAvatar(
+      userId: user.id,
+      imageUrl: user.image,
+      size: 40,
     );
   }
 

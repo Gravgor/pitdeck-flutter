@@ -4,6 +4,7 @@ import '../../models/trade.dart';
 import '../../models/card.dart';
 import '../../utils/color_utils.dart';
 import '../trades/make_offer_screen.dart';
+import '../../widgets/user_avatar.dart';
 
 class TradeCard extends StatelessWidget {
   final TradeModel trade;
@@ -52,43 +53,15 @@ class TradeCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            margin: const EdgeInsets.only(right: 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: const Color(0xFF3B82F6).withOpacity(0.3),
-                width: 2,
-              ),
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF3B82F6).withOpacity(0.1),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: trade.sender.image != null
-                  ? Image.network(
-                      trade.sender.image!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.person,
-                        color: Color(0xFF3B82F6),
-                      ),
-                    )
-                  : const Icon(
-                      Icons.person,
-                      color: Color(0xFF3B82F6),
-                    ),
-            ),
+          UserAvatar(
+            userId: trade.sender.id,
+            imageUrl: trade.sender.image,
+            size: 40,
           ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+
               children: [
                 Text(
                   trade.sender.name ?? 'Unknown Trader',

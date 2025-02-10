@@ -102,7 +102,6 @@ class UserProvider with ChangeNotifier {
     } catch (e) {
       rethrow;
     }
-
   }
 
   Future<void> fetchUserProfileID(String userId) async {
@@ -118,9 +117,7 @@ class UserProvider with ChangeNotifier {
     } catch (e) {
       rethrow;
     }
-
   }
-
 
   Future<void> fetchUserDetails(String userId, String token) async {
     try {
@@ -147,6 +144,29 @@ class UserProvider with ChangeNotifier {
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<User?> fetchAnotherUser(String userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/users/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final userData = json.decode(response.body);
+        return User.fromJson(userData, token: _token);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      rethrow;
+    }
+
+
   }
 
   Future<void> updateUser(User user) async {
@@ -220,5 +240,3 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 }
-
-
