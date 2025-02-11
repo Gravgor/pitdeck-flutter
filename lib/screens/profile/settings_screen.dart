@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -407,7 +408,6 @@ class SettingsScreen extends StatelessWidget {
         throw Exception('Not authenticated');
       }
 
-      // Create form data
       final request = http.MultipartRequest(
         'POST',
         Uri.parse('https://api.pitdeck.app/api/users/profile-picture/update'),
@@ -419,19 +419,18 @@ class SettingsScreen extends StatelessWidget {
 
       request.files.add(
         await http.MultipartFile.fromPath(
-          'image',
+          'file',
           image.path,
+          filename: image.name,
+          contentType: MediaType('image', 'jpeg'),
         ),
       );
 
-      // Send the request
       final response = await request.send();
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Success - refresh user data
         await userProvider.refreshUser();
       } else {
-        // Show native error dialog
         if (!context.mounted) return;
         showCupertinoDialog(
           context: context,
