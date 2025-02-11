@@ -32,6 +32,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       setState(() => _isLoading = true);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       _user = await userProvider.fetchAnotherUser(widget.userId);
+      final badgeProvider = Provider.of<BadgeProvider>(context, listen: false);
+      await badgeProvider.fetchBadgesForUserByUserId(userProvider.user!.token, widget.userId);
       setState(() => _isLoading = false);
     } catch (e) {
       // If there's an error, use mock data
@@ -344,28 +346,17 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         height: 40,
         fit: BoxFit.cover,
       ),
+
     );
   }
 
   Widget _buildBadges() {
     return Consumer<BadgeProvider>(
       builder: (context, provider, child) {
-        // Initialize badges fetch for viewed user
-        if (!provider.hasLoadedForUser(widget.userId)) {
-          final userProvider =
-              Provider.of<UserProvider>(context, listen: false);
-          provider.fetchUserBadges(userProvider.user!.token, widget.userId);
-          return const Center(
-            child: CircularProgressIndicator(color: Color(0xFF3B82F6)),
-          );
-        }
-
-        final badges =
-            provider.getBadgesForUser(widget.userId).take(5).toList();
-        if (badges.isEmpty) {
+        if (provider.getBadgesForUser(widget.userId).isEmpty) {
           return const SizedBox.shrink();
         }
-
+        final badges = provider.getBadgesForUser(widget.userId).take(5).toList();
         return Row(
           children: badges.map((badge) {
             return Padding(

@@ -262,7 +262,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                              const SizedBox(height: 16),
             Consumer<BadgeProvider>(
               builder: (context, provider, child) {
-                if (provider.getBadgesForUser(widget.userId!).isEmpty) {
+                if (provider.badges.isEmpty) {
                   return const SizedBox.shrink();
                 }
                 return _buildBadges();
@@ -349,11 +349,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildBadges() {
     return Consumer<BadgeProvider>(
       builder: (context, provider, child) {
-        if (provider.getBadgesForUser(widget.userId!).isEmpty) {
+        if (provider.badges.isEmpty) {
           return const SizedBox.shrink();
         }
 
-        final badges = provider.getBadgesForUser(widget.userId!).take(5).toList();
+        final badges = provider.badges.take(5).toList();
         return Row(
           children: badges.map((badge) {
             return Padding(
