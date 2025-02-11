@@ -41,6 +41,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   geo.Position? _userLocation;
   Timer? _locationTimer;
   final bool _isLoading = false;
+  bool _isLoadingLocation = true;
   IO.Socket? _socket;
   Timer? _socketReconnectTimer;
   bool _isSocketConnecting = false;
@@ -123,6 +124,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
       setState(() {
         _userLocation = position;
+        _isLoadingLocation = false;
       });
 
       _socket?.emit('location:update', {
@@ -283,6 +285,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       if (mounted) {
         setState(() {
           _userLocation = position;
+          _isLoadingLocation = false;
         });
 
         _socket?.emit('location:update', {
@@ -1111,12 +1114,52 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       body: Stack(
         children: [
           _buildMap(),
-          if (_isLoading)
-            Container(
-              color: Colors.black54,
-              child: const Center(
-                child: CircularProgressIndicator(),
+          if (_isLoadingLocation)
+            Scaffold(
+        backgroundColor: const Color(0xFF040412),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: const Color(0xFF3B82F6),
+                    width: 2,
+                  ),
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.location_searching,
+                    color: Color(0xFF3B82F6),
+                    size: 60,
+                  ),
+                ),
               ),
+              const SizedBox(height: 24),
+              const Text(
+                'Getting your location...',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Orbitron',
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Please enable location services to continue',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             ),
           const TopBarWidget(),
           _buildControlCenter(),
