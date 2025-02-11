@@ -56,8 +56,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   Map<String, dynamic>? _rewardStatus;
 
   @override
-
-  @override
   void initState() {
     super.initState();
     _loadCachedState();
@@ -1107,6 +1105,55 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    if (_userLocation == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF040412),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: const Color(0xFF3B82F6),
+                    width: 2,
+                  ),
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.location_searching,
+                    color: Color(0xFF3B82F6),
+                    size: 60,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Getting your location...',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Orbitron',
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Please enable location services to continue',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: Stack(
         children: [
