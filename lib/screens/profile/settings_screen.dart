@@ -395,66 +395,54 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Future<void> _updateProfilePicture(BuildContext context) async {
-    try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-
-      if (image == null) return;
-
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final token = userProvider.user?.token;
-
-      if (token == null) {
-        throw Exception('Not authenticated');
-      }
-
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('https://api.pitdeck.app/api/users/profile-picture/update'),
-      );
-
-      request.headers.addAll({
-        'Authorization': 'Bearer $token',
-      });
-
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'file',
-          image.path,
-          filename: image.name,
-          contentType: MediaType('image', 'jpeg'),
-        ),
-      );
-
-      final response = await request.send();
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        await userProvider.refreshUser();
-      } else {
-        if (!context.mounted) return;
-        showCupertinoDialog(
-          context: context,
-          builder: (context) => CupertinoAlertDialog(
-            title: const Text('Error'),
-            content: const Text(
-                'Failed to update profile picture. Please try again.'),
-            actions: [
-              CupertinoDialogAction(
-                child: const Text('OK'),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-        );
-      }
-    } catch (e) {
+  try {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    
+    if (image == null) return;
+    
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final token = userProvider.user?.token;
+    
+    if (token == null) {
+      throw Exception('Not authenticated');
+    }
+    
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('https://api.pitdeck.app/api/users/profile-picture/update'),
+    );
+    
+    request.headers.addAll({
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'multipart/form-data', // Add content type header
+    });
+    
+    // Change 'file' to 'image' to match the backend endpoint
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'image', // Changed from 'file' to 'image'
+        image.path,
+        filename: image.name,
+        contentType: MediaType('image', 'jpeg'),
+      ),
+    );
+    
+    final response = await request.send();
+    final responseData = await response.stream.bytesToString();
+    
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      await userProvider.refreshUser();
+    } else {
       if (!context.mounted) return;
       showCupertinoDialog(
         context: context,
         builder: (context) => CupertinoAlertDialog(
           title: const Text('Error'),
-          content:
-              const Text('An unexpected error occurred. Please try again.'),
+          content: Text(
+            // Show the actual error message from the server if available
+            'Failed to update profile picture: $responseData'
+          ),
           actions: [
             CupertinoDialogAction(
               child: const Text('OK'),
@@ -464,5 +452,21 @@ class SettingsScreen extends StatelessWidget {
         ),
       );
     }
+  } catch (e) {
+    if (!context.mounted) return;
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('Error'),
+        content: Text('An unexpected error occurred: ${e.toString()}'),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('OK'),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
   }
+}
 }
