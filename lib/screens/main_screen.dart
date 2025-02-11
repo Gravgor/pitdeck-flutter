@@ -55,6 +55,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   bool _hasUnclaimedReward = false;
   Map<String, dynamic>? _rewardStatus;
 
+
   @override
   void initState() {
     super.initState();
@@ -1105,7 +1106,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    if (_userLocation == null) {
+     if (_userLocation == null) {
       return Scaffold(
         backgroundColor: const Color(0xFF040412),
         body: Center(
@@ -1153,7 +1154,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         ),
       );
     }
-
     return Scaffold(
       body: Stack(
         children: [
