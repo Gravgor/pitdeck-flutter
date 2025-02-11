@@ -3,32 +3,35 @@ import 'package:http/http.dart' as http;
 import '../models/badge.dart';
 import 'dart:convert';
 
-class BadgeProvider with ChangeNotifier {
+class BadgeProvider extends ChangeNotifier {
   final _baseUrl = 'https://api.pitdeck.app/api';
-  List<BadgeModel> _badges = [];
-  bool _isLoading = false;
+  final Map<String, List<BadgeModel>> _userBadges = {};
 
-  List<BadgeModel> get badges => _badges;
-  bool get isLoading => _isLoading;
+  List<BadgeModel> getBadgesForUser(String userId) {
+    return _userBadges[userId] ?? [];
+  }
+
+  bool hasLoadedForUser(String userId) {
+    return _userBadges.containsKey(userId);
+  }
 
   Future<void> fetchUserBadges(String token, String userId) async {
+    if (_userBadges.containsKey(userId)) return;
+
     try {
-      _isLoading = true;
-      notifyListeners();
+      final response = await http.get(
+        Uri.parse('$_baseUrl/badges/user/$userId'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
 
-      final response =
-          await http.get(Uri.parse('$_baseUrl/badges/user/$userId'), headers: {
-        'Authorization': 'Bearer $token',
-      });
-
-      final List<dynamic> jsonData = json.decode(response.body);
-
-      _badges = jsonData.map((json) => BadgeModel.fromJson(json)).toList();
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        _userBadges[userId] =
+            data.map((json) => BadgeModel.fromJson(json)).toList();
+        notifyListeners();
+      }
     } catch (e) {
-      print('Error fetching badges: $e');
-      _badges = [];
-    } finally {
-      _isLoading = false;
+      _userBadges[userId] = [];
       notifyListeners();
     }
   }
