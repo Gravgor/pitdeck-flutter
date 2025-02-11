@@ -55,6 +55,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   bool _hasUnclaimedReward = false;
   Map<String, dynamic>? _rewardStatus;
 
+  @override
 
   @override
   void initState() {
@@ -67,6 +68,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       _checkDailyReward();
     });
   }
+
 
   @override
   void dispose() {

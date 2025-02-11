@@ -48,11 +48,11 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs access to location when open to show your position on the map and find nearby drops.</string>
+	<string>PitDeck needs your location to show nearby drops and connect with other players</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>This app needs access to location when in the background to notify you of nearby drops.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>This app needs access to location when open and in the background to show your position and notify you of nearby drops.</string>
+	<string>PitDeck needs your location to show nearby drops and connect with other players even when the app is in background</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
