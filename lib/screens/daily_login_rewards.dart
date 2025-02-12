@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:pitdeck/main.dart';
 import 'dart:ui';
 import 'package:pitdeck/services/daily_reward_service.dart';
+import 'package:pitdeck/providers/user_provider.dart';
+import 'package:provider/provider.dart';
+
 
 class DailyLoginRewardsPopup extends StatefulWidget {
   final String token;
@@ -64,6 +68,11 @@ class _DailyLoginRewardsPopupState extends State<DailyLoginRewardsPopup>
 
     try {
       final result = await _rewardService.claimDailyReward(widget.token);
+      final userProvider = Provider.of<UserProvider>(
+        navigatorKey.currentContext!,
+        listen: false,
+      );
+      await userProvider.fetchUserProfile();
       Navigator.of(context).pop(result);
     } catch (e) {
       setState(() {

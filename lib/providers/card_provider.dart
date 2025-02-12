@@ -60,8 +60,7 @@ class CardProvider with ChangeNotifier {
   }
 
   Future<CardDetailModel> fetchCardDetails(String cardId) async {
-    try {
-    
+    try {    
       final userProvider = Provider.of<UserProvider>(
         navigatorKey.currentContext!,
         listen: false,
@@ -121,6 +120,7 @@ class CardProvider with ChangeNotifier {
     );
     if (response.statusCode == 201) {
       await fetchUserCards();
+      await userProvider.fetchUserProfile();
       notifyListeners();
     }
   }

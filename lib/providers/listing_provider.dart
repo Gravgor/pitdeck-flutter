@@ -178,8 +178,10 @@ class ListingProvider with ChangeNotifier {
       if (response.statusCode == 201) {
         _listings.removeWhere((listing) => listing.id == listingId);
         // Refetch listings
+        await userProvider.fetchUserProfile();
         fetchListings();
         notifyListeners();
+        
       } else {
         final errorData = json.decode(response.body);
         throw Exception(errorData['message'] ?? 'Failed to buy listing');
