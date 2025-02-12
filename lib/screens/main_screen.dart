@@ -22,6 +22,7 @@ import 'package:pitdeck/screens/widgets/main/topbar_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pitdeck/screens/daily_login_rewards.dart';
 import 'package:pitdeck/services/daily_reward_service.dart';
+import 'package:lottie/lottie.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -726,144 +727,101 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           filter: ImageFilter.blur(sigmaX: 15 * value, sigmaY: 15 * value),
           child: Dialog.fullscreen(
             backgroundColor: Colors.transparent,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.center,
-                  radius: 1.5,
-                  colors: [
-                    rarityColor.withOpacity(0.1),
-                    const Color(0xFF040412),
-                  ],
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Background animation
+                Lottie.network(
+                  'https://lottie.host/c7e44f6d-b2ed-4991-97e9-361dd205ed5e/x2YDkwPwFB.lottie',
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.height,
+                  fit: BoxFit.cover,
                 ),
-              ),
-              child: Center(
-                child: TweenAnimationBuilder<double>(
-                  duration: const Duration(milliseconds: 2000),
-                  tween: Tween(begin: 0, end: 1),
-                  builder: (context, value, child) => Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Outer glow
-                      Container(
-                        width: 400,
-                        height: 400,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            colors: [
-                              rarityColor.withOpacity(0.2 * value),
-                              Colors.transparent,
+                // Main content
+                Center(
+                  child: TweenAnimationBuilder<double>(
+                    duration: const Duration(milliseconds: 1500),
+                    tween: Tween(begin: 0, end: 1),
+                    curve: Curves.easeOutExpo,
+                    builder: (context, value, child) => Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Glow effect
+                        Container(
+                          width: 300,
+                          height: 300,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: rarityColor.withOpacity(0.3 * value),
+                                blurRadius: 50,
+                                spreadRadius: 20,
+                              ),
                             ],
                           ),
                         ),
-                      ),
-                      // Rotating rings
-                      ...List.generate(3, (index) {
-                        return Transform.rotate(
-                          angle: value * 2 * pi * (index % 2 == 0 ? 1 : -1),
+                        // Card container
+                        Transform.scale(
+                          scale: value,
                           child: Container(
-                            width: 300 - (index * 40),
-                            height: 300 - (index * 40),
+                            width: 200,
+                            height: 200,
                             decoration: BoxDecoration(
-                              shape: BoxShape.circle,
+                              color: const Color(0xFF040412),
+                              borderRadius: BorderRadius.circular(24),
                               border: Border.all(
-                                color: rarityColor.withOpacity(0.3),
-                                width: 1,
+                                color: rarityColor.withOpacity(0.5),
+                                width: 2,
                               ),
-                            ),
-                          ),
-                        );
-                      }),
-                      // Main container with hexagonal shape
-                      ClipPath(
-                        clipper: HexagonClipper(),
-                        child: Container(
-                          width: 200,
-                          height: 200,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                rarityColor.withOpacity(0.2),
-                                const Color(0xFF1A1A2E),
-                                rarityColor.withOpacity(0.1),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: rarityColor.withOpacity(0.2),
+                                  blurRadius: 20,
+                                  spreadRadius: -5,
+                                ),
                               ],
                             ),
-                          ),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: rarityColor.withOpacity(0.5),
-                                  width: 2,
-                                ),
-                              ),
-                              child: Center(
-                                child: TweenAnimationBuilder<double>(
-                                  duration: const Duration(milliseconds: 1000),
-                                  tween: Tween(begin: 0, end: 1),
-                                  curve: Curves.elasticOut,
-                                  builder: (context, scaleValue, child) =>
-                                      Transform.scale(
-                                    scale: scaleValue,
-                                    child: Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.card_giftcard,
-                                          size: 80,
-                                          color: rarityColor.withOpacity(0.2),
-                                        ),
-                                        Icon(
-                                          Icons.card_giftcard,
-                                          size: 60,
-                                          color: rarityColor,
-                                        ),
-                                      ],
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                // Background pattern
+                                Positioned.fill(
+                                  child: CustomPaint(
+                                    painter: GridPainter(
+                                      color: rarityColor.withOpacity(0.1),
+                                      gridSize: 10,
                                     ),
                                   ),
                                 ),
-                              ),
+                                // Icon
+                                Icon(
+                                  Icons.card_giftcard,
+                                  size: 80,
+                                  color: rarityColor.withOpacity(0.8),
+                                ),
+                                // Animated border
+                                AnimatedBuilder(
+                                  animation: AlwaysStoppedAnimation(value),
+                                  builder: (context, child) {
+                                    return CustomPaint(
+                                      size: const Size(200, 200),
+                                      painter: BorderPainter(
+                                        progress: value,
+                                        color: rarityColor,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                      ),
-                      // Animated particles
-                      ...List.generate(12, (index) {
-                        final angle = (index / 12) * 2 * pi;
-                        final radius = 150 * value;
-                        return Positioned(
-                          left: cos(angle) * radius + 200,
-                          top: sin(angle) * radius + 200,
-                          child: Transform.rotate(
-                            angle: angle,
-                            child: FadeTransition(
-                              opacity: AlwaysStoppedAnimation(1 - value),
-                              child: Container(
-                                width: 3,
-                                height: 20,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      rarityColor,
-                                      rarityColor.withOpacity(0),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
@@ -871,7 +829,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-    Widget _buildFinalReward(List<dynamic> rewardsList, DropRarity rarity) {
+  Widget _buildFinalReward(List<dynamic> rewardsList, DropRarity rarity) {
     return Dialog.fullscreen(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -922,7 +880,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                                 color: Colors.black.withOpacity(0.3),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: _getRarityColor(rarity).withOpacity(0.3),
+                                  color:
+                                      _getRarityColor(rarity).withOpacity(0.3),
                                 ),
                               ),
                               child: Column(
@@ -946,13 +905,16 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
                                         colors: [
-                                          _getRarityColor(rarity).withOpacity(0.2),
-                                          _getRarityColor(rarity).withOpacity(0.1),
+                                          _getRarityColor(rarity)
+                                              .withOpacity(0.2),
+                                          _getRarityColor(rarity)
+                                              .withOpacity(0.1),
                                         ],
                                       ),
                                       borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
-                                        color: _getRarityColor(rarity).withOpacity(0.3),
+                                        color: _getRarityColor(rarity)
+                                            .withOpacity(0.3),
                                       ),
                                     ),
                                     child: Text(
@@ -974,7 +936,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: _getRarityColor(rarity).withOpacity(0.2),
+                                    color: _getRarityColor(rarity)
+                                        .withOpacity(0.2),
                                     blurRadius: 20,
                                     spreadRadius: 5,
                                   ),
@@ -996,11 +959,13 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                                 color: Colors.black.withOpacity(0.3),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: _getRarityColor(rarity).withOpacity(0.3),
+                                  color:
+                                      _getRarityColor(rarity).withOpacity(0.3),
                                 ),
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
                                 children: [
                                   _buildCardDetail(
                                     Icons.calendar_today,
@@ -1136,7 +1101,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildCardDetail(IconData icon, String label, String value, {Color? color}) {
+  Widget _buildCardDetail(IconData icon, String label, String value,
+      {Color? color}) {
     return Column(
       children: [
         Icon(icon, color: color ?? Colors.white, size: 24),
@@ -1634,7 +1600,7 @@ class HexagonClipper extends CustomClipper<Path> {
     final path = Path();
     final height = size.height;
     final width = size.width;
-    
+
     path.moveTo(width * 0.5, 0);
     path.lineTo(width, height * 0.25);
     path.lineTo(width, height * 0.75);
@@ -1642,10 +1608,70 @@ class HexagonClipper extends CustomClipper<Path> {
     path.lineTo(0, height * 0.75);
     path.lineTo(0, height * 0.25);
     path.close();
-    
+
     return path;
   }
 
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+// Grid pattern painter
+class GridPainter extends CustomPainter {
+  final Color color;
+  final double gridSize;
+
+  GridPainter({required this.color, required this.gridSize});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 0.5;
+
+    for (double i = 0; i < size.width; i += gridSize) {
+      canvas.drawLine(
+        Offset(i, 0),
+        Offset(i, size.height),
+        paint,
+      );
+    }
+
+    for (double i = 0; i < size.height; i += gridSize) {
+      canvas.drawLine(
+        Offset(0, i),
+        Offset(size.width, i),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// Animated border painter
+class BorderPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+
+  BorderPainter({required this.progress, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    final path = Path()
+      ..moveTo(0, size.height * progress)
+      ..lineTo(0, 0)
+      ..lineTo(size.width * progress, 0);
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
