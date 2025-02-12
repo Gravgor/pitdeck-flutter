@@ -57,7 +57,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   Map<String, dynamic>? _rewardStatus;
 
   @override
-
   @override
   void initState() {
     super.initState();
@@ -334,16 +333,15 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     final distance = _calculateDistance(newDrop!);
     final auth = Provider.of<UserProvider>(context, listen: false);
     final isPremium = auth.user?.isPremium ?? false;
-
     final maxRange = isPremium ? 500.0 : 100.0;
     final isInRange = distance <= maxRange;
 
     showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: Colors.black.withOpacity(0.8),
       builder: (context) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Dialog(
           backgroundColor: Colors.transparent,
           insetPadding: const EdgeInsets.symmetric(horizontal: 16),
@@ -355,23 +353,16 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
               scale: value,
               child: Container(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF1A1A2E),
-                      _getRarityColor(newDrop.rarity).withOpacity(0.05),
-                      const Color(0xFF1A1A2E),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
+                  color: const Color(0xFF040412),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: _getRarityColor(newDrop.rarity).withOpacity(0.3),
+                    width: 2,
                   ),
                   boxShadow: [
                     BoxShadow(
                       color: _getRarityColor(newDrop.rarity).withOpacity(0.2),
-                      blurRadius: 20,
+                      blurRadius: 30,
                       spreadRadius: 5,
                     ),
                   ],
@@ -379,22 +370,9 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const SizedBox(height: 12),
-                    Container(
-                      width: 32,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
                     _buildDropHeader(newDrop, distance, isInRange, isPremium),
-                    const SizedBox(height: 24),
                     _buildDropContent(newDrop, isInRange),
-                    const SizedBox(height: 24),
-                    _buildDropButton(newDrop, isInRange),
-                    const SizedBox(height: 32),
+                    _buildDropFooter(newDrop, isInRange),
                   ],
                 ),
               ),
@@ -408,129 +386,226 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   Widget _buildDropHeader(
       DropModel drop, double distance, bool isInRange, bool isPremium) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            _getRarityColor(drop.rarity).withOpacity(0.2),
+            Colors.transparent,
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
       child: Column(
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              TweenAnimationBuilder<double>(
-                duration: const Duration(milliseconds: 800),
-                tween: Tween(begin: 0.0, end: 1.0),
-                curve: Curves.elasticOut,
-                builder: (context, value, child) => Transform.scale(
-                  scale: value,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getRarityColor(drop.rarity).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _getRarityColor(drop.rarity).withOpacity(0.3),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.auto_awesome,
-                          color: _getRarityColor(drop.rarity),
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          drop.rarity.toString().split('.').last,
-                          style: TextStyle(
-                            color: _getRarityColor(drop.rarity),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            fontFamily: 'Orbitron',
-                          ),
-                        ),
-                      ],
-                    ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _getRarityColor(drop.rarity).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _getRarityColor(drop.rarity).withOpacity(0.3),
                   ),
                 ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.auto_awesome,
+                      color: _getRarityColor(drop.rarity),
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      drop.rarity.toString().split('.').last,
+                      style: TextStyle(
+                        color: _getRarityColor(drop.rarity),
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Orbitron',
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const Spacer(),
-              _buildDistanceIndicator(distance, isInRange, isPremium),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isInRange
+                      ? const Color(0xFF10B981).withOpacity(0.1)
+                      : const Color(0xFFEF4444).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isInRange
+                        ? const Color(0xFF10B981).withOpacity(0.3)
+                        : const Color(0xFFEF4444).withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      isInRange ? Icons.near_me : Icons.location_off,
+                      color: isInRange
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFEF4444),
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${distance.toStringAsFixed(0)}m',
+                      style: TextStyle(
+                        color: isInRange
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFFEF4444),
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Orbitron',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
+          if (!isPremium && distance > 100 && distance <= 500) ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFB800).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFFFFB800).withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFB800).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Icon(
+                      Icons.workspace_premium,
+                      color: Color(0xFFFFB800),
+                      size: 14,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Upgrade to Premium to Reach',
+                    style: TextStyle(
+                      color: Color(0xFFFFB800),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Orbitron',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildDistanceIndicator(
-      double distance, bool isInRange, bool isPremium) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: isInRange
-                ? const Color(0xFF10B981).withOpacity(0.1)
-                : const Color(0xFFEF4444).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isInRange
-                  ? const Color(0xFF10B981).withOpacity(0.3)
-                  : const Color(0xFFEF4444).withOpacity(0.3),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isInRange ? Icons.near_me : Icons.location_off,
-                color: isInRange
-                    ? const Color(0xFF10B981)
-                    : const Color(0xFFEF4444),
-                size: 18,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '${distance.toStringAsFixed(0)}m away',
-                style: TextStyle(
-                  color: isInRange
-                      ? const Color(0xFF10B981)
-                      : const Color(0xFFEF4444),
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Orbitron',
-                ),
-              ),
-            ],
+  Widget _buildDropContent(DropModel drop, bool isInRange) {
+    return Container(
+      height: 280,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            _getRarityColor(drop.rarity).withOpacity(0.05),
+            Colors.transparent,
+            _getRarityColor(drop.rarity).withOpacity(0.05),
+          ],
+        ),
+        border: Border.symmetric(
+          horizontal: BorderSide(
+            color: _getRarityColor(drop.rarity).withOpacity(0.1),
           ),
         ),
-        if (!isPremium && distance > 100 && distance <= 500) ...[
-          const SizedBox(height: 8),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            width: 160,
+            height: 160,
             decoration: BoxDecoration(
-              color: const Color(0xFFFFB800).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFFFFB800).withOpacity(0.3),
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  _getRarityColor(drop.rarity).withOpacity(0.2),
+                  Colors.transparent,
+                ],
               ),
             ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
+          ),
+          Icon(
+            Icons.card_giftcard,
+            color: _getRarityColor(drop.rarity).withOpacity(0.4),
+            size: 80,
+          ),
+          if (!isInRange)
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.black.withOpacity(0.5),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Icon(
+                Icons.lock,
+                color: _getRarityColor(drop.rarity),
+                size: 40,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropFooter(DropModel drop, bool isInRange) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          ElevatedButton(
+            onPressed: isInRange ? () => _openDrop(drop) : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isInRange
+                  ? _getRarityColor(drop.rarity)
+                  : const Color(0xFF1A1A2E),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.star,
-                  color: Color(0xFFFFB800),
-                  size: 18,
+                  isInRange ? Icons.lock_open : Icons.lock,
+                  color: Colors.white,
+                  size: 20,
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Text(
-                  'Get Premium to Reach',
-                  style: TextStyle(
-                    color: Color(0xFFFFB800),
-                    fontSize: 14,
+                  isInRange ? 'Open Drop' : 'Too Far Away',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Orbitron',
                   ),
@@ -539,99 +614,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             ),
           ),
         ],
-      ],
-    );
-  }
-
-  Widget _buildDropContent(DropModel drop, bool isInRange) {
-    return TweenAnimationBuilder<double>(
-      duration: const Duration(milliseconds: 800),
-      tween: Tween(begin: 0.0, end: 1.0),
-      curve: Curves.elasticOut,
-      builder: (context, value, child) => Transform.scale(
-        scale: value,
-        child: Container(
-          height: 280,
-          width: MediaQuery.of(context).size.width,
-          margin: EdgeInsets.zero,
-          decoration: BoxDecoration(
-            color: _getRarityColor(drop.rarity).withOpacity(0.05),
-            border: Border(
-              top: BorderSide(
-                color: _getRarityColor(drop.rarity).withOpacity(0.2),
-              ),
-              bottom: BorderSide(
-                color: _getRarityColor(drop.rarity).withOpacity(0.2),
-              ),
-            ),
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Icon(
-                Icons.card_giftcard,
-                color: _getRarityColor(drop.rarity).withOpacity(0.2),
-                size: 80,
-              ),
-              if (!isInRange)
-                Icon(
-                  Icons.lock,
-                  color: _getRarityColor(drop.rarity).withOpacity(0.3),
-                  size: 40,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDropButton(DropModel drop, bool isInRange) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: TweenAnimationBuilder<double>(
-        duration: const Duration(milliseconds: 600),
-        tween: Tween(begin: 0.0, end: 1.0),
-        curve: Curves.easeOutCubic,
-        builder: (context, value, child) => Transform.scale(
-          scale: value,
-          child: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: isInRange ? () => _openDrop(drop) : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isInRange
-                    ? _getRarityColor(drop.rarity)
-                    : const Color(0xFF2A2A3E),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    isInRange ? Icons.lock_open : Icons.lock,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    isInRange ? 'Open Drop' : 'Too Far Away',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      fontFamily: 'Orbitron',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -718,6 +700,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   void _showRewardsDialog(Map<String, dynamic> rewards, DropRarity rarity) {
     final List<dynamic> rewardsList = rewards['rewards'];
+    final rarityColor = _getRarityColor(rarity);
 
     showDialog(
       context: context,
@@ -740,18 +723,17 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           );
         },
         builder: (context, value, child) => BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8 * value, sigmaY: 8 * value),
+          filter: ImageFilter.blur(sigmaX: 15 * value, sigmaY: 15 * value),
           child: Dialog.fullscreen(
             backgroundColor: Colors.transparent,
             child: Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+                gradient: RadialGradient(
+                  center: Alignment.center,
+                  radius: 1.5,
                   colors: [
-                    const Color(0xFF1A1A2E),
-                    _getRarityColor(rarity).withOpacity(0.1),
-                    const Color(0xFF1A1A2E),
+                    rarityColor.withOpacity(0.1),
+                    const Color(0xFF040412),
                   ],
                 ),
               ),
@@ -762,80 +744,117 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   builder: (context, value, child) => Stack(
                     alignment: Alignment.center,
                     children: [
-                      // Background glow
+                      // Outer glow
                       Container(
-                        width: 300,
-                        height: 300,
+                        width: 400,
+                        height: 400,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: _getRarityColor(rarity).withOpacity(0.3),
-                              blurRadius: 50 * value,
-                              spreadRadius: 20 * value,
-                            ),
-                          ],
+                          gradient: RadialGradient(
+                            colors: [
+                              rarityColor.withOpacity(0.2 * value),
+                              Colors.transparent,
+                            ],
+                          ),
                         ),
                       ),
-                      // Rotating border
-                      Transform.rotate(
-                        angle: value * 2 * pi,
+                      // Rotating rings
+                      ...List.generate(3, (index) {
+                        return Transform.rotate(
+                          angle: value * 2 * pi * (index % 2 == 0 ? 1 : -1),
+                          child: Container(
+                            width: 300 - (index * 40),
+                            height: 300 - (index * 40),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: rarityColor.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                      // Main container with hexagonal shape
+                      ClipPath(
+                        clipper: HexagonClipper(),
                         child: Container(
                           width: 200,
                           height: 200,
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: _getRarityColor(rarity).withOpacity(0.5),
-                              width: 2,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                rarityColor.withOpacity(0.2),
+                                const Color(0xFF1A1A2E),
+                                rarityColor.withOpacity(0.1),
+                              ],
                             ),
                           ),
-                        ),
-                      ),
-                      // Main container
-                      Container(
-                        width: 180,
-                        height: 180,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: const Color(0xFF1A1A2E),
-                          border: Border.all(
-                            color: _getRarityColor(rarity),
-                            width: 2,
-                          ),
-                        ),
-                        child: Center(
-                          child: TweenAnimationBuilder<double>(
-                            duration: const Duration(milliseconds: 1000),
-                            tween: Tween(begin: 0, end: 1),
-                            curve: Curves.easeOutBack,
-                            builder: (context, scaleValue, child) =>
-                                Transform.scale(
-                              scale: scaleValue,
-                              child: Icon(
-                                Icons.card_giftcard,
-                                size: 60,
-                                color: _getRarityColor(rarity),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: rarityColor.withOpacity(0.5),
+                                  width: 2,
+                                ),
+                              ),
+                              child: Center(
+                                child: TweenAnimationBuilder<double>(
+                                  duration: const Duration(milliseconds: 1000),
+                                  tween: Tween(begin: 0, end: 1),
+                                  curve: Curves.elasticOut,
+                                  builder: (context, scaleValue, child) =>
+                                      Transform.scale(
+                                    scale: scaleValue,
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.card_giftcard,
+                                          size: 80,
+                                          color: rarityColor.withOpacity(0.2),
+                                        ),
+                                        Icon(
+                                          Icons.card_giftcard,
+                                          size: 60,
+                                          color: rarityColor,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                      // Particles
-                      ...List.generate(8, (index) {
-                        final angle = (index / 8) * 2 * pi;
-                        final radius = 120 * value;
+                      // Animated particles
+                      ...List.generate(12, (index) {
+                        final angle = (index / 12) * 2 * pi;
+                        final radius = 150 * value;
                         return Positioned(
-                          left: cos(angle) * radius + 150,
-                          top: sin(angle) * radius + 150,
-                          child: FadeTransition(
-                            opacity: AlwaysStoppedAnimation(1 - value),
-                            child: Container(
-                              width: 4,
-                              height: 12,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(2),
-                                color: _getRarityColor(rarity),
+                          left: cos(angle) * radius + 200,
+                          top: sin(angle) * radius + 200,
+                          child: Transform.rotate(
+                            angle: angle,
+                            child: FadeTransition(
+                              opacity: AlwaysStoppedAnimation(1 - value),
+                              child: Container(
+                                width: 3,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      rarityColor,
+                                      rarityColor.withOpacity(0),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -852,18 +871,17 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildFinalReward(List<dynamic> rewardsList, DropRarity rarity) {
+    Widget _buildFinalReward(List<dynamic> rewardsList, DropRarity rarity) {
     return Dialog.fullscreen(
       backgroundColor: Colors.transparent,
       child: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+          gradient: RadialGradient(
+            center: Alignment.topCenter,
+            radius: 2.0,
             colors: [
-              const Color(0xFF1A1A2E),
-              _getRarityColor(rarity).withOpacity(0.1),
-              const Color(0xFF1A1A2E),
+              _getRarityColor(rarity).withOpacity(0.15),
+              const Color(0xFF040412),
             ],
           ),
         ),
@@ -880,104 +898,140 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                         child: Column(
                           children: [
                             const SizedBox(height: 70),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.auto_awesome,
-                                  color: _getRarityColor(rarity),
-                                  size: 24,
+                            ShaderMask(
+                              shaderCallback: (bounds) => LinearGradient(
+                                colors: [
+                                  _getRarityColor(rarity),
+                                  _getRarityColor(rarity).withOpacity(0.7),
+                                ],
+                              ).createShader(bounds),
+                              child: Text(
+                                'New Drop Unlocked!',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Orbitron',
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'New Drop Unlocked!',
-                                  style: TextStyle(
-                                    color: _getRarityColor(rarity),
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'Orbitron',
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                             const SizedBox(height: 32),
-                            Text(
-                              card['name'],
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Orbitron',
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 24),
                               decoration: BoxDecoration(
-                                color: _getRarityColor(rarity).withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(20),
+                                color: Colors.black.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color:
-                                      _getRarityColor(rarity).withOpacity(0.3),
+                                  color: _getRarityColor(rarity).withOpacity(0.3),
                                 ),
                               ),
-                              child: Text(
-                                '#${card['serialNumber']}',
-                                style: TextStyle(
-                                  color: _getRarityColor(rarity),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    card['name'],
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'Orbitron',
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          _getRarityColor(rarity).withOpacity(0.2),
+                                          _getRarityColor(rarity).withOpacity(0.1),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: _getRarityColor(rarity).withOpacity(0.3),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      '#${card['serialNumber']}',
+                                      style: TextStyle(
+                                        color: _getRarityColor(rarity),
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'Orbitron',
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 40),
+                            const SizedBox(height: 24),
                             Container(
-                              width: MediaQuery.of(context).size.width,
-                              height: 400,
                               decoration: BoxDecoration(
-                                border: Border(
-                                  top: BorderSide(
-                                    color: _getRarityColor(rarity)
-                                        .withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: _getRarityColor(rarity).withOpacity(0.2),
+                                    blurRadius: 20,
+                                    spreadRadius: 5,
                                   ),
-                                  bottom: BorderSide(
-                                    color: _getRarityColor(rarity)
-                                        .withOpacity(0.2),
-                                  ),
-                                ),
+                                ],
                               ),
-                              child: Image.network(
-                                card['imageUrl'],
-                                fit: BoxFit.cover,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: Image.network(
+                                  card['imageUrl'],
+                                  fit: BoxFit.cover,
+                                  height: 400,
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 40),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                _buildCardDetail(
-                                  Icons.calendar_today,
-                                  'Year',
-                                  card['year'].toString(),
+                            const SizedBox(height: 32),
+                            Container(
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: _getRarityColor(rarity).withOpacity(0.3),
                                 ),
-                                const SizedBox(width: 12),
-                                _buildCardDetail(
-                                  Icons.category,
-                                  'Series',
-                                  card['series'],
-                                ),
-                                const SizedBox(width: 12),
-                                _buildCardDetail(
-                                  Icons.auto_awesome,
-                                  'Rarity',
-                                  card['rarity'],
-                                  color: _getRarityColor(rarity),
-                                ),
-                              ],
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  _buildCardDetail(
+                                    Icons.calendar_today,
+                                    'Year',
+                                    card['year'].toString(),
+                                    color: _getRarityColor(rarity),
+                                  ),
+                                  Container(
+                                    width: 1,
+                                    height: 40,
+                                    color: Colors.white.withOpacity(0.1),
+                                  ),
+                                  _buildCardDetail(
+                                    Icons.category,
+                                    'Series',
+                                    card['series'],
+                                    color: _getRarityColor(rarity),
+                                  ),
+                                  Container(
+                                    width: 1,
+                                    height: 40,
+                                    color: Colors.white.withOpacity(0.1),
+                                  ),
+                                  _buildCardDetail(
+                                    Icons.auto_awesome,
+                                    'Rarity',
+                                    card['rarity'],
+                                    color: _getRarityColor(rarity),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -991,11 +1045,13 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.3),
-                border: Border(
-                  top: BorderSide(
-                    color: Colors.white.withOpacity(0.1),
-                  ),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.8),
+                  ],
                 ),
               ),
               child: Column(
@@ -1013,7 +1069,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                         elevation: 0,
                       ),
                       child: const Text(
-                        'Confirm',
+                        'Add to Collection',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -1027,26 +1083,16 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      IconButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        icon: const Icon(
-                          Icons.swap_horiz,
-                          color: Colors.white,
-                          size: 28,
-                        ),
+                      _buildActionButton(
+                        Icons.swap_horiz,
+                        'Trade',
+                        () => Navigator.pop(context),
                       ),
                       const SizedBox(width: 40),
-                      IconButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        icon: const Icon(
-                          Icons.sell,
-                          color: Colors.white,
-                          size: 28,
-                        ),
+                      _buildActionButton(
+                        Icons.sell,
+                        'Sell',
+                        () => Navigator.pop(context),
                       ),
                     ],
                   ),
@@ -1059,37 +1105,61 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildCardDetail(IconData icon, String label, String value,
-      {Color? color}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.1),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+  Widget _buildActionButton(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
         children: [
-          Icon(
-            icon,
-            color: color ?? Colors.white.withOpacity(0.7),
-            size: 14,
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 24,
+            ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(height: 8),
           Text(
-            value,
+            label,
             style: TextStyle(
-              color: color ?? Colors.white,
+              color: Colors.white.withOpacity(0.7),
               fontSize: 12,
-              fontWeight: FontWeight.bold,
               fontFamily: 'Orbitron',
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCardDetail(IconData icon, String label, String value, {Color? color}) {
+    return Column(
+      children: [
+        Icon(icon, color: color ?? Colors.white, size: 24),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            color: color ?? Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Orbitron',
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 12,
+            fontFamily: 'Orbitron',
+          ),
+        ),
+      ],
     );
   }
 
@@ -1116,50 +1186,50 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           _buildMap(),
           if (_isLoadingLocation)
             Scaffold(
-        backgroundColor: const Color(0xFF040412),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: const Color(0xFF3B82F6),
-                    width: 2,
-                  ),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.location_searching,
-                    color: Color(0xFF3B82F6),
-                    size: 60,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Getting your location...',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Orbitron',
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Please enable location services to continue',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 14,
+              backgroundColor: const Color(0xFF040412),
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF3B82F6),
+                          width: 2,
+                        ),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.location_searching,
+                          color: Color(0xFF3B82F6),
+                          size: 60,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Getting your location...',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Orbitron',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Please enable location services to continue',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
             ),
           const TopBarWidget(),
           _buildControlCenter(),
@@ -1438,7 +1508,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     }
   }
 
-
   void _showDailyReward() {
     final token = Provider.of<UserProvider>(context, listen: false).user?.token;
     if (token != null) {
@@ -1556,4 +1625,27 @@ class PointAnnotationClickListener extends OnPointAnnotationClickListener {
     }
     return true;
   }
+}
+
+// Add this custom clipper for hexagonal shape
+class HexagonClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    final height = size.height;
+    final width = size.width;
+    
+    path.moveTo(width * 0.5, 0);
+    path.lineTo(width, height * 0.25);
+    path.lineTo(width, height * 0.75);
+    path.lineTo(width * 0.5, height);
+    path.lineTo(0, height * 0.75);
+    path.lineTo(0, height * 0.25);
+    path.close();
+    
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
