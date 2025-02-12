@@ -875,7 +875,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                             ),
                             const SizedBox(height: 32),
                             Container(
+                              width: double.infinity,
                               padding: const EdgeInsets.symmetric(vertical: 24),
+                              margin:
+                                  const EdgeInsets.symmetric(horizontal: 24),
                               decoration: BoxDecoration(
                                 color: Colors.black.withOpacity(0.3),
                                 borderRadius: BorderRadius.circular(16),
