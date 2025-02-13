@@ -372,7 +372,10 @@ class PackResultsScreen extends StatelessWidget {
         const SizedBox(height: 12),
         TextButton(
           onPressed: () {
-           NavigationProvider().changePage(1);
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const CollectionScreen()));
           },
           style: TextButton.styleFrom(
             foregroundColor: Colors.white.withOpacity(0.7),
