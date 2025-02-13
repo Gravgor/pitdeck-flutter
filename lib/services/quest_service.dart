@@ -21,7 +21,7 @@ class QuestService extends ChangeNotifier {
         Uri.parse('$baseUrl/quests/available'),
         headers: {
           'Authorization':
-              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbTNsbGlmNnEwMDAwMTM1enh1NWdtOGJ1IiwiaWF0IjoxNzM4ODkxMDMwLCJleHAiOjE3Mzk0OTU4MzB9.ynEoK8qfo95ahsOnk5FsLcu-aKM8oFTLUW6oOPcrT9E',
+              'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
@@ -50,7 +50,7 @@ class QuestService extends ChangeNotifier {
         Uri.parse('$baseUrl/quests/available/$category'),
         headers: {
           'Authorization':
-              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbTNsbGlmNnEwMDAwMTM1enh1NWdtOGJ1IiwiaWF0IjoxNzM4ODkxMDMwLCJleHAiOjE3Mzk0OTU4MzB9.ynEoK8qfo95ahsOnk5FsLcu-aKM8oFTLUW6oOPcrT9E',
+              'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
@@ -74,7 +74,7 @@ class QuestService extends ChangeNotifier {
         Uri.parse('$baseUrl/quests/progress/summary'),
         headers: {
           'Authorization':
-              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbTNsbGlmNnEwMDAwMTM1enh1NWdtOGJ1IiwiaWF0IjoxNzM4ODkxMDMwLCJleHAiOjE3Mzk0OTU4MzB9.ynEoK8qfo95ahsOnk5FsLcu-aKM8oFTLUW6oOPcrT9E',
+              'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
@@ -99,7 +99,7 @@ class QuestService extends ChangeNotifier {
         Uri.parse('$baseUrl/quests/$questId/claim'),
         headers: {
           'Authorization':
-              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbTNsbGlmNnEwMDAwMTM1enh1NWdtOGJ1IiwiaWF0IjoxNzM4ODkxMDMwLCJleHAiOjE3Mzk0OTU4MzB9.ynEoK8qfo95ahsOnk5FsLcu-aKM8oFTLUW6oOPcrT9E',
+              'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
