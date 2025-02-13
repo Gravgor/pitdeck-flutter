@@ -3,6 +3,7 @@ import 'package:pitdeck/providers/user_provider.dart';
 import 'package:pitdeck/services/daily_reward_service.dart';
 import 'dart:ui';
 import 'package:pitdeck/screens/pack/packs_screen.dart';
+import 'package:pitdeck/screens/quests_screen.dart';
 import 'package:provider/provider.dart';
 
 class ControlTile {
@@ -82,7 +83,13 @@ class ControlCenter extends StatelessWidget {
         label: 'Quests',
         description: 'Daily challenges',
         accentColor: const Color(0xFFFFB800),
-        onTap: () {},
+        onTap: () {
+          Navigator.pop(context);
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const QuestsScreen()),
+          );
+        },
       ),
       ControlTile(
         icon: Icons.flag_rounded,

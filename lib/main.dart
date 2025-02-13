@@ -20,9 +20,9 @@ import 'dart:math' show pi, sin, cos;
 import 'package:pitdeck/screens/main_wrapper.dart';
 import 'package:pitdeck/services/cache_service.dart';
 import 'package:pitdeck/providers/achievement_provider.dart';
+import 'package:pitdeck/services/quest_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,6 +51,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AchievementProvider()),
         ChangeNotifierProvider(create: (_) => BadgeProvider()),
         ChangeNotifierProvider(create: (_) => DailyRewardService()),
+        ChangeNotifierProvider(create: (_) => QuestService()),
       ],
       child: MaterialApp(
         navigatorKey: navigatorKey,
@@ -77,12 +78,9 @@ class MyApp extends StatelessWidget {
                 final prefs = snapshot.data?[0] as SharedPreferences;
                 return prefs.getBool('isLoggedIn') ?? false
                     ? const MainWrapper()
-                    : const AuthScreen();
-                    //: const MainWrapper();
-                   // : const UserProfileScreen(userId: '1');
-
-
-
+                   : const AuthScreen();
+               // : const MainWrapper();
+                // : const UserProfileScreen(userId: '1');
               }
 
               return const Scaffold(
