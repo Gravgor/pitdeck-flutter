@@ -66,7 +66,7 @@ class DailyRewardService extends ChangeNotifier {
 
       if (response.statusCode == 201) {
         final result = json.decode(response.body);
-        await getDailyRewardStatus(token); // Refresh status after claim
+        await getDailyRewardStatus(token); 
         return result;
       } else {
         _error = json.decode(response.body)['message'];

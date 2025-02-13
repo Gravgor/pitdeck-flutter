@@ -104,6 +104,11 @@ class UserProvider with ChangeNotifier {
     }
   }
 
+  Future<void> updateCoins(int coins) async {
+    _user = _user?.copyWith(coins: coins);
+    notifyListeners();
+  }
+
   Future<void> fetchUserProfileID(String userId) async {
     try {
       final response = await http.get(
