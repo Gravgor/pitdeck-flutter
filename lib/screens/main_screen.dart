@@ -329,9 +329,9 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     await _getCurrentLocation();
   }
 
-  void _showDropModal(DropModel drop) {
+  void _showDropModal(DropModel drop) async {
     final newDrop = _markerManager?.getDropForId(drop.id);
-    final distance = _calculateDistance(newDrop!);
+    final distance = await _calculateDistance(newDrop!);
     final auth = Provider.of<UserProvider>(context, listen: false);
     final isPremium = auth.user?.isPremium ?? false;
     final maxRange = isPremium ? 500.0 : 100.0;
@@ -619,12 +619,13 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-  double _calculateDistance(DropModel drop) {
+  Future<double> _calculateDistance(DropModel drop) async {
     if (_userLocation == null) return double.infinity;
-
+    // Get fresh location
+    final location = await geo.Geolocator.getCurrentPosition();
     return geo.Geolocator.distanceBetween(
-      _userLocation!.latitude,
-      _userLocation!.longitude,
+      location.latitude,
+      location.longitude,
       drop.latitude,
       drop.longitude,
     ).roundToDouble();

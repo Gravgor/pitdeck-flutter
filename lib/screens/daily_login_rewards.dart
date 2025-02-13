@@ -73,6 +73,7 @@ class _DailyLoginRewardsPopupState extends State<DailyLoginRewardsPopup>
         listen: false,
       );
       await userProvider.fetchUserProfile();
+      await _loadRewardStatus();
       Navigator.of(context).pop(result);
     } catch (e) {
       setState(() {
