@@ -4,6 +4,7 @@ import 'package:pitdeck/screens/pack/packs_screen.dart';
 import '../../models/card.dart';
 import '../../utils/color_utils.dart';
 import 'dart:math' show min;
+import '../../providers/navigation_provider.dart';
 
 class PackResultsScreen extends StatelessWidget {
   final List<CardModel> cards;
@@ -348,9 +349,7 @@ class PackResultsScreen extends StatelessWidget {
       children: [
         ElevatedButton(
           onPressed: () {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const PacksScreen()),
-            );
+            Navigator.pop(context);
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF3B82F6),
@@ -373,11 +372,8 @@ class PackResultsScreen extends StatelessWidget {
         const SizedBox(height: 12),
         TextButton(
           onPressed: () {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const CollectionScreen()),
-            );
+           NavigationProvider().changePage(1);
           },
-
           style: TextButton.styleFrom(
             foregroundColor: Colors.white.withOpacity(0.7),
             minimumSize: const Size(double.infinity, 56),
