@@ -8,18 +8,16 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' hide Size;
 import 'dart:async';
 import 'package:pitdeck/config/mapbox_config.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:permission_handler/permission_handler.dart';
+import 'package:pitdeck/providers/card_provider.dart';
 import 'package:pitdeck/services/cache_service.dart';
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:pitdeck/models/drop.dart';
-import 'dart:math';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:pitdeck/components/control_center.dart';
 import 'package:pitdeck/screens/widgets/main/topbar_widget.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pitdeck/screens/daily_login_rewards.dart';
 import 'package:pitdeck/services/daily_reward_service.dart';
 import 'package:lottie/lottie.dart';
@@ -102,6 +100,11 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       setState(() {
         _isLoadingLocation = !hasLocation;
       });
+
+      // If we have permission, start location updates
+      if (hasLocation) {
+        await _startLocationUpdates();
+      }
     }
 
     // Set up periodic check
@@ -112,14 +115,92 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         setState(() {
           _isLoadingLocation = !hasLocation;
         });
-      }
 
-      // If we have location, stop checking
-      if (hasLocation) {
-        _startLocationUpdates();
-        _locationCheckTimer?.cancel();
+        // If we have location, start updates and stop checking
+        if (hasLocation) {
+          await _startLocationUpdates();
+          _locationCheckTimer?.cancel();
+        }
       }
     });
+  }
+
+  Future<void> _startLocationUpdates() async {
+    _locationStreamSubscription?.cancel();
+
+    const geo.LocationSettings locationSettings = geo.LocationSettings(
+      accuracy: geo.LocationAccuracy.high,
+      distanceFilter: 10,
+    );
+
+    try {
+      // Get initial position first
+      final position = await geo.Geolocator.getCurrentPosition(
+          desiredAccuracy: geo.LocationAccuracy.high);
+
+      if (mounted) {
+        setState(() {
+          _userLocation = position;
+          _isLoadingLocation = false;
+        });
+
+        // Update map camera
+        await _mapboxMap?.setCamera(
+          CameraOptions(
+            center: Point(
+              coordinates: Position(position.longitude, position.latitude),
+            ),
+            zoom: 15.0,
+          ),
+        );
+
+        // Emit location update
+        _socket?.emit('location:update', {
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+        });
+      }
+
+      // Then start listening to stream
+      _locationStreamSubscription = geo.Geolocator.getPositionStream(
+        locationSettings: locationSettings,
+      ).listen((geo.Position position) {
+        if (mounted) {
+          setState(() {
+            _userLocation = position;
+            _isLoadingLocation = false;
+          });
+
+          _socket?.emit('location:update', {
+            'latitude': position.latitude,
+            'longitude': position.longitude,
+          });
+
+          _mapboxMap?.setCamera(
+            CameraOptions(
+              center: Point(
+                coordinates: Position(position.longitude, position.latitude),
+              ),
+              zoom: 15.0,
+            ),
+          );
+        }
+      }, onError: (error) {
+        debugPrint('Error getting location stream: $error');
+        if (mounted) {
+          setState(() {
+            _isLoadingLocation = true;
+          });
+        }
+      });
+    } catch (e) {
+      debugPrint('Error starting location updates: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingLocation = true;
+        });
+      }
+    }
   }
 
   Future<void> _getCurrentLocation() async {
@@ -292,41 +373,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     } catch (e) {
       print('Error updating drops: $e');
     }
-  }
-
-  Future<void> _startLocationUpdates() async {
-    _locationStreamSubscription?.cancel();
-
-    const geo.LocationSettings locationSettings = geo.LocationSettings(
-      accuracy: geo.LocationAccuracy.high,
-      distanceFilter: 10,
-    );
-
-    _locationStreamSubscription = geo.Geolocator.getPositionStream(
-      locationSettings: locationSettings,
-    ).listen((geo.Position position) {
-      if (mounted) {
-        setState(() {
-          _userLocation = position;
-          _isLoadingLocation = false;
-        });
-        _socket?.emit('location:update', {
-          'latitude': position.latitude,
-          'longitude': position.longitude,
-        });
-
-        _mapboxMap?.setCamera(
-          CameraOptions(
-            center: Point(
-              coordinates: Position(position.longitude, position.latitude),
-            ),
-            zoom: 15.0,
-          ),
-        );
-      }
-    }, onError: (error) {
-      print('Error getting location stream: $error');
-    });
   }
 
   Future<void> _enableLocationComponent() async {
@@ -887,9 +933,9 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                                   _getRarityColor(rarity).withOpacity(0.7),
                                 ],
                               ).createShader(bounds),
-                              child: Text(
+                              child: const Text(
                                 'New Drop Unlocked!',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 28,
                                   fontWeight: FontWeight.bold,
@@ -1051,7 +1097,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => {
+                        Provider.of<CardProvider>(context, listen: false).revalidateUserCards(),
+                        Navigator.pop(context),
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _getRarityColor(rarity),
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -1719,27 +1768,21 @@ class BorderPainter extends CustomPainter {
 // Add this service class to handle location checks
 class LocationService {
   Future<bool> hasLocationPermission() async {
-    final status = await geo.Geolocator.checkPermission();
-    if (status == geo.LocationPermission.denied) {
-      final requestStatus = await geo.Geolocator.requestPermission();
-      return requestStatus != geo.LocationPermission.denied &&
-          requestStatus != geo.LocationPermission.deniedForever;
-    }
-
-    // Also check if location is enabled
-    final isEnabled = await geo.Geolocator.isLocationServiceEnabled();
-    if (!isEnabled) {
-      return false;
-    }
-
     try {
-      // Try to get current position
-      await geo.Geolocator.getCurrentPosition(
-        desiredAccuracy: geo.LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 5),
-      );
-      return true;
+      final status = await geo.Geolocator.checkPermission();
+      if (status == geo.LocationPermission.denied) {
+        final requestStatus = await geo.Geolocator.requestPermission();
+        return requestStatus != geo.LocationPermission.denied &&
+            requestStatus != geo.LocationPermission.deniedForever;
+      }
+
+      // Check if location is enabled
+      final isEnabled = await geo.Geolocator.isLocationServiceEnabled();
+      return isEnabled &&
+          status != geo.LocationPermission.denied &&
+          status != geo.LocationPermission.deniedForever;
     } catch (e) {
+      debugPrint('Error checking location permission: $e');
       return false;
     }
   }

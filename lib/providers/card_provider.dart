@@ -98,7 +98,6 @@ class CardProvider with ChangeNotifier {
   }
 
   Future<void> revalidateUserCards() async {
-    print('Revalidating user cards');
     await fetchUserCards();
   }
 
