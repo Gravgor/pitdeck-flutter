@@ -644,6 +644,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         );
         return;
       }
+      final location = await geo.Geolocator.getCurrentPosition();
       final response = await http.post(
         Uri.parse('$baseUrl/drops/claim'),
         headers: {
@@ -652,8 +653,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         },
         body: json.encode({
           'dropId': drop.id,
-          'latitude': _userLocation!.latitude,
-          'longitude': _userLocation!.longitude,
+          'latitude': location.latitude,
+          'longitude': location.longitude,
         }),
       );
       if (!mounted) return;
