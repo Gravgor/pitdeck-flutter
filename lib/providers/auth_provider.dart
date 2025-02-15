@@ -244,7 +244,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> signInWithApple() async {
+   Future<void> signInWithApple() async {
     try {
       final credential = await SignInWithApple.getAppleIDCredential(
         scopes: [
@@ -275,11 +275,13 @@ class AuthProvider with ChangeNotifier {
 
         await getUserDetails();
         if (data['user']['needUsernameSetup']) {
-          Navigator.of(navigatorKey.currentContext!)
-              .pushReplacementNamed('/onboarding');
+          Navigator.of(navigatorKey.currentContext!).pushReplacement(
+            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+          );
         } else {
-          Navigator.of(navigatorKey.currentContext!)
-              .pushReplacementNamed('/main');
+          Navigator.of(navigatorKey.currentContext!).pushReplacement(
+            MaterialPageRoute(builder: (context) => const MainWrapper()),
+          );
         }
 
         notifyListeners();

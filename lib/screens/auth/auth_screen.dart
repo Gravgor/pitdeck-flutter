@@ -285,14 +285,14 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  Future<void> _handleGoogleSignIn(BuildContext context) async {
+   Future<void> _handleGoogleSignIn(BuildContext context) async {
     try {
-
       await Provider.of<AuthProvider>(context, listen: false)
           .signInWithGoogle();
-
       if (!context.mounted) return;
-      Navigator.of(context).pushReplacementNamed('/main');
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const MainWrapper()),
+      );
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -306,12 +306,11 @@ class _AuthScreenState extends State<AuthScreen>
 
   Future<void> _handleAppleSignIn(BuildContext context) async {
     try {
-
-      await Provider.of<AuthProvider>(context, listen: false)
-          .signInWithApple();
-
+      await Provider.of<AuthProvider>(context, listen: false).signInWithApple();
       if (!context.mounted) return;
-      Navigator.of(context).pushReplacementNamed('/main');
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const MainWrapper()),
+      );
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
