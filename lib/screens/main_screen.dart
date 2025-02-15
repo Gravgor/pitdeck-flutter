@@ -57,12 +57,13 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   bool _hasUnclaimedReward = false;
   Map<String, dynamic>? _rewardStatus;
 
-  @override
+  Timer? _locationCheckTimer;
+
   @override
   void initState() {
     super.initState();
     _loadCachedState();
-    _requestLocationPermission();
+    _checkLocationStatus();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeSocket();
       _initializeUserSocket();
@@ -77,6 +78,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     _locationStreamSubscription?.cancel();
     _socket?.disconnect();
     _socket?.dispose();
+    _locationCheckTimer?.cancel();
     super.dispose();
   }
 
@@ -91,12 +93,33 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     });
   }
 
-  Future<void> _requestLocationPermission() async {
-    final status = await Permission.locationWhenInUse.request();
-    if (status.isGranted) {
-      _enableLocationComponent();
-      _startLocationUpdates();
+  Future<void> _checkLocationStatus() async {
+    final locationService = LocationService();
+
+    // Initial check
+    bool hasLocation = await locationService.hasLocationPermission();
+    if (mounted) {
+      setState(() {
+        _isLoadingLocation = !hasLocation;
+      });
     }
+
+    // Set up periodic check
+    _locationCheckTimer =
+        Timer.periodic(const Duration(seconds: 2), (timer) async {
+      bool hasLocation = await locationService.hasLocationPermission();
+      if (mounted) {
+        setState(() {
+          _isLoadingLocation = !hasLocation;
+        });
+      }
+
+      // If we have location, stop checking
+      if (hasLocation) {
+        _startLocationUpdates();
+        _locationCheckTimer?.cancel();
+      }
+    });
   }
 
   Future<void> _getCurrentLocation() async {
@@ -271,7 +294,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     }
   }
 
-
   Future<void> _startLocationUpdates() async {
     _locationStreamSubscription?.cancel();
 
@@ -285,10 +307,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     ).listen((geo.Position position) {
       if (mounted) {
         setState(() {
-      _userLocation = position;
-      _isLoadingLocation = false;
-      });
-      _socket?.emit('location:update', {
+          _userLocation = position;
+          _isLoadingLocation = false;
+        });
+        _socket?.emit('location:update', {
           'latitude': position.latitude,
           'longitude': position.longitude,
         });
@@ -1155,54 +1177,66 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       body: Stack(
         children: [
           _buildMap(),
-          if (_isLoadingLocation == true) ...[
-            Scaffold(
-              backgroundColor: const Color(0xFF040412),
-              body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFF3B82F6),
-                          width: 2,
+          if (_isLoadingLocation)
+            AnimatedOpacity(
+              opacity: _isLoadingLocation ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child: Scaffold(
+                backgroundColor: const Color(0xFF040412),
+                body: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      TweenAnimationBuilder<double>(
+                        duration: const Duration(seconds: 2),
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        builder: (context, value, child) {
+                          return Transform.rotate(
+                            angle: value * 2 * 3.14159,
+                            child: Container(
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: const Color(0xFF3B82F6),
+                                  width: 2,
+                                ),
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.location_searching,
+                                  color: Color(0xFF3B82F6),
+                                  size: 60,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      const Text(
+                        'Getting your location...',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
                         ),
                       ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.location_searching,
-                          color: Color(0xFF3B82F6),
-                          size: 60,
+                      const SizedBox(height: 12),
+                      Text(
+                        'Please enable location services to continue',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 14,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Getting your location...',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Orbitron',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Please enable location services to continue',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ],
           const TopBarWidget(),
           _buildControlCenter(),
           _buildRefreshButton(),
@@ -1680,4 +1714,33 @@ class BorderPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+// Add this service class to handle location checks
+class LocationService {
+  Future<bool> hasLocationPermission() async {
+    final status = await geo.Geolocator.checkPermission();
+    if (status == geo.LocationPermission.denied) {
+      final requestStatus = await geo.Geolocator.requestPermission();
+      return requestStatus != geo.LocationPermission.denied &&
+          requestStatus != geo.LocationPermission.deniedForever;
+    }
+
+    // Also check if location is enabled
+    final isEnabled = await geo.Geolocator.isLocationServiceEnabled();
+    if (!isEnabled) {
+      return false;
+    }
+
+    try {
+      // Try to get current position
+      await geo.Geolocator.getCurrentPosition(
+        desiredAccuracy: geo.LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 5),
+      );
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 }
