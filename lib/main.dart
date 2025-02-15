@@ -30,9 +30,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MapboxOptions.setAccessToken(MapboxConfig.accessToken);
   await SharedPreferences.getInstance();
- await PushNotificationService.requestPushNotificationPermission().then((value) async {
+  await PushNotificationService.requestPushNotificationPermission().then((value) async {
     await PushNotificationService.registerDevice();
-  });  runApp(const MyApp());
+  });
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -82,7 +83,7 @@ class MyApp extends StatelessWidget {
                 return prefs.getBool('isLoggedIn') ?? false
                     ? const MainWrapper()
                    : const AuthScreen();
-               // : const MainWrapper();
+                //: const MainWrapper();
                 // : const UserProfileScreen(userId: '1');
               }
 

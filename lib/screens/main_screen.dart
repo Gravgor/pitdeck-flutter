@@ -1155,7 +1155,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       body: Stack(
         children: [
           _buildMap(),
-          if (_isLoadingLocation == true)
+          if (_isLoadingLocation == true) ...[
             Scaffold(
               backgroundColor: const Color(0xFF040412),
               body: Center(
@@ -1202,6 +1202,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                 ),
               ),
             ),
+          ],
           const TopBarWidget(),
           _buildControlCenter(),
           _buildRefreshButton(),
