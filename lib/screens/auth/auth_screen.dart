@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/auth_provider.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -18,7 +20,7 @@ class _AuthScreenState extends State<AuthScreen>
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _slideAnimation;
-  static const String _deviceTokenKey = 'deviceToken';
+  final _baseUrl = 'https://api.pitdeck.app';
 
   @override
   void initState() {
@@ -51,7 +53,6 @@ class _AuthScreenState extends State<AuthScreen>
       final messaging = FirebaseMessaging.instance;
       final prefs = await SharedPreferences.getInstance();
 
-      // Request permission for iOS
       if (Platform.isIOS) {
         final settings = await messaging.requestPermission(
           alert: true,
@@ -64,21 +65,26 @@ class _AuthScreenState extends State<AuthScreen>
         }
       }
 
-      // Check for existing token
-      String? existingToken = prefs.getString(_deviceTokenKey);
+      String? existingToken = prefs.getString('deviceToken');
 
       if (existingToken == null) {
-        // Get new token based on platform
         String? newToken;
         if (Platform.isIOS) {
           newToken = await messaging.getAPNSToken();
         } else {
           newToken = await messaging.getToken();
         }
-
-        // Save new token
         if (newToken != null) {
-          await prefs.setString(_deviceTokenKey, newToken);
+          await prefs.setString('deviceToken', newToken);
+          http.post(
+            Uri.parse('$_baseUrl/auth/test-device-token'),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: json.encode({
+              'deviceToken': newToken,
+            }),
+          );
           print('New FCM Token: $newToken');
         }
       } else {
@@ -87,8 +93,14 @@ class _AuthScreenState extends State<AuthScreen>
 
       // Listen for token refresh
       messaging.onTokenRefresh.listen((newToken) async {
-        print('FCM Token Refreshed: $newToken');
-        await prefs.setString(_deviceTokenKey, newToken);
+        http.post(
+          Uri.parse('$_baseUrl/auth/test-device-token'),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: json.encode({'deviceToken': newToken}),
+        );
+        await prefs.setString('deviceToken', newToken);
       });
     } catch (e) {
       print('Error initializing Firebase: $e');
@@ -335,7 +347,7 @@ class _AuthScreenState extends State<AuthScreen>
   Future<void> _handleGoogleSignIn(BuildContext context) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final deviceToken = prefs.getString(_deviceTokenKey);
+      final deviceToken = prefs.getString('deviceToken');
 
       await Provider.of<AuthProvider>(context, listen: false)
           .signInWithGoogle(deviceToken: deviceToken);
@@ -356,7 +368,7 @@ class _AuthScreenState extends State<AuthScreen>
   Future<void> _handleAppleSignIn(BuildContext context) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final deviceToken = prefs.getString(_deviceTokenKey);
+      final deviceToken = prefs.getString('deviceToken');
 
       await Provider.of<AuthProvider>(context, listen: false)
           .signInWithApple(deviceToken: deviceToken);

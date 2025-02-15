@@ -203,16 +203,6 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<String?> _getDeviceToken() async {
-    if (Platform.isIOS) {
-      final messaging = FirebaseMessaging.instance;
-      return await messaging.getAPNSToken();
-    } else {
-      final messaging = FirebaseMessaging.instance;
-      return await messaging.getToken();
-    }
-  }
-
   Future<void> signInWithGoogle({String? deviceToken}) async {
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn();
