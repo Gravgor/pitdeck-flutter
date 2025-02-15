@@ -12,8 +12,7 @@ import FirebaseMessaging
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
-        
-        
+                
         let controller : FlutterViewController = window?.rootViewController as! FlutterViewController
         let pushNotificationChannel = FlutterMethodChannel(name: channelName, binaryMessenger: controller.binaryMessenger)
         
@@ -37,8 +36,19 @@ import FirebaseMessaging
         GeneratedPluginRegistrant.register(with: self)
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
+    
+    override func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
+        let token = tokenParts.joined()
+        self.deviceToken = token
+    }
 
-     private func requestNotificationPermissions(result: @escaping FlutterResult) {
+    override func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+    }
+    
+   
+    
+    private func requestNotificationPermissions(result: @escaping FlutterResult) {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
         if let error = error {
             result(FlutterError(code: "PERMISSION_ERROR", message: "Failed to request permissions", details: error.localizedDescription))
@@ -60,4 +70,31 @@ import FirebaseMessaging
             result(deviceToken)
         }
     }
+
+     override func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                 willPresent notification: UNNotification,
+                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        if #available(iOS 14.0, *) {
+            completionHandler([.banner, .list, .sound, .badge])
+         } else {
+             completionHandler([.alert, .sound, .badge])
+         }
+     }
+    
+   override func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        let userInfo = response.notification.request.content.userInfo
+        handleNotification(userInfo: userInfo)
+        completionHandler()
+    }
+
+   private func handleNotification(userInfo: [AnyHashable: Any]) {
+        let controller: FlutterViewController = window?.rootViewController as! FlutterViewController
+        let pushNotificationChannel = FlutterMethodChannel(name: channelName,binaryMessenger: controller.binaryMessenger)
+        if let customData = userInfo["customKey"] as? String {
+            pushNotificationChannel.invokeMethod("onPushNotification", arguments: customData)
+        }
+    }
+    
 }

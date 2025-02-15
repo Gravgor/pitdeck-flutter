@@ -41,10 +41,6 @@ class AuthProvider with ChangeNotifier {
     await prefs.setBool(_isLoggedIn, true);
 
     await getUserDetails();
-
-    final pushNotificationService = PushNotificationService();
-    await pushNotificationService.updateServerToken(data['token']);
-
     notifyListeners();
   }
 
@@ -72,9 +68,6 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> logout() async {
     try {
-      final pushNotificationService = PushNotificationService();
-      await pushNotificationService.clearToken();
-
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
 
@@ -217,7 +210,7 @@ class AuthProvider with ChangeNotifier {
           AppleIDAuthorizationScopes.fullName,
         ],
       );
-
+      final deviceToken = await PushNotificationService.retriveDeviceToken();
       final response = await http.post(
         Uri.parse('$_baseUrl/auth/mobile/apple'),
         headers: {'Content-Type': 'application/json'},
@@ -227,6 +220,7 @@ class AuthProvider with ChangeNotifier {
           'givenName': credential.givenName,
           'familyName': credential.familyName,
           'email': credential.email,
+          'deviceToken': deviceToken,
         }),
       );
 
