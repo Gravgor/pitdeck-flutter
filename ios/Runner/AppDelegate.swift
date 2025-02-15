@@ -1,10 +1,11 @@
+
 import UIKit
 import Flutter
-import FirebaseCore
-import FirebaseMessaging
+import UserNotifications
 
-@UIApplicationMain
+@main
 @objc class AppDelegate: FlutterAppDelegate {
+    
     let channelName : String = "PushNotificationChannel"
     var deviceToken : String = ""
 
@@ -96,5 +97,6 @@ import FirebaseMessaging
             pushNotificationChannel.invokeMethod("onPushNotification", arguments: customData)
         }
     }
+    
     
 }
