@@ -203,7 +203,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> signInWithGoogle({String? deviceToken}) async {
+  Future<void> signInWithGoogle() async {
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn();
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
@@ -223,8 +223,6 @@ class AuthProvider with ChangeNotifier {
           'idToken': idToken,
           'email': googleUser.email,
           'name': googleUser.displayName,
-          'deviceToken': deviceToken,
-          'deviceType': Platform.isIOS ? 'ios' : 'android',
         }),
       );
 
@@ -245,7 +243,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> signInWithApple({String? deviceToken}) async {
+  Future<void> signInWithApple() async {
     try {
       final credential = await SignInWithApple.getAppleIDCredential(
         scopes: [
@@ -263,8 +261,6 @@ class AuthProvider with ChangeNotifier {
           'givenName': credential.givenName,
           'familyName': credential.familyName,
           'email': credential.email,
-          'deviceToken': deviceToken,
-          'deviceType': 'ios',
         }),
       );
 

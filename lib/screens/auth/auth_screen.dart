@@ -25,7 +25,6 @@ class _AuthScreenState extends State<AuthScreen>
   @override
   void initState() {
     super.initState();
-    _initializeFirebase();
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -48,65 +47,7 @@ class _AuthScreenState extends State<AuthScreen>
     _controller.forward();
   }
 
-  Future<void> _initializeFirebase() async {
-    try {
-      final messaging = FirebaseMessaging.instance;
-      final prefs = await SharedPreferences.getInstance();
-
-      if (Platform.isIOS) {
-        final settings = await messaging.requestPermission(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
-
-        if (settings.authorizationStatus != AuthorizationStatus.authorized) {
-          return;
-        }
-      }
-
-      String? existingToken = prefs.getString('deviceToken');
-
-      if (existingToken == null) {
-        String? newToken;
-        if (Platform.isIOS) {
-          newToken = await messaging.getAPNSToken();
-        } else {
-          newToken = await messaging.getToken();
-        }
-        if (newToken != null) {
-          await prefs.setString('deviceToken', newToken);
-          http.post(
-            Uri.parse('$_baseUrl/auth/test-device-token'),
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: json.encode({
-              'deviceToken': newToken,
-            }),
-          );
-          print('New FCM Token: $newToken');
-        }
-      } else {
-        print('Existing FCM Token: $existingToken');
-      }
-
-      // Listen for token refresh
-      messaging.onTokenRefresh.listen((newToken) async {
-        http.post(
-          Uri.parse('$_baseUrl/auth/test-device-token'),
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: json.encode({'deviceToken': newToken}),
-        );
-        await prefs.setString('deviceToken', newToken);
-      });
-    } catch (e) {
-      print('Error initializing Firebase: $e');
-    }
-  }
-
+  
   @override
   void dispose() {
     _controller.dispose();
@@ -346,11 +287,9 @@ class _AuthScreenState extends State<AuthScreen>
 
   Future<void> _handleGoogleSignIn(BuildContext context) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final deviceToken = prefs.getString('deviceToken');
 
       await Provider.of<AuthProvider>(context, listen: false)
-          .signInWithGoogle(deviceToken: deviceToken);
+          .signInWithGoogle();
 
       if (!context.mounted) return;
       Navigator.of(context).pushReplacementNamed('/main');
@@ -367,11 +306,9 @@ class _AuthScreenState extends State<AuthScreen>
 
   Future<void> _handleAppleSignIn(BuildContext context) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final deviceToken = prefs.getString('deviceToken');
 
       await Provider.of<AuthProvider>(context, listen: false)
-          .signInWithApple(deviceToken: deviceToken);
+          .signInWithApple();
 
       if (!context.mounted) return;
       Navigator.of(context).pushReplacementNamed('/main');

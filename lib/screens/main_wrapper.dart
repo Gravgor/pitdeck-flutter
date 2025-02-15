@@ -12,29 +12,69 @@ import 'package:pitdeck/screens/main_screen.dart';
 import 'package:pitdeck/screens/collection_screen.dart';
 import 'package:pitdeck/screens/profile_screen.dart';
 import 'package:pitdeck/widgets/bottom_navigation_bar.dart';
+import 'package:pitdeck/providers/auth_provider.dart';
+import 'package:pitdeck/services/push_notification_service.dart';
 
-class MainWrapper extends StatelessWidget {
+class MainWrapper extends StatefulWidget {
   const MainWrapper({super.key});
 
   @override
-  Widget build(BuildContext context) {
-      return Consumer<NavigationProvider>(
-        builder: (context, navigationProvider, _) {
-          return Scaffold(
-            body: IndexedStack(
+  State<MainWrapper> createState() => _MainWrapperState();
+}
 
-              index: navigationProvider.currentIndex,
-              children: const [
-                MainScreen(),
-                CollectionScreen(),
-                MarketScreen(),
-                ProfileScreen(),
-              ],
-            ),
-            bottomNavigationBar: const GlobalBottomNavigationBar(),
+class _MainWrapperState extends State<MainWrapper> {
+  final _pushNotificationService = PushNotificationService();
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeNotifications();
+  }
+
+  Future<void> _initializeNotifications() async {
+    try {
+      if (!_isInitialized) {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        final currentUser = authProvider.currentUser;
+
+        if (currentUser != null) {
+          await _pushNotificationService.updateServerToken(currentUser.token);
+          _isInitialized = true;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error initializing notifications: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final user = authProvider.currentUser;
+
+        if (user != null && !_isInitialized) {
+          _initializeNotifications();
+        }
+
+        return Consumer<NavigationProvider>(
+          builder: (context, navigationProvider, _) {
+            return Scaffold(
+              body: IndexedStack(
+                index: navigationProvider.currentIndex,
+                children: const [
+                  MainScreen(),
+                  CollectionScreen(),
+                  MarketScreen(),
+                  ProfileScreen(),
+                ],
+              ),
+              bottomNavigationBar: const GlobalBottomNavigationBar(),
+            );
+          },
         );
       },
     );
   }
 }
-

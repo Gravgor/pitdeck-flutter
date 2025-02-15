@@ -23,6 +23,7 @@ import 'package:pitdeck/providers/achievement_provider.dart';
 import 'package:pitdeck/services/quest_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:pitdeck/firebase_options.dart';
+import 'package:pitdeck/services/push_notification_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -31,6 +32,11 @@ void main() async {
   MapboxOptions.setAccessToken(MapboxConfig.accessToken);
   await SharedPreferences.getInstance();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  final pushNotificationService = PushNotificationService();
+  await pushNotificationService.initialize();
+  await pushNotificationService.setupNotificationHandlers();
+
   runApp(const MyApp());
 }
 
@@ -54,6 +60,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => BadgeProvider()),
         ChangeNotifierProvider(create: (_) => DailyRewardService()),
         ChangeNotifierProvider(create: (_) => QuestService()),
+        ChangeNotifierProvider(create: (_) => PushNotificationService())
       ],
       child: MaterialApp(
         navigatorKey: navigatorKey,
@@ -80,8 +87,8 @@ class MyApp extends StatelessWidget {
                 final prefs = snapshot.data?[0] as SharedPreferences;
                 return prefs.getBool('isLoggedIn') ?? false
                     ? const MainWrapper()
-                   : const AuthScreen();
-               // : const MainWrapper();
+                    : const AuthScreen();
+                // : const MainWrapper();
                 // : const UserProfileScreen(userId: '1');
               }
 
