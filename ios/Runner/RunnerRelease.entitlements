@@ -10,5 +10,13 @@
 	<array>
 		<string>merchant.com.pitdeck.pitdeckapp</string>
 	</array>
+	<key>aps-environment</key>
+    <string>production</string>
+    <key>com.apple.developer.push-to-talk</key>
+    <true/>
+    <key>com.apple.security.application-groups</key>
+    <array>
+        <string>group.com.pitdeck.pitdeckapp</string>
+    </array>
 </dict>
 </plist>
