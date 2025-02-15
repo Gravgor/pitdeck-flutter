@@ -3,6 +3,7 @@ import 'package:pitdeck/screens/main_wrapper.dart';
 import 'dart:io' show Platform;
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/auth_provider.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -20,6 +21,7 @@ class _AuthScreenState extends State<AuthScreen>
   @override
   void initState() {
     super.initState();
+    _initializeFirebase();
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -40,6 +42,26 @@ class _AuthScreenState extends State<AuthScreen>
     );
 
     _controller.forward();
+  }
+
+  Future<void> _initializeFirebase() async {
+    final messaging = FirebaseMessaging.instance;
+
+    if (Platform.isIOS) {
+      await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    }
+
+    messaging.getToken().then((token) {
+      print('FCM Token: $token');
+    });
+
+    messaging.onTokenRefresh.listen((token) {
+      print('FCM Token Refreshed: $token');
+    });
   }
 
   @override

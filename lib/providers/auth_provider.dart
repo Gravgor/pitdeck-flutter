@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:pitdeck/providers/user_provider.dart';
 import 'package:pitdeck/screens/main_wrapper.dart';
@@ -12,6 +14,7 @@ import '../main.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthProvider with ChangeNotifier {
   final _userSubject = BehaviorSubject<User?>();
@@ -200,6 +203,16 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<String?> _getDeviceToken() async {
+    if (Platform.isIOS) {
+      final messaging = FirebaseMessaging.instance;
+      return await messaging.getAPNSToken();
+    } else {
+      final messaging = FirebaseMessaging.instance;
+      return await messaging.getToken();
+    }
+  }
+
   Future<void> signInWithGoogle() async {
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn();
@@ -213,6 +226,9 @@ class AuthProvider with ChangeNotifier {
 
       if (idToken == null) throw Exception('Failed to get ID token');
 
+      // Get device token for push notifications
+      final deviceToken = await _getDeviceToken();
+
       // Send to backend
       final response = await http.post(
         Uri.parse('$_baseUrl/auth/google/mobile'),
@@ -221,6 +237,8 @@ class AuthProvider with ChangeNotifier {
           'idToken': idToken,
           'email': googleUser.email,
           'name': googleUser.displayName,
+          'deviceToken': deviceToken,
+          'deviceType': 'ios'
         }),
       );
 
@@ -230,6 +248,12 @@ class AuthProvider with ChangeNotifier {
         await prefs.setString('token', data['token']);
         await prefs.setString('userId', data['user']['id']);
         await prefs.setBool('isLoggedIn', true);
+
+        // Save device token
+        if (deviceToken != null) {
+          await prefs.setString('deviceToken', deviceToken);
+        }
+
         await getUserDetails();
         notifyListeners();
       } else {
@@ -249,20 +273,8 @@ class AuthProvider with ChangeNotifier {
         ],
       );
 
-      // Get Firebase token for push notifications
-      final messaging = FirebaseMessaging.instance;
+      final deviceToken = await _getDeviceToken();
 
-      // Request permission first (iOS requires this)
-      await messaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-
-      // Get the token
-      final deviceToken = await messaging.getAPNSToken();
-
-      // Send to backend
       final response = await http.post(
         Uri.parse('$_baseUrl/auth/mobile/apple'),
         headers: {'Content-Type': 'application/json'},
@@ -284,7 +296,7 @@ class AuthProvider with ChangeNotifier {
         await prefs.setString('userId', data['user']['id']);
         await prefs.setBool('isLoggedIn', true);
 
-        // Save device token locally if needed
+        // Save device token
         if (deviceToken != null) {
           await prefs.setString('deviceToken', deviceToken);
         }
@@ -333,21 +345,27 @@ class AuthProvider with ChangeNotifier {
   Future<void> setupPushNotifications() async {
     final messaging = FirebaseMessaging.instance;
 
-    // Listen for token refresh
     messaging.onTokenRefresh.listen((newToken) async {
       if (currentUser != null) {
-        // Send updated token to backend
-        await http.post(
-          Uri.parse('$_baseUrl/auth/update-device-token'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ${currentUser!.token}',
-          },
-          body: json.encode({
-            'deviceToken': newToken,
-            'deviceType': 'ios',
-          }),
-        );
+        try {
+          await http.post(
+            Uri.parse('$_baseUrl/auth/update-device-token'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ${currentUser!.token}',
+            },
+            body: json.encode({
+              'deviceToken': newToken,
+              'deviceType': Platform.isIOS ? 'ios' : 'android',
+            }),
+          );
+
+          // Update stored token
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('deviceToken', newToken);
+        } catch (e) {
+          print('Failed to update device token: $e');
+        }
       }
     });
   }
