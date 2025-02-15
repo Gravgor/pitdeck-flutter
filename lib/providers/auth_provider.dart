@@ -213,7 +213,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> signInWithGoogle() async {
+  Future<void> signInWithGoogle({String? deviceToken}) async {
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn();
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
@@ -226,10 +226,6 @@ class AuthProvider with ChangeNotifier {
 
       if (idToken == null) throw Exception('Failed to get ID token');
 
-      // Get device token for push notifications
-      final deviceToken = await _getDeviceToken();
-
-      // Send to backend
       final response = await http.post(
         Uri.parse('$_baseUrl/auth/google/mobile'),
         headers: {'Content-Type': 'application/json'},
@@ -238,7 +234,7 @@ class AuthProvider with ChangeNotifier {
           'email': googleUser.email,
           'name': googleUser.displayName,
           'deviceToken': deviceToken,
-          'deviceType': 'ios'
+          'deviceType': Platform.isIOS ? 'ios' : 'android',
         }),
       );
 
@@ -248,11 +244,6 @@ class AuthProvider with ChangeNotifier {
         await prefs.setString('token', data['token']);
         await prefs.setString('userId', data['user']['id']);
         await prefs.setBool('isLoggedIn', true);
-
-        // Save device token
-        if (deviceToken != null) {
-          await prefs.setString('deviceToken', deviceToken);
-        }
 
         await getUserDetails();
         notifyListeners();
@@ -264,7 +255,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> signInWithApple() async {
+  Future<void> signInWithApple({String? deviceToken}) async {
     try {
       final credential = await SignInWithApple.getAppleIDCredential(
         scopes: [
@@ -272,8 +263,6 @@ class AuthProvider with ChangeNotifier {
           AppleIDAuthorizationScopes.fullName,
         ],
       );
-
-      final deviceToken = await _getDeviceToken();
 
       final response = await http.post(
         Uri.parse('$_baseUrl/auth/mobile/apple'),
@@ -295,11 +284,6 @@ class AuthProvider with ChangeNotifier {
         await prefs.setString('token', data['token']);
         await prefs.setString('userId', data['user']['id']);
         await prefs.setBool('isLoggedIn', true);
-
-        // Save device token
-        if (deviceToken != null) {
-          await prefs.setString('deviceToken', deviceToken);
-        }
 
         await getUserDetails();
         if (data['user']['needUsernameSetup']) {

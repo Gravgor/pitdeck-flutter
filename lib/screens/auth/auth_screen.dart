@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/auth_provider.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -17,6 +18,7 @@ class _AuthScreenState extends State<AuthScreen>
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _slideAnimation;
+  static const String _deviceTokenKey = 'deviceToken';
 
   @override
   void initState() {
@@ -45,23 +47,52 @@ class _AuthScreenState extends State<AuthScreen>
   }
 
   Future<void> _initializeFirebase() async {
-    final messaging = FirebaseMessaging.instance;
+    try {
+      final messaging = FirebaseMessaging.instance;
+      final prefs = await SharedPreferences.getInstance();
 
-    if (Platform.isIOS) {
-      await messaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
+      // Request permission for iOS
+      if (Platform.isIOS) {
+        final settings = await messaging.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+
+        if (settings.authorizationStatus != AuthorizationStatus.authorized) {
+          return;
+        }
+      }
+
+      // Check for existing token
+      String? existingToken = prefs.getString(_deviceTokenKey);
+
+      if (existingToken == null) {
+        // Get new token based on platform
+        String? newToken;
+        if (Platform.isIOS) {
+          newToken = await messaging.getAPNSToken();
+        } else {
+          newToken = await messaging.getToken();
+        }
+
+        // Save new token
+        if (newToken != null) {
+          await prefs.setString(_deviceTokenKey, newToken);
+          print('New FCM Token: $newToken');
+        }
+      } else {
+        print('Existing FCM Token: $existingToken');
+      }
+
+      // Listen for token refresh
+      messaging.onTokenRefresh.listen((newToken) async {
+        print('FCM Token Refreshed: $newToken');
+        await prefs.setString(_deviceTokenKey, newToken);
+      });
+    } catch (e) {
+      print('Error initializing Firebase: $e');
     }
-
-    messaging.getToken().then((token) {
-      print('FCM Token: $token');
-    });
-
-    messaging.onTokenRefresh.listen((token) {
-      print('FCM Token Refreshed: $token');
-    });
   }
 
   @override
@@ -303,12 +334,14 @@ class _AuthScreenState extends State<AuthScreen>
 
   Future<void> _handleGoogleSignIn(BuildContext context) async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final deviceToken = prefs.getString(_deviceTokenKey);
+
       await Provider.of<AuthProvider>(context, listen: false)
-          .signInWithGoogle();
+          .signInWithGoogle(deviceToken: deviceToken);
+
       if (!context.mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const MainWrapper()),
-      );
+      Navigator.of(context).pushReplacementNamed('/main');
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -322,11 +355,14 @@ class _AuthScreenState extends State<AuthScreen>
 
   Future<void> _handleAppleSignIn(BuildContext context) async {
     try {
-      await Provider.of<AuthProvider>(context, listen: false).signInWithApple();
+      final prefs = await SharedPreferences.getInstance();
+      final deviceToken = prefs.getString(_deviceTokenKey);
+
+      await Provider.of<AuthProvider>(context, listen: false)
+          .signInWithApple(deviceToken: deviceToken);
+
       if (!context.mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const MainWrapper()),
-      );
+      Navigator.of(context).pushReplacementNamed('/main');
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
