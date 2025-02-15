@@ -15,6 +15,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:pitdeck/services/push_notification_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final _userSubject = BehaviorSubject<User?>();
@@ -33,6 +34,20 @@ class AuthProvider with ChangeNotifier {
     await prefs.setString(_userId, user.id);
   }
 
+  Future<void> _handleSuccessfulLogin(Map<String, dynamic> data) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_token, data['token']);
+    await prefs.setString(_userId, data['user']['id']);
+    await prefs.setBool(_isLoggedIn, true);
+
+    await getUserDetails();
+
+    final pushNotificationService = PushNotificationService();
+    await pushNotificationService.updateServerToken(data['token']);
+
+    notifyListeners();
+  }
+
   Future<void> login(String email, String password) async {
     try {
       final response = await http.post(
@@ -46,62 +61,7 @@ class AuthProvider with ChangeNotifier {
 
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
-        final initialUser = User(
-          id: data['user']['id'],
-          email: data['user']['email'],
-          name: data['user']['name'],
-          token: data['token'],
-          createdAt: DateTime.parse(
-              data['user']['createdAt'] ?? DateTime.now().toIso8601String()),
-          updatedAt: DateTime.now(),
-          coins: data['user']['coins'] ?? 1000,
-          level: data['user']['level'] ?? 1,
-          xp: data['user']['xp'] ?? 0,
-          totalXp: data['user']['totalXp'] ?? 0,
-          image: data['user']['image'],
-          bio: data['user']['bio'] ?? '',
-          isPremium: data['user']['isPremium'] ?? false,
-        );
-
-        // First store basic user data
-        _userSubject.add(initialUser);
-
-        // Then fetch detailed user info
-        final detailsResponse = await http.get(
-          Uri.parse('$_baseUrl/users/${initialUser.id}'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ${initialUser.token}',
-          },
-        );
-
-        if (detailsResponse.statusCode == 200) {
-          final userDetails = json.decode(detailsResponse.body);
-          final fullUser = User(
-            id: userDetails['id'],
-            name: userDetails['name'],
-            email: userDetails['email'],
-            image: userDetails['image'],
-            coins: userDetails['coins'],
-            totalXp: userDetails['totalXp'],
-            level: userDetails['level'],
-            bio: userDetails['bio'],
-            xp: userDetails['xp'],
-            createdAt: DateTime.parse(userDetails['createdAt']),
-            updatedAt: DateTime.now(),
-            isPremium: userDetails['isPremium'],
-            token: initialUser.token,
-          );
-          await saveUserToPrefs(fullUser);
-          _userSubject.add(fullUser);
-          await Provider.of<UserProvider>(navigatorKey.currentContext!,
-                  listen: false)
-              .updateUser(fullUser);
-
-          notifyListeners();
-        } else {
-          throw Exception('Failed to fetch user details');
-        }
+        await _handleSuccessfulLogin(data);
       } else {
         throw Exception('Failed to login');
       }
@@ -111,10 +71,22 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> logout() async {
-    await Provider.of<UserProvider>(navigatorKey.currentContext!, listen: false)
-        .clearUser();
-    _userSubject.add(null);
-    notifyListeners();
+    try {
+      final pushNotificationService = PushNotificationService();
+      await pushNotificationService.clearToken();
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      await Provider.of<UserProvider>(navigatorKey.currentContext!,
+              listen: false)
+          .clearUser();
+      _userSubject.add(null);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error during logout: $e');
+      rethrow;
+    }
   }
 
   Future<void> register(String name, String email, String password) async {
@@ -228,13 +200,7 @@ class AuthProvider with ChangeNotifier {
 
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', data['token']);
-        await prefs.setString('userId', data['user']['id']);
-        await prefs.setBool('isLoggedIn', true);
-
-        await getUserDetails();
-        notifyListeners();
+        await _handleSuccessfulLogin(data);
       } else {
         throw Exception('Failed to authenticate with Google');
       }
@@ -266,21 +232,7 @@ class AuthProvider with ChangeNotifier {
 
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', data['token']);
-        await prefs.setString('userId', data['user']['id']);
-        await prefs.setBool('isLoggedIn', true);
-
-        await getUserDetails();
-        if (data['user']['needUsernameSetup']) {
-          Navigator.of(navigatorKey.currentContext!)
-              .pushReplacementNamed('/onboarding');
-        } else {
-          Navigator.of(navigatorKey.currentContext!)
-              .pushReplacementNamed('/main');
-        }
-
-        notifyListeners();
+        await _handleSuccessfulLogin(data);
       } else {
         throw Exception('Failed to authenticate with Apple');
       }
