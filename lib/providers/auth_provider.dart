@@ -312,34 +312,6 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> setupPushNotifications() async {
-    final messaging = FirebaseMessaging.instance;
-
-    messaging.onTokenRefresh.listen((newToken) async {
-      if (currentUser != null) {
-        try {
-          await http.post(
-            Uri.parse('$_baseUrl/auth/update-device-token'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ${currentUser!.token}',
-            },
-            body: json.encode({
-              'deviceToken': newToken,
-              'deviceType': Platform.isIOS ? 'ios' : 'android',
-            }),
-          );
-
-          // Update stored token
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('deviceToken', newToken);
-        } catch (e) {
-          print('Failed to update device token: $e');
-        }
-      }
-    });
-  }
-
   @override
   void dispose() {
     _userSubject.close();

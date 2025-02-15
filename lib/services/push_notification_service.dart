@@ -78,9 +78,6 @@ class PushNotificationService extends ChangeNotifier {
       final Map<String, String> headers = {
         'Content-Type': 'application/json',
       };
-
-      
-
       if (authToken != null) {
         headers['Authorization'] = 'Bearer $authToken';
       }
@@ -114,6 +111,15 @@ class PushNotificationService extends ChangeNotifier {
 
   Future<void> updateServerToken(String? authToken) async {
     final deviceToken = await getToken();
+    await http.post(
+      Uri.parse('$_baseUrl/auth/test-device-token'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({
+        'deviceToken': deviceToken,
+      }),
+    );
     if (deviceToken != null && authToken != null) {
       await _sendTokenToServer(deviceToken, authToken: authToken);
     }
