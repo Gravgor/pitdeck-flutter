@@ -21,6 +21,7 @@ import 'package:pitdeck/screens/main_wrapper.dart';
 import 'package:pitdeck/services/cache_service.dart';
 import 'package:pitdeck/providers/achievement_provider.dart';
 import 'package:pitdeck/services/quest_service.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -28,7 +29,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MapboxOptions.setAccessToken(MapboxConfig.accessToken);
   await SharedPreferences.getInstance();
-
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 

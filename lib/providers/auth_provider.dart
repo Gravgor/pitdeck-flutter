@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import '../main.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class AuthProvider with ChangeNotifier {
   final _userSubject = BehaviorSubject<User?>();
@@ -248,6 +249,19 @@ class AuthProvider with ChangeNotifier {
         ],
       );
 
+      // Get Firebase token for push notifications
+      final messaging = FirebaseMessaging.instance;
+
+      // Request permission first (iOS requires this)
+      await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
+      // Get the token
+      final deviceToken = await messaging.getAPNSToken();
+
       // Send to backend
       final response = await http.post(
         Uri.parse('$_baseUrl/auth/mobile/apple'),
@@ -258,6 +272,8 @@ class AuthProvider with ChangeNotifier {
           'givenName': credential.givenName,
           'familyName': credential.familyName,
           'email': credential.email,
+          'deviceToken': deviceToken,
+          'deviceType': 'ios',
         }),
       );
 
@@ -268,15 +284,18 @@ class AuthProvider with ChangeNotifier {
         await prefs.setString('userId', data['user']['id']);
         await prefs.setBool('isLoggedIn', true);
 
+        // Save device token locally if needed
+        if (deviceToken != null) {
+          await prefs.setString('deviceToken', deviceToken);
+        }
+
         await getUserDetails();
         if (data['user']['needUsernameSetup']) {
-          Navigator.of(navigatorKey.currentContext!).pushReplacement(
-            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
-          );
+          Navigator.of(navigatorKey.currentContext!)
+              .pushReplacementNamed('/onboarding');
         } else {
-          Navigator.of(navigatorKey.currentContext!).pushReplacement(
-            MaterialPageRoute(builder: (context) => const MainWrapper()),
-          );
+          Navigator.of(navigatorKey.currentContext!)
+              .pushReplacementNamed('/main');
         }
 
         notifyListeners();
@@ -309,6 +328,28 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<void> setupPushNotifications() async {
+    final messaging = FirebaseMessaging.instance;
+
+    // Listen for token refresh
+    messaging.onTokenRefresh.listen((newToken) async {
+      if (currentUser != null) {
+        // Send updated token to backend
+        await http.post(
+          Uri.parse('$_baseUrl/auth/update-device-token'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ${currentUser!.token}',
+          },
+          body: json.encode({
+            'deviceToken': newToken,
+            'deviceType': 'ios',
+          }),
+        );
+      }
+    });
   }
 
   @override
