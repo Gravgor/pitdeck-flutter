@@ -55,10 +55,6 @@
 	<string>This app needs access to location when in the background to notify you of nearby drops.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>PitDeck needs your location to show nearby drops and connect with other players even when the app is in background</string>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>location</string>
-	</array>
 	<key>io.flutter.embedded_views_preview</key>
 	<true/>
 	<key>MGLMapboxMetricsEnabledSettingShowInApp</key>
@@ -81,6 +77,7 @@
 <array>
     <string>fetch</string>
     <string>remote-notification</string>
+	<string>location</string>
 </array>
 <key>GIDClientID</key>
 <string>YOUR-CLIENT-ID</string>
