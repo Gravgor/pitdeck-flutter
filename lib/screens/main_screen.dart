@@ -271,6 +271,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     }
   }
 
+
   Future<void> _startLocationUpdates() async {
     _locationStreamSubscription?.cancel();
 
@@ -284,11 +285,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     ).listen((geo.Position position) {
       if (mounted) {
         setState(() {
-          _userLocation = position;
-          _isLoadingLocation = false;
-        });
-
-        _socket?.emit('location:update', {
+      _userLocation = position;
+      _isLoadingLocation = false;
+      });
+      _socket?.emit('location:update', {
           'latitude': position.latitude,
           'longitude': position.longitude,
         });
@@ -1155,7 +1155,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       body: Stack(
         children: [
           _buildMap(),
-          if (_isLoadingLocation)
+          if (_isLoadingLocation == true)
             Scaffold(
               backgroundColor: const Color(0xFF040412),
               body: Center(
