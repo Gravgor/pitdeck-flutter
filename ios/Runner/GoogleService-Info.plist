@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyBcFQn1ZLmQw7i8CnLcCuhVWXfW19Ob0Lc</string>
+	<string>AIzaSyCVGfrhJATAAXvzpOy_91AijaQ5KtKZMsY</string>
 	<key>GCM_SENDER_ID</key>
-	<string>69592613007</string>
+	<string>1059614758434</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.pitdeck.pitdeckapp</string>
 	<key>PROJECT_ID</key>
-	<string>pitdeck-messaing</string>
+	<string>pitdeck</string>
 	<key>STORAGE_BUCKET</key>
-	<string>pitdeck-messaing.firebasestorage.app</string>
+	<string>pitdeck.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:69592613007:ios:9029a1bcb2d5a19f8db0fa</string>
+	<string>1:1059614758434:ios:3e8b1c8028508949bfdc7b</string>
 </dict>
 </plist>
