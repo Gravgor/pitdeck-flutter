@@ -111,7 +111,7 @@ class UserProvider with ChangeNotifier {
           _needUsernameSetup = true;
           notifyListeners();
           Navigator.of(navigatorKey.currentContext!).pushReplacement(
-            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+            MaterialPageRoute(builder: (context) => OnboardingScreen(token: userData['token'])),
           );
         }
       } else if (response.statusCode == 401) {

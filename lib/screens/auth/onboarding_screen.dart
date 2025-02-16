@@ -4,7 +4,8 @@ import '../../providers/auth_provider.dart';
 import '../main_wrapper.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  const OnboardingScreen({super.key, required this.token});
+  final String token;
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -58,7 +59,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     try {
       await Provider.of<AuthProvider>(context, listen: false)
-          .updateUsername(_usernameController.text);
+          .updateUsername(_usernameController.text, widget.token);
 
       if (!mounted) return;
       Navigator.of(context).pushReplacement(

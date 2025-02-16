@@ -28,7 +28,7 @@ class MainWrapper extends StatelessWidget {
           return const AuthScreen();
         }
         if (userProvider.needUsernameSetup) {
-          return const OnboardingScreen();
+          return OnboardingScreen(token: user.token);
         }
 
         return Scaffold(

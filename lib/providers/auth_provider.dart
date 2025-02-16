@@ -203,7 +203,7 @@ class AuthProvider with ChangeNotifier {
         if (user.needUsernameSetup) {
           await prefs.setBool('needUsernameSetup', true);
           Navigator.of(navigatorKey.currentContext!).pushReplacement(
-            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+            MaterialPageRoute(builder: (context) => OnboardingScreen(token: user.token)),
           );
         }
         _userSubject.add(user);
@@ -297,7 +297,7 @@ class AuthProvider with ChangeNotifier {
         if (data['user']['needUsernameSetup']) {
           await prefs.setBool('needUsernameSetup', true);
           Navigator.of(navigatorKey.currentContext!).pushReplacement(
-            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+            MaterialPageRoute(builder: (context) => OnboardingScreen(token: data['token'])),
           );
         } else {
           Navigator.of(navigatorKey.currentContext!).pushReplacement(
@@ -314,13 +314,13 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> updateUsername(String username) async {
+  Future<void> updateUsername(String username, String token) async {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/users/update/name'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${currentUser?.token}',
+          'Authorization': 'Bearer $token',
         },
         body: json.encode({'name': username}),
       );
