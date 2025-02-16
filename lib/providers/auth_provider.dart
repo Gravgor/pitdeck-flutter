@@ -200,8 +200,13 @@ class AuthProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         final userDetails = json.decode(response.body);
         final user = User.fromJson(userDetails, token: token);
+        if (user.needUsernameSetup) {
+          await prefs.setBool('needUsernameSetup', true);
+          Navigator.of(navigatorKey.currentContext!).pushReplacement(
+            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+          );
+        }
         _userSubject.add(user);
-
         await Provider.of<UserProvider>(navigatorKey.currentContext!,
                 listen: false)
             .updateUser(user);

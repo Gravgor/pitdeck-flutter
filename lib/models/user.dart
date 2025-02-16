@@ -60,6 +60,7 @@ class User {
   final DateTime? lastLogin;
   final DateTime? lastActive;
   final String? backgroundImage;
+  final bool needUsernameSetup;
   final String token;
   final List<UserLocation> locations;
 
@@ -77,7 +78,7 @@ class User {
     this.totalXp = 0,
     this.bio = '',
     this.isPremium = false,
-
+    this.needUsernameSetup = false,
     this.role = 'user',
     required this.createdAt,
     required this.updatedAt,
@@ -104,7 +105,7 @@ class User {
       bio: json['bio'] ?? '',
       role: json['role'] ?? 'user',
       isPremium: json['isPremium'] ?? false,
-
+      needUsernameSetup: json['needUsernameSetup'] ?? false,
       createdAt: DateTime.parse(json['createdAt'].toString()),
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'].toString())
