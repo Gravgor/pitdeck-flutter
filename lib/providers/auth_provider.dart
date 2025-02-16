@@ -24,10 +24,15 @@ class AuthProvider with ChangeNotifier {
   static const String _isLoggedIn = 'isLoggedIn';
   static const String _token = 'token';
   static const String _userId = 'userId';
-  final kDebugToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbTNsbGlmNnEwMDAwMTM1enh1NWdtOGJ1IiwiaWF0IjoxNzM5NTM0ODQyLCJleHAiOjE3NDAxMzk2NDJ9.CHNTGbn7m-SAgdlhzBB9Z5tHK-x1YqMt15OYz-x3pS8';
+  final kDebugToken =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbTNsbGlmNnEwMDAwMTM1enh1NWdtOGJ1IiwiaWF0IjoxNzM5NTM0ODQyLCJleHAiOjE3NDAxMzk2NDJ9.CHNTGbn7m-SAgdlhzBB9Z5tHK-x1YqMt15OYz-x3pS8';
 
   User? get currentUser => _userSubject.valueOrNull;
   Stream<User?> get userStream => _userSubject.stream;
+
+  bool _hasCompletedOnboarding = true;
+
+  bool get hasCompletedOnboarding => _hasCompletedOnboarding;
 
   Future<void> saveUserToPrefs(User user) async {
     final prefs = await SharedPreferences.getInstance();
@@ -254,7 +259,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-   Future<void> signInWithApple() async {
+  Future<void> signInWithApple() async {
     try {
       final credential = await SignInWithApple.getAppleIDCredential(
         scopes: [
@@ -285,6 +290,7 @@ class AuthProvider with ChangeNotifier {
 
         await getUserDetails();
         if (data['user']['needUsernameSetup']) {
+          await prefs.setBool('needUsernameSetup', true);
           Navigator.of(navigatorKey.currentContext!).pushReplacement(
             MaterialPageRoute(builder: (context) => const OnboardingScreen()),
           );
@@ -302,6 +308,7 @@ class AuthProvider with ChangeNotifier {
       throw Exception('Apple sign in failed: $e');
     }
   }
+
   Future<void> updateUsername(String username) async {
     try {
       final response = await http.post(
@@ -323,6 +330,19 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<void> completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('hasCompletedOnboarding', true);
+    _hasCompletedOnboarding = true;
+    notifyListeners();
+  }
+
+  Future<void> checkOnboardingStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    _hasCompletedOnboarding = prefs.getBool('hasCompletedOnboarding') ?? false;
+    notifyListeners();
   }
 
   @override
