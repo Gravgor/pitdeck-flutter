@@ -130,6 +130,23 @@ class CardDetailModel {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'type': type,
+      'rarity': rarity,
+      'imageUrl': imageUrl,
+      'description': description,
+      'edition': edition,
+      'serialNumber': serialNumber,
+      'stats': stats,
+      'series': series,
+    };
+  }
+
+  
+
   static CardDetailModel empty() {
     return CardDetailModel(
       id: '',

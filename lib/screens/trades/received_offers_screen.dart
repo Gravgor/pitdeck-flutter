@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pitdeck/models/card.dart';
 import 'package:pitdeck/models/trade.dart';
 import 'package:pitdeck/widgets/trade/trade_card.dart';
 import 'package:pitdeck/widgets/user_avatar.dart';
@@ -16,6 +17,7 @@ class ReceivedOffersScreen extends StatefulWidget {
 
 class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
   bool _isLoading = true;
+  List<TradeModel> _tradesWithOffers = [];
 
   @override
   void initState() {
@@ -27,6 +29,13 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
     try {
       await Provider.of<TradeProvider>(context, listen: false)
           .fetchAllReceivedOffers();
+
+      // Get trades that have offers
+      final tradeProvider = Provider.of<TradeProvider>(context, listen: false);
+      final trades = tradeProvider.myListings;
+      setState(() {
+        _tradesWithOffers = trades.where((trade) => trade.hasOffers()).toList();
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -45,7 +54,7 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
       await Provider.of<TradeProvider>(context, listen: false)
           .acceptOffer(offerId);
       ScaffoldMessenger.of(context).showSnackBar(
-       SnackBar(
+        SnackBar(
           backgroundColor: const Color(0xFF10B981),
           duration: const Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
@@ -308,12 +317,20 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
   }
 
   Widget _buildOfferCard(TradeOfferModel offer) {
+    final trade = _tradesWithOffers.firstWhere(
+      (t) => t.id == offer.tradeId,
+      orElse: () => TradeModel.empty(),
+    );
+
+    if (trade.id.isEmpty) return const SizedBox.shrink();
+
     return TradeCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildOfferHeader(offer),
-          _buildOfferedCards(offer),
+          if (trade.offeredCards.isNotEmpty) _buildTradeCards(trade),
+          if (offer.offeredCards.isNotEmpty) _buildOfferedCards(offer),
           if (offer.coins > 0) _buildCoinsOffered(offer),
           if (offer.note?.isNotEmpty ?? false) _buildNote(offer),
           if (offer.isPending) _buildActions(offer),
@@ -405,6 +422,39 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
     }
   }
 
+  Widget _buildTradeCards(TradeModel trade) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'Your Trade Cards',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 160,
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            scrollDirection: Axis.horizontal,
+            itemCount: trade.offeredCards.length,
+            itemBuilder: (context, index) {
+              final card = trade.offeredCards[index];
+              return _buildCardItem(card, isTradeCard: true);
+            },
+          ),
+        ),
+        const Divider(height: 32, color: Colors.white10),
+      ],
+    );
+  }
+
   Widget _buildOfferedCards(TradeOfferModel offer) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -412,7 +462,7 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            'Offered Cards',
+            'Cards Offered',
             style: TextStyle(
               color: Colors.white,
               fontSize: 14,
@@ -429,71 +479,88 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
             itemCount: offer.offeredCards.length,
             itemBuilder: (context, index) {
               final card = offer.offeredCards[index];
-              return Container(
-                width: 120,
-                margin: const EdgeInsets.only(right: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        card.imageUrl,
-                        height: 120,
-                        width: 120,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      card.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: ColorUtils.getRarityColor(card.rarity)
-                                .withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            card.rarity,
-                            style: TextStyle(
-                              color: ColorUtils.getRarityColor(card.rarity),
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '#${card.serialNumber}',
-                          style: TextStyle(
-                            color: Colors.grey.shade400,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
+              return _buildCardItem(card, isTradeCard: false);
             },
           ),
         ),
+        const Divider(height: 32, color: Colors.white10),
       ],
+    );
+  }
+
+  Widget _buildCardItem(CardDetailModel card, {required bool isTradeCard}) {
+    return Container(
+      width: 120,
+      margin: const EdgeInsets.only(right: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  card.imageUrl,
+                  height: 120,
+                  width: 120,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '#${card.serialNumber}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            card.name,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 4,
+              vertical: 2,
+            ),
+            decoration: BoxDecoration(
+              color: ColorUtils.getRarityColor(card.rarity).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              card.rarity,
+              style: TextStyle(
+                color: ColorUtils.getRarityColor(card.rarity),
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -518,15 +585,47 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
   }
 
   Widget _buildNote(TradeOfferModel offer) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: Text(
-        offer.note!,
-        style: TextStyle(
-          color: Colors.grey.shade400,
-          fontSize: 14,
-          fontStyle: FontStyle.italic,
-        ),
+    if (offer.note == null || offer.note!.isEmpty)
+      return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.message_outlined,
+                size: 16,
+                color: Colors.white.withOpacity(0.5),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Note from ${offer.user.name}',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            offer.note!,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 14,
+            ),
+          ),
+        ],
       ),
     );
   }

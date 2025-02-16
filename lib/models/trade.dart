@@ -52,7 +52,8 @@ class TradeModel {
             .map((cardJson) =>
                 CardDetailModel.fromJson(cardJson as Map<String, dynamic>))
             .toList(),
-        sender: UserModel.fromJson(json['sender'] as Map<String, dynamic>? ?? {}),
+        sender:
+            UserModel.fromJson(json['sender'] as Map<String, dynamic>? ?? {}),
       );
     } catch (e, stackTrace) {
       print('Error parsing TradeModel: $e');
@@ -61,6 +62,25 @@ class TradeModel {
       rethrow;
     }
   }
+
+  bool hasOffers() {
+    return offeredCards.isNotEmpty;
+  }
+
+   factory TradeModel.empty() {
+    return TradeModel(
+      id: '',
+      offeredCards: [],
+      status: TradeStatus.PENDING,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      senderId: '',
+      isOpenTrade: true,
+      coinsOffered: 0,
+      sender: UserModel.empty(),
+    );
+  }
+
 }
 
 class UserModel {
@@ -69,7 +89,8 @@ class UserModel {
   final String? image;
   final int level;
 
-  UserModel({required this.id, required this.name, this.image, required this.level});
+  UserModel(
+      {required this.id, required this.name, this.image, required this.level});
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
@@ -79,4 +100,13 @@ class UserModel {
       level: json['level'] as int? ?? 0,
     );
   }
+
+  factory UserModel.empty() {
+    return UserModel(
+      id: '',
+      name: '',
+      image: null,
+      level: 0,
+    );
+}
 }

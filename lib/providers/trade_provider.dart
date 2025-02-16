@@ -438,7 +438,7 @@ class TradeProvider with ChangeNotifier {
         final index = _allReceivedOffers
             .indexWhere((trade) => trade.id == updatedTrade.id);
         if (index != -1) {
-          _allReceivedOffers[index] = updatedTrade;
+          _receivedOffers.remove(updatedTrade.id);
           notifyListeners();
         }
       } else if (response.statusCode == 400) {
@@ -482,7 +482,6 @@ class TradeProvider with ChangeNotifier {
     final userProvider = Provider.of<UserProvider>(
       navigatorKey.currentContext!,
       listen: false,
-
     );
     final token = userProvider.user?.token;
     final response = await http.get(
@@ -499,8 +498,6 @@ class TradeProvider with ChangeNotifier {
       throw Exception('Failed to get active trade card ids');
     }
   }
-
-
 
   @override
   void dispose() {

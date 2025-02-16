@@ -52,7 +52,7 @@ class TradeOfferModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime expiresAt;
-  final List<CardModel> offeredCards;
+  final List<CardDetailModel> offeredCards;
   final OfferUserModel user;
 
   TradeOfferModel({
@@ -81,7 +81,7 @@ class TradeOfferModel {
       updatedAt: DateTime.parse(json['updatedAt']),
       expiresAt: DateTime.parse(json['expiresAt']),
       offeredCards: (json['offeredCards'] as List)
-          .map((card) => CardModel.fromJson(card))
+          .map((card) => CardDetailModel.fromJson(card))
           .toList(),
       user: OfferUserModel.fromJson(json['user']),
     );
@@ -163,7 +163,7 @@ class TradeOfferModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? expiresAt,
-    List<CardModel>? offeredCards,
+    List<CardDetailModel>? offeredCards,
     OfferUserModel? user,
   }) {
     return TradeOfferModel(
