@@ -3,6 +3,7 @@ import 'package:pitdeck/models/listing.dart';
 import 'package:pitdeck/models/trade.dart';
 import 'package:pitdeck/providers/card_provider.dart';
 import 'package:pitdeck/providers/trade_provider.dart';
+import 'package:pitdeck/providers/user_provider.dart';
 import 'package:pitdeck/screens/trades/my_listings_screen.dart';
 import 'package:pitdeck/screens/trades/trades_screen.dart';
 import '../../models/card.dart';
@@ -13,6 +14,7 @@ import 'package:intl/intl.dart';
 import '../widgets/trade_card.dart';
 import 'sell_card_screen.dart';
 import 'create_trade_screen.dart';
+import 'package:pitdeck/screens/user_profile_screen.dart';
 
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
@@ -25,6 +27,12 @@ class _MarketScreenState extends State<MarketScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool isLoading = false;
+  final TextEditingController _searchController = TextEditingController();
+  String _selectedFilter = 'my_listings';
+  Set<String> _selectedRarities = {};
+  Set<String> _selectedTypes = {};
+  String _emptyStateMessage = '';
+  List<ListingModel> _filteredListings = [];
 
   @override
   void initState() {
@@ -209,41 +217,246 @@ class _MarketScreenState extends State<MarketScreen>
     );
   }
 
-  Widget _buildMarketplace() {
+    Widget _buildMarketplace() {
     return Consumer<ListingProvider>(
       builder: (context, listingProvider, child) {
-        final listings = listingProvider.listings;
-
         if (isLoading) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        }
-
-        if (listings.isEmpty) {
-          return const Center(
-            child: Text(
-              'No listings available',
-              style: TextStyle(color: Colors.white),
-            ),
+          return Column(
+            children: [
+              _buildFilters(),
+              const Expanded(
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF3B82F6),
+                  ),
+                ),
+              ),
+            ],
           );
         }
 
         return RefreshIndicator(
           onRefresh: _loadListings,
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: listings.length,
-            itemBuilder: (context, index) {
-              return _buildListingCard(listings[index]);
-            },
+          child: Column(
+            children: [
+              _buildFilters(),
+              if (_selectedFilter == 'my_listings' && _filteredListings.isEmpty)
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.store_outlined,
+                          size: 64,
+                          color: Colors.white.withOpacity(0.2),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No Active Listings',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Orbitron',
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Start selling your cards in the marketplace',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 14,
+                            fontFamily: 'Orbitron',
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: () => _showAddListingModal(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF3B82F6),
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'CREATE LISTING',
+                            style: TextStyle(
+                              fontFamily: 'Orbitron',
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _filteredListings.length,
+                    itemBuilder: (context, index) {
+                      return _buildListingCard(_filteredListings[index]);
+                    },
+                  ),
+                ),
+            ],
           ),
         );
       },
     );
   }
 
+  Widget _buildFilters() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A2E),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'Orbitron',
+                    ),
+                    decoration: const InputDecoration(
+                      hintText: 'Search listings...',
+                      hintStyle: TextStyle(color: Colors.grey),
+                      border: InputBorder.none,
+                      icon: Icon(Icons.search, color: Colors.grey),
+                    ),
+                    onChanged: _handleSearch,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              IconButton(
+                onPressed: _showFilterModal,
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A2E),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Badge(
+                    isLabelVisible: _selectedRarities.isNotEmpty ||
+                        _selectedTypes.isNotEmpty,
+                    child: const Icon(Icons.tune, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildFilterChip(
+                  label: 'My Cards on Sale',
+                  value: 'my_listings',
+                  isSelected: _selectedFilter == 'my_listings',
+                  onTap: () => _setFilter('my_listings'),
+                ),
+                const SizedBox(width: 8),
+                _buildFilterChip(
+                  label: 'Price: Low to High',
+                  value: 'price_asc',
+                  isSelected: _selectedFilter == 'price_asc',
+                  onTap: () => _setFilter('price_asc'),
+                ),
+                const SizedBox(width: 8),
+                _buildFilterChip(
+                  label: 'Price: High to Low',
+                  value: 'price_desc',
+                  isSelected: _selectedFilter == 'price_desc',
+                  onTap: () => _setFilter('price_desc'),
+                ),
+                const SizedBox(width: 8),
+                _buildFilterChip(
+                  label: 'Recently Listed',
+                  value: 'recent',
+                  isSelected: _selectedFilter == 'recent',
+                  onTap: () => _setFilter('recent'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFilterModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          height: MediaQuery.of(context).size.height * 0.85,
+          padding: const EdgeInsets.all(24),
+          decoration: const BoxDecoration(
+            color: Color(0xFF1A1A2E),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: const Column(
+            children: [
+              Text(
+                'Filter Listings',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Orbitron',
+                ),
+              ),
+              SizedBox(height: 24),
+              // Add your filter options here
+              // Rarity filters
+              // Type filters
+              // Price range filters
+              // etc.
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _handleSearch(String query) {
+    setState(() {
+      final listingProvider =
+          Provider.of<ListingProvider>(context, listen: false);
+      final listings = listingProvider.listings;
+
+      if (query.isEmpty) {
+        _loadListings();
+        return;
+      }
+
+      listingProvider.filteredListings = listings.where((listing) {
+        return listing.card.name.toLowerCase().contains(query.toLowerCase()) ||
+            listing.card.type.toLowerCase().contains(query.toLowerCase()) ||
+            listing.seller.name.toLowerCase().contains(query.toLowerCase());
+      }).toList();
+    });
+  }
+
   Widget _buildListingCard(ListingModel listing) {
+  final currentUser = Provider.of<UserProvider>(context, listen: false).user;
+    final isOwnListing = currentUser?.id == listing.seller.id;
     final formattedPrice = NumberFormat('#,###').format(listing.price);
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -355,6 +568,26 @@ class _MarketScreenState extends State<MarketScreen>
                           ),
                         ],
                       ),
+                      if (isOwnListing)
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => _showEditPriceModal(listing),
+                      icon: const Icon(
+                        Icons.edit,
+                        color: Color(0xFF3B82F6),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => _showDeleteConfirmation(listing),
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ],
+                )
+              else
                       ElevatedButton(
                         onPressed: () => _showBuyCardModal(context, listing),
                         style: ElevatedButton.styleFrom(
@@ -378,11 +611,145 @@ class _MarketScreenState extends State<MarketScreen>
                       ),
                     ],
                   ),
+                  GestureDetector(
+                    onTap: () => _navigateToUserProfile(listing.seller.id),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(color: Colors.white.withOpacity(0.1)),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundImage:
+                                NetworkImage(listing.seller.image ?? ''),
+                          ),
+                          const SizedBox(width: 8),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                listing.seller.name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'Level ${listing.seller.level}',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.5),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+   void _showEditPriceModal(ListingModel listing) {
+    final priceController = TextEditingController(text: listing.price.toString());
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+        decoration: const BoxDecoration(
+          color: Color(0xFF1A1A2E),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Edit Price',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Orbitron',
+              ),
+            ),
+            const SizedBox(height: 24),
+            TextField(
+              controller: priceController,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'New Price',
+                labelStyle: TextStyle(color: Colors.grey),
+                border: OutlineInputBorder(),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () async {
+                final newPrice = int.tryParse(priceController.text);
+                if (newPrice != null) {
+                  await Provider.of<ListingProvider>(context, listen: false)
+                      .updateListingPrice(listing.id, newPrice);
+                  Navigator.pop(context);
+                  _loadListings();
+                }
+              },
+              child: const Text('UPDATE PRICE'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(ListingModel listing) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2E),
+        title: const Text(
+          'Remove Listing',
+          style: TextStyle(color: Colors.white, fontFamily: 'Orbitron'),
+        ),
+        content: const Text(
+          'Are you sure you want to remove this card from sale?',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await Provider.of<ListingProvider>(context, listen: false)
+                  .removeFromSale(listing.id);
+              Navigator.pop(context);
+              _loadListings();
+            },
+            child: const Text(
+              'REMOVE',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -794,12 +1161,77 @@ class _MarketScreenState extends State<MarketScreen>
                                         listen: false)
                                     .buyListing(listing.id);
                                 Navigator.pop(context);
-                                // TODO: Show success message
+                                Provider.of<UserProvider>(context,
+                                        listen: false)
+                                    .refreshUser();
+                                Provider.of<CardProvider>(context,
+                                        listen: false)
+                                    .fetchUserCards();
+                                ScaffoldMessenger.of(context).clearSnackBars();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: const Color(0xFF10B981),
+                                    duration: const Duration(seconds: 3),
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    content: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 8),
+                                      child: const Row(
+                                        children: [
+                                          Icon(
+                                            Icons.check_circle_outline,
+                                            color: Colors.white,
+                                            size: 20,
+                                          ),
+                                          SizedBox(width: 12),
+                                          Text(
+                                            'Card purchased successfully',
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
                               } catch (e) {
                                 setState(() {
                                   isProcessing = false;
                                 });
-                                // TODO: Show error message
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).clearSnackBars();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: const Color(0xFFE53935),
+                                    duration: const Duration(seconds: 3),
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    content: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 8),
+                                      child: const Row(
+                                        children: [
+                                          Icon(
+                                            Icons.error_outline,
+                                            color: Colors.white,
+                                            size: 20,
+                                          ),
+                                          SizedBox(width: 12),
+                                          Text(
+                                            'Failed to purchase card',
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
                               }
                             },
                       style: ElevatedButton.styleFrom(
@@ -1521,5 +1953,86 @@ class _MarketScreenState extends State<MarketScreen>
         ),
       ),
     );
+  }
+
+  void _navigateToUserProfile(String userId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserProfileScreen(userId: userId),
+      ),
+    );
+  }
+
+  Widget _buildFilterChip({
+    required String label,
+    required String value,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF3B82F6) : const Color(0xFF1A1A2E),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.white.withOpacity(0.7),
+            fontSize: 14,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontFamily: 'Orbitron',
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _setFilter(String filter) {
+    setState(() {
+      _selectedFilter = filter;
+      final listingProvider =
+          Provider.of<ListingProvider>(context, listen: false);
+      final allListings = listingProvider.listings;
+      List<ListingModel> filtered = [...allListings];
+       final currentUser =
+              Provider.of<UserProvider>(context, listen: false).user;
+
+      switch (filter) {
+        case 'my_listings':
+          final currentUser =
+              Provider.of<UserProvider>(context, listen: false).user;
+          if (currentUser != null) {
+            filtered = allListings
+                .where((l) => l.seller.id == currentUser.id)
+                .toList();
+            if (filtered.isEmpty) {
+              _emptyStateMessage = 'You haven\'t listed any cards yet';
+            }
+          } else {
+            filtered = [];
+            _emptyStateMessage = 'Please sign in to view your listings';
+          }
+          break;
+        case 'price_asc':
+          filtered.sort((a, b) => (a.price ?? 0).compareTo(b.price ?? 0));
+          filtered = filtered.where((l) => l.seller.id != currentUser?.id).toList();
+          break;
+        case 'price_desc':
+          filtered.sort((a, b) => (b.price ?? 0).compareTo(a.price ?? 0));
+          filtered = filtered.where((l) => l.seller.id != currentUser?.id).toList();
+          break;
+        case 'recent':
+          filtered.sort((a, b) => (b.createdAt ?? DateTime.now())
+              .compareTo(a.createdAt ?? DateTime.now()));
+          filtered = filtered.where((l) => l.seller.id != currentUser?.id).toList();
+          break;
+      }
+
+      _filteredListings = filtered;
+    });
   }
 }

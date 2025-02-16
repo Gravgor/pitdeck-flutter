@@ -10,6 +10,7 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 class ListingProvider with ChangeNotifier {
   final String _baseUrl = 'https://api.pitdeck.app/api';
   List<ListingModel> _listings = [];
+  List<ListingModel> _filteredListings = [];
   late IO.Socket _socket;
 
   ListingProvider() {
@@ -58,6 +59,12 @@ class ListingProvider with ChangeNotifier {
       .where((listing) => listing.status == ListingStatus.ACTIVE)
       .toList();
 
+  List<ListingModel> get filteredListings => _filteredListings;
+  set filteredListings(List<ListingModel> value) {
+    _filteredListings = value;
+    notifyListeners();
+  }
+
   Future<List<ListingModel>> fetchListings() async {
     try {
       final userProvider = Provider.of<UserProvider>(
@@ -84,15 +91,7 @@ class ListingProvider with ChangeNotifier {
         final activeListings = listingsData
             .where((listing) => listing['status'] == 'ACTIVE')
             .toList();
-        final userProvider = Provider.of<UserProvider>(
-          navigatorKey.currentContext!,
-          listen: false,
-        );
-        final userId = userProvider.user?.id;
-        final filteredListings = activeListings
-            .where((listing) => listing['sellerId'] != userId)
-            .toList();
-        _listings = filteredListings
+        _listings = activeListings
             .map((json) {
               try {
                 return ListingModel.fromJson(json);
@@ -114,6 +113,42 @@ class ListingProvider with ChangeNotifier {
       throw Exception('Network error: $e');
     }
   }
+
+  Future<void> updateListingPrice(String listingId, int newPrice) async {
+    try {
+      final userProvider = Provider.of<UserProvider>(
+        navigatorKey.currentContext!,
+        listen: false,
+      );
+      final token = userProvider.user?.token;
+
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/marketplace/update-price/$listingId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({
+          'price': newPrice,
+        }),
+      );
+
+      if (response.statusCode == 200) { 
+        print('Listing price updated successfully');
+        notifyListeners();
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to update listing price');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
 
   Future<void> createListing({
     required String cardId,
@@ -176,8 +211,7 @@ class ListingProvider with ChangeNotifier {
 
       if (response.statusCode == 201) {
         _listings.removeWhere((listing) => listing.id == listingId);
-        // Refetch listings
-        await userProvider.fetchUserProfile();
+        await userProvider.refreshUser();
         fetchListings();
         notifyListeners();
         

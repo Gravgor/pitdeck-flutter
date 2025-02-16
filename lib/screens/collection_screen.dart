@@ -303,41 +303,81 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
   void _handleSearch(String value) {
     setState(() {
-      _searchQuery = value;
-      _applyFilters();
+      _searchQuery = value.toLowerCase();
+      final cardProvider = Provider.of<CardProvider>(context, listen: false);
+
+      // First filter by search query
+      _filteredCards = cardProvider.cards.where((card) {
+        return card.name.toLowerCase().contains(_searchQuery) ||
+            card.type.toLowerCase().contains(_searchQuery) ||
+            card.series.toLowerCase().contains(_searchQuery);
+      }).toList();
+
+      // Then apply other filters
+      if (_selectedRarities.isNotEmpty) {
+        _filteredCards = _filteredCards
+            .where(
+                (card) => _selectedRarities.contains(card.rarity.toUpperCase()))
+            .toList();
+      }
+
+      if (_selectedTypes.isNotEmpty) {
+        _filteredCards = _filteredCards
+            .where((card) => _selectedTypes.contains(card.type.toUpperCase()))
+            .toList();
+      }
+
+      // Finally apply selected filter (all/trade/market)
+      if (_selectedFilter == 'trade') {
+        _filteredCards =
+            _filteredCards.where((card) => card.isForTrade).toList();
+      } else if (_selectedFilter == 'market') {
+        _filteredCards =
+            _filteredCards.where((card) => card.isForSale).toList();
+      }
     });
   }
 
   void _applyFilters() {
-    final cardProvider = Provider.of<CardProvider>(context, listen: false);
     setState(() {
-      if (_selectedRarities.isEmpty && _selectedTypes.isEmpty) {
-        _filteredCards = List<CardModel>.from(cardProvider.cards);
-      } else {
-        _filteredCards = cardProvider.cards.where((card) {
-          final matchesRarity = _selectedRarities.isEmpty ||
-              _selectedRarities.contains(card.rarity.toUpperCase());
-          final matchesType = _selectedTypes.isEmpty ||
-              _selectedTypes.contains(card.type.toUpperCase());
-          return matchesRarity && matchesType;
+      final cardProvider = Provider.of<CardProvider>(context, listen: false);
+      _filteredCards = cardProvider.cards;
+
+      // Apply search filter if exists
+      if (_searchQuery.isNotEmpty) {
+        _filteredCards = _filteredCards.where((card) {
+          return card.name.toLowerCase().contains(_searchQuery) ||
+              card.type.toLowerCase().contains(_searchQuery) ||
+              card.series.toLowerCase().contains(_searchQuery);
         }).toList();
       }
+
+      // Apply rarity filters
+      if (_selectedRarities.isNotEmpty) {
+        _filteredCards = _filteredCards
+            .where((card) => _selectedRarities.contains(card.rarity))
+            .toList();
+      }
+
+      // Apply type filters
+      if (_selectedTypes.isNotEmpty) {
+        _filteredCards = _filteredCards
+            .where((card) => _selectedTypes.contains(card.type))
+            .toList();
+      }
+
+      // Apply main filter (all/trade/market)
+      if (_selectedFilter == 'trade') {
+        _filteredCards =
+            _filteredCards.where((card) => card.isForTrade).toList();
+      } else if (_selectedFilter == 'market') {
+        _filteredCards =
+            _filteredCards.where((card) => card.isForSale).toList();
+      }
+      if (_selectedFilter == 'all') {
+        _filteredCards = cardProvider.cards.where((card) => !card.isForTrade && !card.isForSale).toList();
+      }
     });
-    if (_selectedFilter == 'all') {
-      setState(() {
-        _filteredCards = List<CardModel>.from(cardProvider.cards);
-      });
-    } else if (_selectedFilter == 'trade') {
-      setState(() {
-        _filteredCards =
-            cardProvider.cards.where((card) => card.isForTrade).toList();
-      });
-    } else if (_selectedFilter == 'market') {
-      setState(() {
-        _filteredCards =
-            cardProvider.cards.where((card) => card.isForSale).toList();
-      });
-    }
   }
 
   Widget _buildFilterChips() {
@@ -395,7 +435,12 @@ class _CollectionScreenState extends State<CollectionScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => setState(() => _selectedFilter = value),
+          onTap: () {
+            setState(() {
+              _selectedFilter = value;
+              _applyFilters();
+            });
+          },
           borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -865,7 +910,8 @@ class _CollectionScreenState extends State<CollectionScreen> {
                                     Color(0xFFB91C1C)
                                   ],
                                 ),
-                              ] else if (card.isForTrade && !card.isForSale) ...[
+                              ] else if (card.isForTrade &&
+                                  !card.isForSale) ...[
                                 _buildActionButton(
                                   label: 'IN ACTIVE TRADE',
                                   icon: Icons.swap_horiz,
@@ -887,7 +933,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
                                     Color(0xFFB91C1C)
                                   ],
                                 ),
-                              ]  else ...[
+                              ] else ...[
                                 // Default state - card is available for trade/sale
                                 Row(
                                   children: [
@@ -1028,8 +1074,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
   }
 
   void _removeFromTrade(CardDetailModel card) {
-    Provider.of<TradeProvider>(context, listen: false)
-        .cancelTrade(card.id);
+    Provider.of<TradeProvider>(context, listen: false).cancelTrade(card.id);
   }
 
   void _showFilterModal() {

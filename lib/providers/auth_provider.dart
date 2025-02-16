@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:pitdeck/providers/user_provider.dart';
 import 'package:pitdeck/screens/main_wrapper.dart';
 import 'package:pitdeck/screens/auth/onboarding_screen.dart';
+import 'package:pitdeck/screens/auth/auth_screen.dart';
 import 'package:pitdeck/services/push_notification_service.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:http/http.dart' as http;
@@ -116,6 +117,12 @@ class AuthProvider with ChangeNotifier {
     await Provider.of<UserProvider>(navigatorKey.currentContext!, listen: false)
         .clearUser();
     _userSubject.add(null);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    // Show auth screen
+    Navigator.of(navigatorKey.currentContext!).pushReplacement(
+      MaterialPageRoute(builder: (context) => const AuthScreen()),
+    );
     notifyListeners();
   }
 

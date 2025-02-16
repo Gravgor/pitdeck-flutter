@@ -5,6 +5,7 @@ import 'package:pitdeck/providers/user_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:pitdeck/providers/auth_provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -151,13 +152,6 @@ class SettingsScreen extends StatelessWidget {
                           );
                         },
                       ),
-                      _buildSettingItem(
-                        'Change Username',
-                        Icons.edit,
-                        onTap: () {
-                          // Handle username change
-                        },
-                      ),
                     ],
                   ),
                   _buildSection(
@@ -168,22 +162,6 @@ class SettingsScreen extends StatelessWidget {
                         Icons.notifications,
                         onTap: () {
                           // Handle notifications settings
-                        },
-                      ),
-                      _buildSettingItem(
-                        'Language',
-                        Icons.language,
-                        value: 'English',
-                        onTap: () {
-                          // Handle language change
-                        },
-                      ),
-                      _buildSettingItem(
-                        'Sound Effects',
-                        Icons.volume_up,
-                        isToggle: true,
-                        onTap: () {
-                          // Handle sound toggle
                         },
                       ),
                     ],
@@ -219,7 +197,7 @@ class SettingsScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: GestureDetector(
                       onTap: () {
-                        // Handle logout
+                        Provider.of<AuthProvider>(context, listen: false).logout();
                       },
                       child: Container(
                         width: double.infinity,
