@@ -105,6 +105,8 @@ class UserProvider with ChangeNotifier {
 
       if (response.statusCode == 200) {
         final userData = json.decode(response.body);
+        _user = User.fromJson(userData, token: _token);
+        notifyListeners();
         if (userData['needUsernameSetup']) {
           _needUsernameSetup = true;
           notifyListeners();
@@ -112,8 +114,6 @@ class UserProvider with ChangeNotifier {
             MaterialPageRoute(builder: (context) => const OnboardingScreen()),
           );
         }
-        _user = User.fromJson(userData, token: _token);
-        notifyListeners();
       } else if (response.statusCode == 401) {
         await logout();
       }
