@@ -200,7 +200,7 @@ class AuthProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         final userDetails = json.decode(response.body);
         final user = User.fromJson(userDetails, token: token);
-        if (user.needUsernameSetup) {
+        if (user.needUsernameSetup == true) {
           await prefs.setBool('needUsernameSetup', true);
           Navigator.of(navigatorKey.currentContext!).pushReplacement(
             MaterialPageRoute(builder: (context) => OnboardingScreen(token: user.token)),
@@ -294,7 +294,7 @@ class AuthProvider with ChangeNotifier {
         await prefs.setBool('isLoggedIn', true);
 
         await getUserDetails();
-        if (data['user']['needUsernameSetup']) {
+        if (data['user']['needUsernameSetup'] == true) {
           await prefs.setBool('needUsernameSetup', true);
           Navigator.of(navigatorKey.currentContext!).pushReplacement(
             MaterialPageRoute(builder: (context) => OnboardingScreen(token: data['token'])),
@@ -327,6 +327,8 @@ class AuthProvider with ChangeNotifier {
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
         final user = User.fromJson(data['user'], token: currentUser?.token);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('needUsernameSetup', false);
         _userSubject.add(user);
         notifyListeners();
       } else {

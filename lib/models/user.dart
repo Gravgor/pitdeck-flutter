@@ -156,6 +156,7 @@ class User {
     int? level,
     String? bio,
     String? token,
+    bool? needUsernameSetup,
   }) {
     return User(
       id: id,
@@ -166,6 +167,7 @@ class User {
       coins: coins ?? this.coins,
       level: level ?? this.level,
       token: token ?? this.token,
+      needUsernameSetup: needUsernameSetup ?? this.needUsernameSetup,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );

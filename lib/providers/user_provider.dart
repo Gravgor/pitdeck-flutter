@@ -28,6 +28,10 @@ class UserProvider with ChangeNotifier {
   bool get isLoggedIn => _isLoggedIn;
 
   bool get needUsernameSetup => _needUsernameSetup;
+  set needUsernameSetup(bool value) {
+    _needUsernameSetup = value;
+    notifyListeners();
+  }
 
   Future<void> initializeFromCache() async {
     final prefs = await SharedPreferences.getInstance();
@@ -107,12 +111,16 @@ class UserProvider with ChangeNotifier {
         final userData = json.decode(response.body);
         _user = User.fromJson(userData, token: _token);
         notifyListeners();
-        if (userData['needUsernameSetup']) {
+        if (userData['needUsernameSetup'] == true) {
           _needUsernameSetup = true;
           notifyListeners();
           Navigator.of(navigatorKey.currentContext!).pushReplacement(
-            MaterialPageRoute(builder: (context) => OnboardingScreen(token: userData['token'])),
+            MaterialPageRoute(builder: (context) => OnboardingScreen(token: _token!)),
           );
+        } else {
+          needUsernameSetup = false;
+          _user = _user!.copyWith(needUsernameSetup: false);
+          notifyListeners();
         }
       } else if (response.statusCode == 401) {
         await logout();
