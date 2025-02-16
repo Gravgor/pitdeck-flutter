@@ -8,6 +8,9 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../models/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../screens/main_wrapper.dart';
+import '../screens/auth/onboarding_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class UserProvider with ChangeNotifier {
   User? _user;
@@ -18,10 +21,13 @@ class UserProvider with ChangeNotifier {
   bool isSocketConnected = false;
     final kDebugToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbTNsbGlmNnEwMDAwMTM1enh1NWdtOGJ1IiwiaWF0IjoxNzM5NTM0ODQyLCJleHAiOjE3NDAxMzk2NDJ9.CHNTGbn7m-SAgdlhzBB9Z5tHK-x1YqMt15OYz-x3pS8';
 
+  bool _needUsernameSetup = false;
 
   User? get user => _user;
   String? get token => _token;
   bool get isLoggedIn => _isLoggedIn;
+
+  bool get needUsernameSetup => _needUsernameSetup;
 
   Future<void> initializeFromCache() async {
     final prefs = await SharedPreferences.getInstance();
@@ -99,6 +105,13 @@ class UserProvider with ChangeNotifier {
 
       if (response.statusCode == 200) {
         final userData = json.decode(response.body);
+        if (userData['needUsernameSetup']) {
+          _needUsernameSetup = true;
+          notifyListeners();
+          Navigator.of(navigatorKey.currentContext!).pushReplacement(
+            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+          );
+        }
         _user = User.fromJson(userData, token: _token);
         notifyListeners();
       } else if (response.statusCode == 401) {
@@ -108,6 +121,8 @@ class UserProvider with ChangeNotifier {
       rethrow;
     }
   }
+
+
 
   Future<void> updateCoins(int coins) async {
     _user = _user?.copyWith(coins: coins);

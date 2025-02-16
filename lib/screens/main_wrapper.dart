@@ -24,16 +24,12 @@ class MainWrapper extends StatelessWidget {
     return Consumer2<UserProvider, AuthProvider>(
       builder: (context, userProvider, authProvider, child) {
         final user = userProvider.user;
-
-        // Check if user is authenticated
         if (user == null) {
           return const AuthScreen();
         }
-
-        if (!authProvider.hasCompletedOnboarding) {
+        if (userProvider.needUsernameSetup) {
           return const OnboardingScreen();
         }
-
 
         return Scaffold(
           body: IndexedStack(
