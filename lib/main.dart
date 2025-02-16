@@ -22,6 +22,7 @@ import 'package:pitdeck/screens/main_wrapper.dart';
 import 'package:pitdeck/services/cache_service.dart';
 import 'package:pitdeck/providers/achievement_provider.dart';
 import 'package:pitdeck/services/quest_service.dart';
+import 'package:flutter/foundation.dart';
 
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -30,9 +31,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MapboxOptions.setAccessToken(MapboxConfig.accessToken);
   await SharedPreferences.getInstance();
-  await PushNotificationService.requestPushNotificationPermission().then((value) async {
-    await PushNotificationService.registerDevice();
-  });
+  if (!kDebugMode) {
+    await PushNotificationService.requestPushNotificationPermission().then((value) async {
+      await PushNotificationService.registerDevice();
+    });
+  }
   runApp(const MyApp());
 }
 
@@ -83,8 +86,6 @@ class MyApp extends StatelessWidget {
                 return prefs.getBool('isLoggedIn') ?? false
                     ? const MainWrapper()
                    : const AuthScreen();
-                //: const MainWrapper();
-                // : const UserProfileScreen(userId: '1');
               }
 
               return const Scaffold(

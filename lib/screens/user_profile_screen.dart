@@ -1,8 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:pitdeck/models/card.dart';
+import 'package:pitdeck/utils/color_utils.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../models/user.dart';
 import '../providers/badge_provider.dart';
+import 'package:http/http.dart' as http;
 
 class UserProfileScreen extends StatefulWidget {
   final String userId;
@@ -33,7 +38,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       _user = await userProvider.fetchAnotherUser(widget.userId);
       final badgeProvider = Provider.of<BadgeProvider>(context, listen: false);
-      await badgeProvider.fetchBadgesForUserByUserId(userProvider.user!.token, widget.userId);
+      await badgeProvider.fetchBadgesForUserByUserId(
+          userProvider.user!.token, widget.userId);
       setState(() => _isLoading = false);
     } catch (e) {
       // If there's an error, use mock data
@@ -105,6 +111,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                     onTap: () {
                                       // TODO: Implement friend request
                                     },
+                                    disabled: true,
                                   ),
                                   const SizedBox(width: 8),
                                   _buildActionButton(
@@ -113,6 +120,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                     onTap: () {
                                       // TODO: Implement messaging
                                     },
+                                    disabled: true,
                                   ),
                                 ],
                               ),
@@ -205,13 +213,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    required bool disabled,
   }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: disabled ? null : onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFF3B82F6),
+          color: const Color(0xFF3B82F6).withOpacity(disabled ? 0.5 : 1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -296,7 +305,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 24),
-                _buildCollection(),
+                FutureBuilder<Widget>(
+                  future: _buildCollection(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return snapshot.data!;
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
               ],
             ),
           ),
@@ -305,34 +322,173 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Widget _buildCollection() {
-    //if (_user?.recentCards == null || _user!.recentCards!.isEmpty) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: Center(
+  Future<Widget> _buildCollection() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final response = await http.get(
+      Uri.parse('https://api.pitdeck.app/api/users/${widget.userId}/cards'),
+      headers: {
+        'Authorization': 'Bearer ${userProvider.user?.token}',
+      },
+    );
+    if (response.statusCode == 200) {
+      final recentCards = json.decode(response.body)
+          .map((card) => CardModel.fromJson(card))
+          .toList()
+          .take(10);
+          
+     return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A2E),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+        ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              Icons.card_membership_outlined,
-              size: 48,
-              color: Colors.white.withOpacity(0.2),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Recent Collection',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Orbitron',
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3B82F6).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${recentCards.length} cards',
+                    style: const TextStyle(
+                      color: Color(0xFF3B82F6),
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Orbitron',
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
-            Text(
-              'No cards to display',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
-                fontSize: 16,
-                fontFamily: 'Orbitron',
-              ),
-            ),
+            recentCards.isEmpty
+                ? _buildEmptyState()
+                : GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.7, // Adjusted for larger images
+                    ),
+                    itemCount: recentCards.length,
+                    itemBuilder: (context, index) {
+                      final card = recentCards.elementAt(index);
+                      return _buildCardItem(card);
+                    },
+                  ),
           ],
         ),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildCardItem(CardModel card) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF0A0A1A),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            child: Image.network(
+              card.imageUrl,
+              height: 125, // Larger image height
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  card.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Orbitron',
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: ColorUtils.getRarityColor(card.rarity).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    card.rarity,
+                    style: TextStyle(
+                      color: ColorUtils.getRarityColor(card.rarity),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '#${card.serialNumber}',
+                  style: TextStyle(
+                    color: Colors.grey.shade400,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        children: [
+          Icon(
+            Icons.card_membership_outlined,
+            size: 48,
+            color: Colors.white.withOpacity(0.2),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No cards to display',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.5),
+              fontSize: 16,
+              fontFamily: 'Orbitron',
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -346,7 +502,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         height: 40,
         fit: BoxFit.cover,
       ),
-
     );
   }
 
@@ -356,7 +511,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         if (provider.getBadgesForUser(widget.userId).isEmpty) {
           return const SizedBox.shrink();
         }
-        final badges = provider.getBadgesForUser(widget.userId).take(5).toList();
+        final badges =
+            provider.getBadgesForUser(widget.userId).take(5).toList();
         return Row(
           children: badges.map((badge) {
             return Padding(

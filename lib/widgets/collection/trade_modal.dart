@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pitdeck/screens/trades/my_listings_screen.dart';
 import 'package:pitdeck/utils/color_utils.dart';
 import '../../models/card.dart';
 import '../../models/trade_offer.dart';
@@ -179,7 +180,7 @@ class _TradeModalState extends State<TradeModal> {
             padding: const EdgeInsets.all(24),
             child: ElevatedButton(
               onPressed:
-                  _isLoading || _tradeId.isEmpty ? null : _createTradeOffer,
+                  _isLoading ? null : _createTradeOffer,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF3B82F6),
                 foregroundColor: Colors.white,
@@ -282,7 +283,24 @@ class _TradeModalState extends State<TradeModal> {
     try {
       await Provider.of<TradeProvider>(context, listen: false)
           .createTrade(offeredCardIds: [widget.card.id], coinsOffered: 0);
-      if (mounted) Navigator.pop(context);
+      if (mounted) 
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFF10B981),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          content: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: const Text('Trade offer created successfully'),
+          ),
+        ),
+      );
+      Navigator.push(context, MaterialPageRoute(builder: (context) => MyListingsScreen()));
     } catch (e) {
       print(e);
     } finally {

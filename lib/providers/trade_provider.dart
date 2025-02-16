@@ -168,17 +168,22 @@ class TradeProvider with ChangeNotifier {
       );
       final token = userProvider.user?.token;
 
-      await http.delete(
+      final response = await http.delete(
         Uri.parse('$_baseUrl/marketplace/trades/cancel/$tradeId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
-      _trades.removeWhere((trade) => trade.id == tradeId);
-      _myListings.removeWhere((trade) => trade.id == tradeId);
-      _receivedOffers.remove(tradeId);
-      notifyListeners();
+      if (response.statusCode == 200) {
+        _trades.removeWhere((trade) => trade.id == tradeId);
+        _myListings.removeWhere((trade) => trade.id == tradeId);
+        _receivedOffers.remove(tradeId);
+        notifyListeners();
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to cancel trade');
+      }
     } catch (e) {
       throw Exception('Network error: $e');
     }
@@ -204,7 +209,7 @@ class TradeProvider with ChangeNotifier {
         },
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         final updatedTrade = TradeModel.fromJson(json.decode(response.body));
         final index = _trades.indexWhere((trade) => trade.id == tradeId);
         if (index != -1) {
@@ -377,7 +382,6 @@ class TradeProvider with ChangeNotifier {
       }
     } catch (e) {
       print('Error fetching offers: $e');
-      _receivedOffers[tradeId] = []; // Initialize empty array on error
       throw Exception('Network error: $e');
     }
   }
@@ -398,6 +402,7 @@ class TradeProvider with ChangeNotifier {
       );
       if (response.statusCode == 200) {
         final List<dynamic> tradesData = json.decode(response.body);
+        print(tradesData);
         _allReceivedOffers =
             tradesData.map((json) => TradeModel.fromJson(json)).toList();
         _allReceivedOffers = _allReceivedOffers

@@ -34,9 +34,8 @@ class CardModel {
       rarity: json['rarity'] ?? '',
       isForSale: json['isForSale'] ?? false,
       isForTrade: json['isForTrade'] ?? false,
-      updatedAt: json['updatedAt'] != null
-        ? DateTime.parse(json['updatedAt'])
-        : null,
+      updatedAt:
+          json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
   }
 
@@ -107,9 +106,8 @@ class CardDetailModel {
       isExclusive: json['isExclusive'] ?? false,
       isForSale: json['isForSale'] ?? false,
       isForTrade: json['isForTrade'] ?? false,
-      updatedAt: json['updatedAt'] != null
-        ? DateTime.parse(json['updatedAt'])
-        : null,
+      updatedAt:
+          json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
   }
   factory CardDetailModel.fromCardModel(CardModel card) {
@@ -129,6 +127,26 @@ class CardDetailModel {
       isExclusive: false,
       isForTrade: false,
       updatedAt: null,
+    );
+  }
+
+  static CardDetailModel empty() {
+    return CardDetailModel(
+      id: '',
+      name: '',
+      description: '',
+      imageUrl: '',
+      rarity: 'COMMON',
+      type: '',
+      series: '',
+      stats: {},
+      edition: '',
+      serialNumber: '',
+      year: 0,
+      isExclusive: false,
+      isForSale: false,
+      isForTrade: false,
+      updatedAt: DateTime.now(),
     );
   }
 }

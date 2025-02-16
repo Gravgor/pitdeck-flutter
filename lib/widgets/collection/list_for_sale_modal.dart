@@ -281,15 +281,138 @@ class _ListForSaleModalState extends State<ListForSaleModal> {
       final price = int.parse(_priceController.text);
       await Provider.of<ListingProvider>(context, listen: false)
           .createListing(cardId: widget.card.id, price: price);
-      if (mounted) Navigator.pop(context);
-    } catch (e) {
+    
+      if (!mounted) return;
+      
+      Navigator.pop(context);
+      
+      // Show success notification
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error creating listing: $e')),
+        SnackBar(
+          backgroundColor: const Color(0xFF10B981),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          content: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Card Listed Successfully',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${widget.card.name} is now listed for ${_priceController.text} RC',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          action: SnackBarAction(
+            label: 'VIEW',
+            textColor: Colors.white,
+            onPressed: () {
+              // Navigate to marketplace or listings screen
+              Navigator.pushNamed(context, '/marketplace');
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFFDC2626),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          content: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.error_outline,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Listing Failed',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Error creating listing: $e',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-
   }
 
   @override

@@ -23,6 +23,7 @@ class AuthProvider with ChangeNotifier {
   static const String _isLoggedIn = 'isLoggedIn';
   static const String _token = 'token';
   static const String _userId = 'userId';
+  final kDebugToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbTNsbGlmNnEwMDAwMTM1enh1NWdtOGJ1IiwiaWF0IjoxNzM5NTM0ODQyLCJleHAiOjE3NDAxMzk2NDJ9.CHNTGbn7m-SAgdlhzBB9Z5tHK-x1YqMt15OYz-x3pS8';
 
   User? get currentUser => _userSubject.valueOrNull;
   Stream<User?> get userStream => _userSubject.stream;
@@ -169,11 +170,13 @@ class AuthProvider with ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getString(_userId);
-      final token = prefs.getString(_token);
+      var token = prefs.getString(_token);
       if (userId == null || token == null) {
         throw Exception('User ID or token not found');
       }
-
+      if (kDebugMode) {
+        token = kDebugToken;
+      }
       final response = await http.get(
         Uri.parse('$_baseUrl/users/$userId'),
         headers: {
@@ -292,7 +295,6 @@ class AuthProvider with ChangeNotifier {
       throw Exception('Apple sign in failed: $e');
     }
   }
-
   Future<void> updateUsername(String username) async {
     try {
       final response = await http.post(

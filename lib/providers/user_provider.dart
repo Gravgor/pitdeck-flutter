@@ -16,6 +16,8 @@ class UserProvider with ChangeNotifier {
   final String _baseUrl = 'https://api.pitdeck.app/api';
   IO.Socket? _socket;
   bool isSocketConnected = false;
+    final kDebugToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbTNsbGlmNnEwMDAwMTM1enh1NWdtOGJ1IiwiaWF0IjoxNzM5NTM0ODQyLCJleHAiOjE3NDAxMzk2NDJ9.CHNTGbn7m-SAgdlhzBB9Z5tHK-x1YqMt15OYz-x3pS8';
+
 
   User? get user => _user;
   String? get token => _token;
@@ -84,6 +86,9 @@ class UserProvider with ChangeNotifier {
 
   Future<void> fetchUserProfile() async {
     try {
+      if (kDebugMode) {
+        _token = kDebugToken;
+      }
       final response = await http.get(
         Uri.parse('$_baseUrl/users/me'),
         headers: {
@@ -126,6 +131,9 @@ class UserProvider with ChangeNotifier {
 
   Future<void> fetchUserDetails(String userId, String token) async {
     try {
+      if (kDebugMode) {
+        token = kDebugToken;
+      }
       final response = await http.get(
         Uri.parse('$_baseUrl/users/$userId'),
         headers: {

@@ -488,63 +488,216 @@ class _PacksScreenState extends State<PacksScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1E),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: _isLoading ? _buildLoadingState() : _buildPacksList(),
-            ),
-          ],
-        ),
+      backgroundColor: const Color(0xFF040412),
+      body: Column(
+        children: [
+          _buildHeader(),
+          _buildFilterChips(),
+          Expanded(
+            child: _isLoading ? _buildLoadingState() : _buildPacksList(),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 16,
+        left: 16,
+        right: 24,
+        bottom: 16,
+      ),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
+        color: const Color(0xFF040412),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.2),
             blurRadius: 8,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Row(
         children: [
           IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(
+              Icons.arrow_back_ios,
+              color: Colors.white,
+              size: 20,
+            ),
+            style: IconButton.styleFrom(
+              backgroundColor: const Color(0xFF1A1A2E),
+              padding: const EdgeInsets.all(12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: const Color(0xFF3B82F6).withOpacity(0.3),
+                ),
+              ),
+            ),
           ),
           const SizedBox(width: 16),
           const Text(
-            'CARD PACKS',
+            'PACKS',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 24,
+              fontSize: 28,
               fontWeight: FontWeight.bold,
               fontFamily: 'Orbitron',
             ),
+          ),
+          const Spacer(),
+          Consumer<UserProvider>(
+            builder: (context, userProvider, _) {
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFB800).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFFFFB800).withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.monetization_on,
+                      color: Color(0xFFFFB800),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _formatNumber(userProvider.user?.coins ?? 0),
+                      style: const TextStyle(
+                        color: Color(0xFFFFB800),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Orbitron',
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),
     );
   }
 
+  Widget _buildSearchBar() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A2E),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF3B82F6).withOpacity(0.3),
+        ),
+      ),
+      child: TextField(
+        controller: _searchController,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+        ),
+        decoration: InputDecoration(
+          hintText: 'Search packs...',
+          hintStyle: TextStyle(
+            color: Colors.white.withOpacity(0.5),
+            fontSize: 16,
+          ),
+          prefixIcon: Icon(
+            Icons.search,
+            color: Colors.white.withOpacity(0.5),
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChips() {
+    final filters = ['ALL', 'COMMON', 'RARE', 'EPIC', 'LEGENDARY'];
+
+    return Container(
+      height: 40,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: filters.length,
+        itemBuilder: (context, index) {
+          final filter = filters[index];
+          final isSelected = _selectedFilter == filter;
+          final color = _getRarityColor(filter);
+
+          return Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            child: FilterChip(
+              selected: isSelected,
+              showCheckmark: false,
+              label: Text(filter),
+              labelStyle: TextStyle(
+                color: isSelected ? color : Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Orbitron',
+              ),
+              backgroundColor: const Color(0xFF1A1A2E),
+              selectedColor: color.withOpacity(0.2),
+              side: BorderSide(
+                color: isSelected ? color : color.withOpacity(0.3),
+                width: 1.5,
+              ),
+              onSelected: (selected) {
+                setState(() {
+                  _selectedFilter = filter;
+                  _filterPacks();
+                });
+              },
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildPacksList() {
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: _filteredPacks.length,
       itemBuilder: (context, index) => _buildPackCard(_filteredPacks[index]),
     );
+  }
+
+  Color _getRarityColor(String rarity) {
+    switch (rarity.toUpperCase()) {
+      case 'COMMON':
+        return const Color(0xFF9CA3AF);
+      case 'RARE':
+        return const Color(0xFF3B82F6);
+      case 'EPIC':
+        return const Color(0xFFA855F7);
+      case 'LEGENDARY':
+        return const Color(0xFFFFB800);
+      default:
+        return const Color(0xFF3B82F6); // Default color for 'ALL'
+    }
   }
 }

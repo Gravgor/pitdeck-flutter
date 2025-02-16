@@ -12,39 +12,124 @@ class SentOffersScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TradeProvider>(
-      builder: (context, tradeProvider, child) {
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-        final userId = userProvider.user?.id;
+    return Scaffold(
+      backgroundColor: const Color(0xFF040412),
+      body: Consumer<TradeProvider>(
+        builder: (context, tradeProvider, child) {
+          final userProvider =
+              Provider.of<UserProvider>(context, listen: false);
+          final userId = userProvider.user?.id;
 
-        if (userId == null) {
-          return _buildEmptyState(
-            icon: Icons.account_circle_outlined,
-            message: 'Please log in to view your sent offers',
+          return Column(
+            children: [
+              _buildHeader(context),
+              Expanded(
+                child: userId == null
+                    ? _buildEmptyState(
+                        icon: Icons.account_circle_outlined,
+                        message: 'Please log in to view your sent offers',
+                      )
+                    : _buildContent(userId, tradeProvider),
+              ),
+            ],
           );
-        }
+        },
+      ),
+    );
+  }
 
-        final sentOffers = tradeProvider.trades
-            .where((trade) => trade.senderId == userId)
-            .toList();
-
-        if (sentOffers.isEmpty) {
-          return _buildEmptyState(
-            icon: Icons.local_offer_outlined,
-            message: 'No sent offers yet',
-          );
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: sentOffers.length,
-          itemBuilder: (context, index) => _buildOfferCard(
-            context,
-            sentOffers[index],
-            tradeProvider,
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 64, 24, 24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
-        );
-      },
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(
+                  Icons.arrow_back_ios,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0xFF1A1A2E),
+                  padding: const EdgeInsets.all(12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: const Color(0xFF3B82F6).withOpacity(0.3),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Sent Offers',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Orbitron',
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Track your outgoing trade offers',
+                    style: TextStyle(
+                      color: Colors.white54,
+                      fontSize: 14,
+                      letterSpacing: 0.5,
+                      fontFamily: 'Orbitron',
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContent(String userId, TradeProvider tradeProvider) {
+    final sentOffers = tradeProvider.trades
+        .where((trade) => trade.senderId == userId)
+        .toList();
+
+    if (sentOffers.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.local_offer_outlined,
+        message: 'No sent offers yet',
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: sentOffers.length,
+      itemBuilder: (context, index) => _buildOfferCard(
+        context,
+        sentOffers[index],
+        tradeProvider,
+      ),
     );
   }
 
@@ -52,25 +137,47 @@ class SentOffersScreen extends StatelessWidget {
     required IconData icon,
     required String message,
   }) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: 48,
-            color: Colors.white.withOpacity(0.2),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            message,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
-              fontSize: 16,
-              fontFamily: 'Orbitron',
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF3B82F6).withOpacity(0.1),
+                border: Border.all(
+                  color: const Color(0xFF3B82F6).withOpacity(0.3),
+                  width: 2,
+                ),
+              ),
+              child: Icon(
+                icon,
+                size: 36,
+                color: const Color(0xFF3B82F6),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+            Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Orbitron',
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -80,7 +187,22 @@ class SentOffersScreen extends StatelessWidget {
     TradeModel trade,
     TradeProvider tradeProvider,
   ) {
-    return TradeCard(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF1A1A2E),
+            const Color(0xFF3B82F6).withOpacity(0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF3B82F6).withOpacity(0.3),
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -106,7 +228,24 @@ class SentOffersScreen extends StatelessWidget {
                 ),
                 if (trade.note != null) ...[
                   const SizedBox(height: 12),
-                  _buildNote(trade.note!),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.1),
+                      ),
+                    ),
+                    child: Text(
+                      trade.note!,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
                 ],
                 const SizedBox(height: 16),
                 _buildOfferedCards(trade),
@@ -143,24 +282,6 @@ class SentOffersScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNote(String note) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        note,
-        style: TextStyle(
-          color: Colors.white.withOpacity(0.7),
-          fontSize: 14,
-          fontStyle: FontStyle.italic,
-        ),
-      ),
-    );
-  }
-
   Widget _buildOfferedCards(TradeModel trade) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -174,9 +295,9 @@ class SentOffersScreen extends StatelessWidget {
             fontFamily: 'Orbitron',
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         SizedBox(
-          height: 160,
+          height: 180,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: trade.offeredCards.length,
@@ -184,44 +305,18 @@ class SentOffersScreen extends StatelessWidget {
               final card = trade.offeredCards[index];
               return Container(
                 width: 120,
-                margin: const EdgeInsets.only(right: 8),
+                margin: const EdgeInsets.only(right: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            card.imageUrl,
-                            height: 120,
-                            width: 120,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 4,
-                          left: 4,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.7),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              '#${card.serialNumber}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        card.imageUrl,
+                        height: 120,
+                        width: 120,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -230,6 +325,7 @@ class SentOffersScreen extends StatelessWidget {
                         color: Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
+                        fontFamily: 'Orbitron',
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -249,10 +345,11 @@ class SentOffersScreen extends StatelessWidget {
   Widget _buildRarityChip(String rarity) {
     final color = ColorUtils.getRarityColor(rarity);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Text(
         rarity,
@@ -260,28 +357,39 @@ class SentOffersScreen extends StatelessWidget {
           color: color,
           fontSize: 10,
           fontWeight: FontWeight.bold,
+          fontFamily: 'Orbitron',
         ),
       ),
     );
   }
 
   Widget _buildCoinsOffered(int coins) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFB800).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: const Color(0xFFFFB800).withOpacity(0.3),
+        ),
+      ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(
             Icons.monetization_on,
-            color: Colors.amber,
-            size: 20,
+            color: Color(0xFFFFB800),
+            size: 16,
           ),
           const SizedBox(width: 8),
           Text(
             '$coins coins offered',
             style: const TextStyle(
-              color: Colors.amber,
-              fontSize: 14,
+              color: Color(0xFFFFB800),
+              fontSize: 12,
               fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
             ),
           ),
         ],
@@ -300,21 +408,22 @@ class SentOffersScreen extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF3B82F6).withOpacity(0.1),
-            const Color(0xFF2563EB).withOpacity(0.05),
+            const Color(0xFFDC2626).withOpacity(0.1),
+            const Color(0xFFB91C1C).withOpacity(0.05),
           ],
         ),
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
       ),
       child: TextButton(
-        onPressed: () async {
-          await tradeProvider.cancelTrade(tradeId);
-        },
+        onPressed: () => tradeProvider.cancelTrade(tradeId),
         style: TextButton.styleFrom(
-          foregroundColor: Colors.red,
+          foregroundColor: const Color(0xFFDC2626),
           padding: const EdgeInsets.symmetric(vertical: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
+            side: BorderSide(
+              color: const Color(0xFFDC2626).withOpacity(0.3),
+            ),
           ),
         ),
         child: const Text(

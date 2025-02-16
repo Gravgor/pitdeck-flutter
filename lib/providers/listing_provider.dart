@@ -143,8 +143,7 @@ class ListingProvider with ChangeNotifier {
       );
 
       if (response.statusCode == 201) {
-        final newListing = ListingModel.fromJson(json.decode(response.body));
-        _listings.add(newListing);
+        print('Listing created successfully');
         notifyListeners();
       } else {
         final errorData = json.decode(response.body);
@@ -222,6 +221,42 @@ class ListingProvider with ChangeNotifier {
       throw Exception('Network error: $e');
     }
   }
+
+  Future<void> removeFromSale(String listingId) async {
+    try {
+      final userProvider = Provider.of<UserProvider>(
+        navigatorKey.currentContext!,
+        listen: false,
+      );
+      final token = userProvider.user?.token;
+
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/marketplace/remove-from-sale/$listingId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 201) {
+        _listings.removeWhere((listing) => listing.id == listingId);
+        notifyListeners();
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to remove from sale');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+
+  
+  
 
   Future<List<String>> getListedCardIds() async {
     final userProvider = Provider.of<UserProvider>(

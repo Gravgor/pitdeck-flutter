@@ -32,7 +32,15 @@ class OfferUserModel {
       'level': level,
     };
   }
+
+  static OfferUserModel empty() {
+    return OfferUserModel(id: '', name: '', image: '', level: 0);
+  }
+
+ 
 }
+
+
 
 class TradeOfferModel {
   final String id;

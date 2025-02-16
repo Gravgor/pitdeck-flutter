@@ -45,11 +45,108 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
       await Provider.of<TradeProvider>(context, listen: false)
           .acceptOffer(offerId);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Offer accepted successfully')),
+       SnackBar(
+          backgroundColor: const Color(0xFF10B981),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          content: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Offer Accepted',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error accepting offer: $e')),
+        SnackBar(
+          backgroundColor: const Color(0xFFDC2626),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          content: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.error_outline,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Accept Offer Failed',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Error accepting offer: $e',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     }
   }
@@ -59,11 +156,101 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
       await Provider.of<TradeProvider>(context, listen: false)
           .declineOffer(offerId);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Offer declined')),
+        SnackBar(
+          backgroundColor: const Color(0xFFDC2626),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          content: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.error_outline,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Offer Declined',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error declining offer: $e')),
+        SnackBar(
+          backgroundColor: const Color(0xFFDC2626),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          content: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.error_outline,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Offer Declined',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     }
   }
@@ -145,7 +332,7 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
       ),
       child: Row(
         children: [
-          _buildUserAvatar(offer.user as UserModel),
+          _buildUserAvatar(offer.user),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -178,7 +365,7 @@ class _ReceivedOffersScreenState extends State<ReceivedOffersScreen> {
     );
   }
 
-  Widget _buildUserAvatar(UserModel user) {
+  Widget _buildUserAvatar(OfferUserModel user) {
     return UserAvatar(
       userId: user.id,
       imageUrl: user.image,

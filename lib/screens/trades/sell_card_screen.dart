@@ -32,12 +32,118 @@ class _SellCardScreenState extends State<SellCardScreen> {
           cardId: selectedCard!.id, price: int.parse(_priceController.text));
       if (!mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Listing created successfully!')),
+     ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFF10B981),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          content: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Card Listed Successfully',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${selectedCard!.name} is now listed for ${_priceController.text} RC',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error creating listing: $e')),
+     ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFFDC2626),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          content: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.error_outline,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Listing Failed',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Error creating listing: $e',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     } finally {
       setState(() => _isLoading = false);
@@ -74,7 +180,7 @@ class _SellCardScreenState extends State<SellCardScreen> {
     return Expanded(
       child: Consumer<CardProvider>(
         builder: (context, cardProvider, _) {
-          final cards = cardProvider.cards;
+          final cards = cardProvider.cards.where((card) => !card.isForSale && !card.isForTrade).toList();
 
           if (cards.isEmpty) {
             return const Center(
@@ -277,6 +383,7 @@ class _SellCardScreenState extends State<SellCardScreen> {
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Orbitron',
+                  color: Colors.white,
                 ),
               ),
       ),

@@ -7,6 +7,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -47,7 +48,6 @@ class _AuthScreenState extends State<AuthScreen>
     _controller.forward();
   }
 
-  
   @override
   void dispose() {
     _controller.dispose();
@@ -241,6 +241,10 @@ class _AuthScreenState extends State<AuthScreen>
                           icon: Icons.g_mobiledata,
                           onPressed: () => _handleGoogleSignIn(context),
                         ),
+                      if (kDebugMode) ...[
+                        const SizedBox(height: 16),
+                        _buildDebugLoginButton(),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -285,7 +289,56 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-   Future<void> _handleGoogleSignIn(BuildContext context) async {
+  Widget _buildDebugLoginButton() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFF3B30), width: 1),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFFFF3B30).withOpacity(0.15),
+            const Color(0xFFFF3B30).withOpacity(0.05),
+          ],
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _handleDebugLogin(context),
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.bug_report,
+                  color: Color(0xFFFF3B30),
+                  size: 24,
+                ),
+                SizedBox(width: 12),
+                Text(
+                  'Debug Login',
+                  style: TextStyle(
+                    color: Color(0xFFFF3B30),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Orbitron',
+                    letterSpacing: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleGoogleSignIn(BuildContext context) async {
     try {
       await Provider.of<AuthProvider>(context, listen: false)
           .signInWithGoogle();
@@ -316,6 +369,28 @@ class _AuthScreenState extends State<AuthScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Apple sign in failed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleDebugLogin(BuildContext context) async {
+    try {
+      await Provider.of<AuthProvider>(context, listen: false).login(
+        'marcelborowczak@outlook.com',
+        'Okurde2005!',
+      );
+
+      if (!context.mounted) return;
+       Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const MainWrapper()),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Debug login failed: ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );

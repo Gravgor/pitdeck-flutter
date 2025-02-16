@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pitdeck/models/card.dart';
+import 'package:pitdeck/providers/listing_provider.dart';
+import 'package:pitdeck/providers/trade_provider.dart';
 import 'package:pitdeck/screens/pack/packs_screen.dart';
 import 'package:pitdeck/utils/color_utils.dart';
 import 'package:provider/provider.dart';
@@ -634,15 +636,15 @@ class _CollectionScreenState extends State<CollectionScreen> {
   }
 
   void _showCardDetails(BuildContext context, String cardId) {
-    final card = Provider.of<CardProvider>(context, listen: false)
-        .fetchCardDetails(cardId);
-   
+    final cardProvider = Provider.of<CardProvider>(context, listen: false);
+    final cardFuture = cardProvider.fetchCardDetails(cardId);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => FutureBuilder<CardDetailModel>(
-        future: card,
+        future: cardFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Container(
@@ -662,6 +664,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
           }
 
           if (snapshot.hasError || !snapshot.hasData) {
+            debugPrint('Error loading card details: ${snapshot.error}');
             return Container(
               height: MediaQuery.of(context).size.height * 0.85,
               decoration: const BoxDecoration(
@@ -849,39 +852,77 @@ class _CollectionScreenState extends State<CollectionScreen> {
                               ],
                               _buildCardStats(card),
                               const SizedBox(height: 32),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildActionButton(
-                                      label: 'TRADE',
-                                      icon: Icons.swap_horiz,
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                        _initiateTradeOffer(card);
-                                      },
-                                      gradient: const [
-                                        Color(0xFF3B82F6),
-                                        Color(0xFF2563EB)
-                                      ],
+                              if (card.isForSale) ...[
+                                _buildActionButton(
+                                  label: 'REMOVE FROM SALE',
+                                  icon: Icons.remove_circle_outline,
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    _removeFromSale(card);
+                                  },
+                                  gradient: const [
+                                    Color(0xFFDC2626),
+                                    Color(0xFFB91C1C)
+                                  ],
+                                ),
+                              ] else if (card.isForTrade && !card.isForSale) ...[
+                                _buildActionButton(
+                                  label: 'IN ACTIVE TRADE',
+                                  icon: Icons.swap_horiz,
+                                  onPressed: null, // Disabled state
+                                  gradient: const [
+                                    Color(0xFF6B7280),
+                                    Color(0xFF4B5563)
+                                  ],
+                                ),
+                                _buildActionButton(
+                                  label: 'REMOVE FROM TRADE',
+                                  icon: Icons.remove_circle_outline,
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    _removeFromTrade(card);
+                                  },
+                                  gradient: const [
+                                    Color(0xFFDC2626),
+                                    Color(0xFFB91C1C)
+                                  ],
+                                ),
+                              ]  else ...[
+                                // Default state - card is available for trade/sale
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildActionButton(
+                                        label: 'TRADE',
+                                        icon: Icons.swap_horiz,
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                          _initiateTradeOffer(card);
+                                        },
+                                        gradient: const [
+                                          Color(0xFF3B82F6),
+                                          Color(0xFF2563EB)
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: _buildActionButton(
-                                      label: 'SELL',
-                                      icon: Icons.sell,
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                        _listForSale(card);
-                                      },
-                                      gradient: const [
-                                        Color(0xFF10B981),
-                                        Color(0xFF059669)
-                                      ],
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: _buildActionButton(
+                                        label: 'SELL',
+                                        icon: Icons.sell,
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                          _listForSale(card);
+                                        },
+                                        gradient: const [
+                                          Color(0xFF10B981),
+                                          Color(0xFF059669)
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
+                                  ],
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -928,23 +969,29 @@ class _CollectionScreenState extends State<CollectionScreen> {
   Widget _buildActionButton({
     required String label,
     required IconData icon,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
     required List<Color> gradient,
   }) {
+    final isDisabled = onPressed == null;
+    final colors = isDisabled
+        ? gradient.map((c) => c.withOpacity(0.5)).toList()
+        : gradient;
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: gradient,
+          colors: colors,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(
-            color: gradient[0].withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
+          if (!isDisabled)
+            BoxShadow(
+              color: colors[0].withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
         ],
       ),
       child: Material(
@@ -957,12 +1004,16 @@ class _CollectionScreenState extends State<CollectionScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, color: Colors.white, size: 20),
+                Icon(
+                  icon,
+                  color: Colors.white.withOpacity(isDisabled ? 0.5 : 1),
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   label,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(isDisabled ? 0.5 : 1),
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Orbitron',
@@ -974,6 +1025,11 @@ class _CollectionScreenState extends State<CollectionScreen> {
         ),
       ),
     );
+  }
+
+  void _removeFromTrade(CardDetailModel card) {
+    Provider.of<TradeProvider>(context, listen: false)
+        .cancelTrade(card.id);
   }
 
   void _showFilterModal() {
@@ -1225,8 +1281,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
   }
 
   Widget _buildCardStats(CardDetailModel card) {
-    if (card.stats == null || card.stats!.isEmpty)
+    if (card.stats == null || card.stats!.isEmpty) {
       return const SizedBox.shrink();
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1243,7 +1300,20 @@ class _CollectionScreenState extends State<CollectionScreen> {
         ),
         const SizedBox(height: 16),
         ...card.stats!.entries.map((stat) {
-          final percentage = (stat.value / 100).clamp(0.0, 1.0);
+          // Parse the value to double, with fallback for non-numeric values
+          double numericValue;
+          if (stat.value is num) {
+            numericValue = (stat.value as num).toDouble();
+          } else {
+            try {
+              numericValue = double.parse(stat.value.toString());
+            } catch (e) {
+              // If value can't be parsed to number, show without progress bar
+              return _buildNonNumericStat(stat.key, stat.value.toString());
+            }
+          }
+
+          final percentage = (numericValue / 100).clamp(0.0, 1.0);
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Column(
@@ -1304,6 +1374,34 @@ class _CollectionScreenState extends State<CollectionScreen> {
     );
   }
 
+  Widget _buildNonNumericStat(String key, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            key.toUpperCase(),
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 12,
+              fontFamily: 'Orbitron',
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _initiateTradeOffer(CardDetailModel card) {
     showModalBottomSheet(
       context: context,
@@ -1320,6 +1418,88 @@ class _CollectionScreenState extends State<CollectionScreen> {
       isScrollControlled: true,
       builder: (context) => ListForSaleModal(card: card),
     );
+  }
+
+  Future<void> _removeFromSale(CardDetailModel card) async {
+    try {
+      await Provider.of<ListingProvider>(context, listen: false)
+          .removeFromSale(card.id);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFF3B82F6),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          content: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Card Removed from Sale',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${card.name} has been removed from the marketplace',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          content: Text(
+            'Failed to remove card from sale: $e',
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
   }
 }
 

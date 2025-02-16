@@ -5,7 +5,6 @@ import 'package:pitdeck/services/daily_reward_service.dart';
 import 'package:pitdeck/providers/user_provider.dart';
 import 'package:provider/provider.dart';
 
-
 class DailyLoginRewardsPopup extends StatefulWidget {
   final String token;
 
@@ -127,7 +126,7 @@ class _DailyLoginRewardsPopupState extends State<DailyLoginRewardsPopup>
               children: [
                 _buildHeader(),
                 _buildRewardContent(),
-                _buildProgressBar(),
+                _buildStreakInfo(),
                 _buildClaimButton(),
               ],
             ),
@@ -169,23 +168,27 @@ class _DailyLoginRewardsPopupState extends State<DailyLoginRewardsPopup>
                   ),
                 ),
                 child: const Icon(
-                  Icons.monetization_on_rounded,
+                  Icons.local_fire_department_rounded,
                   color: Color(0xFF3B82F6),
                   size: 40,
                 ),
               ),
               if (_rewardStatus?['canClaim'] == true)
-                AnimatedBuilder(
-                  animation: _animationController,
-                  builder: (context, child) {
-                    return Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFF3B82F6).withOpacity(0.5),
-                          width: 2,
+                TweenAnimationBuilder<double>(
+                  duration: const Duration(seconds: 2),
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  builder: (context, value, child) {
+                    return Transform.rotate(
+                      angle: value * 2 * 3.14159,
+                      child: Container(
+                        width: 90,
+                        height: 90,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFF3B82F6).withOpacity(0.5),
+                            width: 2,
+                          ),
                         ),
                       ),
                     );
@@ -195,7 +198,7 @@ class _DailyLoginRewardsPopupState extends State<DailyLoginRewardsPopup>
           ),
           const SizedBox(height: 16),
           const Text(
-            'Daily Reward',
+            'Daily Streak',
             style: TextStyle(
               color: Colors.white,
               fontSize: 24,
@@ -233,57 +236,39 @@ class _DailyLoginRewardsPopupState extends State<DailyLoginRewardsPopup>
               letterSpacing: 2,
             ),
           ),
-          const SizedBox(height: 16),
-          Text(
-            _rewardStatus?['message'] ?? '',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
-              fontSize: 14,
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildProgressBar() {
+  Widget _buildStreakInfo() {
     final currentStreak = _rewardStatus?['currentStreak'] ?? 0;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
+    return Container(
+      margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF3B82F6).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF3B82F6).withOpacity(0.3),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Day $currentStreak of 7',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontFamily: 'Orbitron',
-                ),
-              ),
-              Text(
-                '${(currentStreak / 7 * 100).toInt()}%',
-                style: const TextStyle(
-                  color: Color(0xFF3B82F6),
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Orbitron',
-                ),
-              ),
-            ],
+          const Icon(
+            Icons.local_fire_department_rounded,
+            color: Color(0xFF3B82F6),
+            size: 24,
           ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: currentStreak / 7,
-              backgroundColor: Colors.white.withOpacity(0.1),
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
-              minHeight: 8,
+          const SizedBox(width: 8),
+          Text(
+            '$currentStreak Day${currentStreak == 1 ? '' : 's'} Streak!',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
             ),
           ),
         ],
