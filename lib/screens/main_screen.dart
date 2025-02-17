@@ -330,6 +330,15 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     });
   }
 
+  Future<void> _refreshDrops() async {
+    final auth = Provider.of<UserProvider>(context, listen: false);
+    final token = auth.user?.token;
+    if (token == null) return;
+    _socket?.emit('drops:refresh', {
+      'Authorization': 'Bearer $token',
+    });
+  }
+
   Future<void> _updateDrops(List<DropModel> drops) async {
     if (!mounted) return;
     try {
@@ -1365,28 +1374,32 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                 builder: (context) => BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
                   child: Center(
-                    child: SizedBox(
+                    child: Container(
                       width: 200,
                       height: 200,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A1A2E),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: const Color(0xFF3B82F6).withOpacity(0.3),
+                        ),
+                      ),
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          // Outer rotating circle
                           TweenAnimationBuilder<double>(
                             duration: const Duration(seconds: 2),
                             tween: Tween(begin: 0, end: 4 * 3.14159),
                             curve: Curves.linear,
-                            builder: (context, value, child) =>
-                                Transform.rotate(
+                            builder: (context, value, child) => Transform.rotate(
                               angle: value,
                               child: Container(
-                                width: 200,
-                                height: 200,
+                                width: 160,
+                                height: 160,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: const Color(0xFF3B82F6)
-                                        .withOpacity(0.5),
+                                    color: const Color(0xFF3B82F6).withOpacity(0.5),
                                     width: 2,
                                   ),
                                   gradient: SweepGradient(
@@ -1399,30 +1412,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                               ),
                             ),
                           ),
-                          // Inner scanning line
-                          TweenAnimationBuilder<double>(
-                            duration: const Duration(seconds: 2),
-                            tween: Tween(begin: -1, end: 1),
-                            curve: Curves.easeInOut,
-                            builder: (context, value, child) =>
-                                Transform.translate(
-                              offset: Offset(0, 100 * value),
-                              child: Container(
-                                width: 150,
-                                height: 2,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Colors.blue.withOpacity(0),
-                                      Colors.blue.withOpacity(0.8),
-                                      Colors.blue.withOpacity(0),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          // Center dot
                           Container(
                             width: 10,
                             height: 10,
@@ -1438,16 +1427,34 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                 ),
               );
 
-              Navigator.of(context).pop();
+              await Future.delayed(const Duration(seconds: 2));
+              if (mounted) {
+                Navigator.of(context).pop();
+                _refreshArea();
+              }
             },
             backgroundColor: const Color(0xFF1A1A2E),
-            label: const Text(
-              'Refresh this area',
-              style: TextStyle(
-                color: Color(0xFF3B82F6),
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Orbitron',
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: const Color(0xFF3B82F6).withOpacity(0.3),
+              ),
+            ),
+            icon: const Icon(
+              Icons.refresh_rounded,
+              color: Color(0xFF3B82F6),
+            ),
+            label: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: const Text(
+                'REFRESH AREA',
+                style: TextStyle(
+                  color: Color(0xFF3B82F6),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Orbitron',
+                ),
               ),
             ),
           ),
@@ -1455,6 +1462,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         ],
       ),
     );
+  }
+
+  Future<void> _refreshArea() async {
+    await _refreshDrops();
   }
 
   Widget _buildEventBanner() {

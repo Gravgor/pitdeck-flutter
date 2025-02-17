@@ -70,6 +70,7 @@ class AuthProvider with ChangeNotifier {
           image: data['user']['image'],
           bio: data['user']['bio'] ?? '',
           isPremium: data['user']['isPremium'] ?? false,
+          leaguePosition: data['user']['leaguePosition'] ?? 0,
         );
 
         // First store basic user data
@@ -101,6 +102,7 @@ class AuthProvider with ChangeNotifier {
             isPremium: userDetails['isPremium'],
             token: initialUser.token,
             league: userDetails['league'],
+            leaguePosition: userDetails['leaguePosition'],
           );
           await saveUserToPrefs(fullUser);
           _userSubject.add(fullUser);
