@@ -1,41 +1,89 @@
 import 'package:pitdeck/models/card.dart';
-import 'package:pitdeck/models/user.dart';
 
-enum TradeOfferStatus { PENDING, ACCEPTED, DECLINED, CANCELLED }
+enum TradeOfferStatus { pending, accepted, declined, cancelled }
+
+class OfferUserModel {
+  final String id;
+  final String name;
+  final String? image;
+  final int level;
+
+  OfferUserModel({
+    required this.id,
+    required this.name,
+    this.image,
+    required this.level,
+  });
+
+  factory OfferUserModel.fromJson(Map<String, dynamic> json) {
+    return OfferUserModel(
+      id: json['id'],
+      name: json['name'],
+      image: json['image'],
+      level: json['level'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'image': image,
+      'level': level,
+    };
+  }
+
+  static OfferUserModel empty() {
+    return OfferUserModel(id: '', name: '', image: '', level: 0);
+  }
+
+ 
+}
+
+
 
 class TradeOfferModel {
   final String id;
   final String tradeId;
-  final User sender;
-  final List<CardModel> offeredCards;
-  final int coinsOffered;
+  final String userId;
+  final int coins;
   final String? note;
-  final DateTime createdAt;
   final TradeOfferStatus status;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime expiresAt;
+  final List<CardDetailModel> offeredCards;
+  final OfferUserModel user;
 
   TradeOfferModel({
     required this.id,
     required this.tradeId,
-    required this.sender,
-    required this.offeredCards,
-    required this.coinsOffered,
+    required this.userId,
+    required this.coins,
     this.note,
-    required this.createdAt,
     required this.status,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.expiresAt,
+    required this.offeredCards,
+    required this.user,
   });
 
   factory TradeOfferModel.fromJson(Map<String, dynamic> json) {
     return TradeOfferModel(
-      id: json['_id'] ?? json['id'],
+      id: json['id'],
       tradeId: json['tradeId'],
-      sender: User.fromJson(json['sender']),
-      offeredCards: (json['offeredCards'] as List)
-          .map((card) => CardModel.fromJson(card))
-          .toList(),
-      coinsOffered: json['coinsOffered'] ?? 0,
+      userId: json['userId'],
+      coins: json['coins'] ?? 0,
       note: json['note'],
-      createdAt: DateTime.parse(json['createdAt']),
       status: _parseStatus(json['status']),
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
+      expiresAt: DateTime.parse(json['expiresAt']),
+      offeredCards: (json['offeredCards'] as List)
+          .map((card) => CardDetailModel.fromJson(card))
+          .toList(),
+      user: OfferUserModel.fromJson(json['user']),
     );
   }
 
@@ -43,27 +91,30 @@ class TradeOfferModel {
     return {
       'id': id,
       'tradeId': tradeId,
-      'sender': sender.toJson(),
-      'offeredCards': offeredCards.map((card) => card.toJson()).toList(),
-      'coinsOffered': coinsOffered,
+      'userId': userId,
+      'coins': coins,
       'note': note,
+      'status': status,
       'createdAt': createdAt.toIso8601String(),
-      'status': status.toString().split('.').last,
+      'updatedAt': updatedAt.toIso8601String(),
+      'expiresAt': expiresAt.toIso8601String(),
+      'offeredCards': offeredCards.map((card) => card.toJson()).toList(),
+      'user': user.toJson(),
     };
   }
 
   static TradeOfferStatus _parseStatus(String status) {
     switch (status.toUpperCase()) {
       case 'PENDING':
-        return TradeOfferStatus.PENDING;
+        return TradeOfferStatus.pending;
       case 'ACCEPTED':
-        return TradeOfferStatus.ACCEPTED;
+        return TradeOfferStatus.accepted;
       case 'DECLINED':
-        return TradeOfferStatus.DECLINED;
+        return TradeOfferStatus.declined;
       case 'CANCELLED':
-        return TradeOfferStatus.CANCELLED;
+        return TradeOfferStatus.cancelled;
       default:
-        return TradeOfferStatus.PENDING;
+        return TradeOfferStatus.pending;
     }
   }
 
@@ -82,43 +133,51 @@ class TradeOfferModel {
     }
   }
 
-  bool get isPending => status == TradeOfferStatus.PENDING;
-  bool get isAccepted => status == TradeOfferStatus.ACCEPTED;
-  bool get isDeclined => status == TradeOfferStatus.DECLINED;
-  bool get isCancelled => status == TradeOfferStatus.CANCELLED;
+  bool get isPending => status == TradeOfferStatus.pending;
+  bool get isAccepted => status == TradeOfferStatus.accepted;
+  bool get isDeclined => status == TradeOfferStatus.declined;
+  bool get isCancelled => status == TradeOfferStatus.cancelled;
 
   String get statusText {
     switch (status) {
-      case TradeOfferStatus.PENDING:
+      case TradeOfferStatus.pending:
         return 'Pending';
-      case TradeOfferStatus.ACCEPTED:
+      case TradeOfferStatus.accepted:
         return 'Accepted';
-      case TradeOfferStatus.DECLINED:
+      case TradeOfferStatus.declined:
         return 'Declined';
-      case TradeOfferStatus.CANCELLED:
+      case TradeOfferStatus.cancelled:
         return 'Cancelled';
+      default:
+        return 'Unknown';
     }
   }
 
   TradeOfferModel copyWith({
     String? id,
     String? tradeId,
-    User? sender,
-    List<CardModel>? offeredCards,
-    int? coinsOffered,
+    String? userId,
+    int? coins,
     String? note,
-    DateTime? createdAt,
     TradeOfferStatus? status,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    DateTime? expiresAt,
+    List<CardDetailModel>? offeredCards,
+    OfferUserModel? user,
   }) {
     return TradeOfferModel(
       id: id ?? this.id,
       tradeId: tradeId ?? this.tradeId,
-      sender: sender ?? this.sender,
-      offeredCards: offeredCards ?? this.offeredCards,
-      coinsOffered: coinsOffered ?? this.coinsOffered,
+      userId: userId ?? this.userId,
+      coins: coins ?? this.coins,
       note: note ?? this.note,
-      createdAt: createdAt ?? this.createdAt,
       status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      expiresAt: expiresAt ?? this.expiresAt,
+      offeredCards: offeredCards ?? this.offeredCards,
+      user: user ?? this.user,
     );
   }
 
@@ -131,17 +190,15 @@ class TradeOfferModel {
   @override
   int get hashCode => id.hashCode;
 
-
   bool hasCard(String cardId) {
     return offeredCards.any((card) => card.id == cardId);
   }
 
   int get cardCount => offeredCards.length;
 
-
   String get summary {
     final cardText = cardCount == 1 ? '1 card' : '$cardCount cards';
-    final coinText = coinsOffered > 0 ? ' + $coinsOffered coins' : '';
+    final coinText = coins > 0 ? ' + $coins coins' : '';
     return '$cardText$coinText';
   }
 }

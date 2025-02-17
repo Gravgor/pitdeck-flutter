@@ -1,30 +1,43 @@
+import 'package:flutter/src/widgets/icon_data.dart';
+
 class BadgeModel {
   final String id;
   final String name;
   final String description;
   final String imageUrl;
-  final bool isUnlocked;
-  final DateTime? unlockedAt;
+  final String type;
+  final String rarity;
+  final DateTime? earnedAt;
+
+
 
   BadgeModel({
     required this.id,
     required this.name,
     required this.description,
     required this.imageUrl,
-    required this.isUnlocked,
-    this.unlockedAt,
+    required this.type,
+    required this.rarity,
+    this.earnedAt,
   });
 
+
   factory BadgeModel.fromJson(Map<String, dynamic> json) {
+    print(json);
     return BadgeModel(
       id: json['_id'] ?? json['id'],
       name: json['name'],
       description: json['description'],
       imageUrl: json['imageUrl'],
-      isUnlocked: json['isUnlocked'] ?? false,
-      unlockedAt: json['unlockedAt'] != null
-          ? DateTime.parse(json['unlockedAt'])
+      type: json['type'],
+
+      rarity: json['rarity'],
+      earnedAt: json['earnedAt'] != null
+          ? DateTime.parse(json['earnedAt'])
+
           : null,
     );
   }
+
+  IconData? get icon => null;
 }

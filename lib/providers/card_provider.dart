@@ -9,10 +9,12 @@ import 'package:pitdeck/main.dart';
 class CardProvider with ChangeNotifier {
   final String _baseUrl = 'https://api.pitdeck.app/api';
   List<CardModel> _cards = [];
-  Map<String, CardDetailModel> _cardDetails = {};
-
+  final Map<String, CardDetailModel> _cardDetails = {};
+  final kDebugToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbTNsbGlmNnEwMDAwMTM1enh1NWdtOGJ1IiwiaWF0IjoxNzM5NTM0ODQyLCJleHAiOjE3NDAxMzk2NDJ9.CHNTGbn7m-SAgdlhzBB9Z5tHK-x1YqMt15OYz-x3pS8';
   List<CardModel> get cards => _cards;
   Map<String, CardDetailModel> get cardDetails => _cardDetails;
+
+  bool isLoading = false;
 
   List<CardModel> getUserCards() {
     return _cards;
@@ -30,7 +32,6 @@ class CardProvider with ChangeNotifier {
       if (token == null) {
         throw Exception('No authentication token found');
       }
-
       final response = await http.get(
         Uri.parse('$_baseUrl/users/$userId/cards'),
         headers: {
@@ -58,8 +59,7 @@ class CardProvider with ChangeNotifier {
   }
 
   Future<CardDetailModel> fetchCardDetails(String cardId) async {
-    try {
-    
+    try {    
       final userProvider = Provider.of<UserProvider>(
         navigatorKey.currentContext!,
         listen: false,
@@ -97,7 +97,6 @@ class CardProvider with ChangeNotifier {
   }
 
   Future<void> revalidateUserCards() async {
-    print('Revalidating user cards');
     await fetchUserCards();
   }
 
@@ -119,6 +118,7 @@ class CardProvider with ChangeNotifier {
     );
     if (response.statusCode == 201) {
       await fetchUserCards();
+      await userProvider.fetchUserProfile();
       notifyListeners();
     }
   }

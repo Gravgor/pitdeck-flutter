@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:pitdeck/providers/badge_provider.dart';
 import 'package:pitdeck/providers/favorite_provider.dart';
-import 'package:pitdeck/screens/auth_screen.dart';
+import 'package:pitdeck/providers/scroll_notifier.dart';
+import 'package:pitdeck/screens/auth/auth_screen.dart';
 import 'package:pitdeck/screens/main_screen.dart';
+import 'package:pitdeck/screens/user_profile_screen.dart';
+import 'package:pitdeck/services/daily_reward_service.dart';
+import 'package:pitdeck/services/push_notification_service.dart';
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/auth_provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
@@ -14,176 +18,85 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' hide Size;
 import 'package:pitdeck/config/mapbox_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' show pi, sin, cos;
+import 'package:pitdeck/screens/main_wrapper.dart';
+import 'package:pitdeck/services/cache_service.dart';
+import 'package:pitdeck/providers/achievement_provider.dart';
+import 'package:pitdeck/services/quest_service.dart';
+import 'package:flutter/foundation.dart';
+
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MapboxOptions.setAccessToken(MapboxConfig.accessToken);
+  await SharedPreferences.getInstance();
+  if (!kDebugMode) {
+    await PushNotificationService.requestPushNotificationPermission().then((value) async {
+      await PushNotificationService.registerDevice();
+    });
+  }
+  runApp(const MyApp());
+}
 
-  final prefs = await SharedPreferences.getInstance();
-  final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-  final token = prefs.getString('token');
-
-  runApp(
-    MultiProvider(
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CardProvider()),
         ChangeNotifierProvider(create: (_) => ListingProvider()),
         ChangeNotifierProvider(create: (_) => TradeProvider()),
         ChangeNotifierProvider(create: (_) => FavoriteProvider()),
         ChangeNotifierProvider(create: (_) => BadgeProvider()),
+        ChangeNotifierProvider(create: (_) => ScrollNotifier()),
+        ChangeNotifierProvider(create: (_) => AchievementProvider()),
+        ChangeNotifierProvider(create: (_) => BadgeProvider()),
+        ChangeNotifierProvider(create: (_) => DailyRewardService()),
+        ChangeNotifierProvider(create: (_) => QuestService()),
       ],
-      child: MyApp(isLoggedIn: isLoggedIn, token: token),
-    ),
-  );
-}
-
-class MyApp extends StatefulWidget {
-  final bool isLoggedIn;
-  final String? token;
-
-  const MyApp({super.key, required this.isLoggedIn, this.token});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
-  bool _isInitializing = true;
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat();
-    _initializeUser();
-  }
-
-  Future<void> _initializeUser() async {
-    if (widget.isLoggedIn && widget.token != null) {
-      try {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        await authProvider.getUserDetails();
-      } catch (e) {
-        print('Error fetching user details: $e');
-      }
-    }
-    setState(() {
-      _isInitializing = false;
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: navigatorKey,
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        textTheme: ThemeData.dark().textTheme.copyWith(
-              bodyLarge: const TextStyle(fontFamily: 'Orbitron'),
-              bodyMedium: const TextStyle(fontFamily: 'Orbitron'),
-              titleLarge: const TextStyle(fontFamily: 'Orbitron'),
-              titleMedium: const TextStyle(fontFamily: 'Orbitron'),
-              titleSmall: const TextStyle(fontFamily: 'Orbitron'),
-            ),
-      ),
-      home: _isInitializing
-          ? _buildLoadingScreen()
-          : widget.isLoggedIn && widget.token != null
-              ? const MainScreen()
-              : const AuthScreen(),
-    );
-  }
-
-  Widget _buildLoadingScreen() {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A0A1A),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              height: 200,
-              width: 200,
-              child: Stack(
-                alignment: Alignment.center,
-                children: List.generate(3, (index) {
-                  return AnimatedBuilder(
-                    animation: _controller,
-                    builder: (context, child) {
-                      return Transform.rotate(
-                        angle:
-                            (_controller.value * 2 * pi) + (index * pi / 1.5),
-                        child: Transform.translate(
-                          offset: Offset(
-                            sin(_controller.value * 2 * pi + index) * 30,
-                            cos(_controller.value * 2 * pi + index) * 30,
-                          ),
-                          child: Container(
-                            width: 80,
-                            height: 120,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  const Color(0xFF3B82F6).withOpacity(0.8),
-                                  const Color(0xFF1E40AF).withOpacity(0.8),
-                                ],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color:
-                                      const Color(0xFF3B82F6).withOpacity(0.3),
-                                  blurRadius: 15,
-                                  spreadRadius: -5,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                }),
+      child: MaterialApp(
+        navigatorKey: navigatorKey,
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          useMaterial3: true,
+          textTheme: ThemeData.dark().textTheme.copyWith(
+                bodyLarge: const TextStyle(fontFamily: 'Orbitron'),
+                bodyMedium: const TextStyle(fontFamily: 'Orbitron'),
+                titleLarge: const TextStyle(fontFamily: 'Orbitron'),
+                titleMedium: const TextStyle(fontFamily: 'Orbitron'),
+                titleSmall: const TextStyle(fontFamily: 'Orbitron'),
               ),
-            ),
-            const SizedBox(height: 40),
-            ShaderMask(
-              shaderCallback: (bounds) => const LinearGradient(
-                colors: [
-                  Color(0xFFEF4444),
-                  Color(0xFF3B82F6),
-                  Color(0xFFEFB344),
-                ],
-              ).createShader(bounds),
-              child: const Text(
-                'PITDECK',
-                style: TextStyle(
-                  fontFamily: 'Orbitron',
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 4,
+        ),
+        home: Builder(
+          builder: (context) => FutureBuilder(
+            future: Future.wait([
+              CacheService().initialize(),
+              Provider.of<UserProvider>(context, listen: false)
+                  .initializeFromCache(),
+            ]),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                final prefs = snapshot.data?[0] as SharedPreferences;
+                return prefs.getBool('isLoggedIn') ?? false
+                    ? const MainWrapper()
+                   : const AuthScreen();
+              }
+
+              return const Scaffold(
+                backgroundColor: Color(0xFF040412),
+                body: Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF4B9FFF),
+                  ),
                 ),
-              ),
-            ),
-          ],
+              );
+            },
+          ),
         ),
       ),
     );

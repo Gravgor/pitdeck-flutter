@@ -6,9 +6,18 @@ class CacheService {
   static const String _dropsKey = 'cached_drops';
   static const String _initialLoadKey = 'initial_load';
   static final CacheService _instance = CacheService._internal();
+  SharedPreferences? _prefs;
 
-  factory CacheService() => _instance;
+  factory CacheService() {
+    return _instance;
+  }
+
   CacheService._internal();
+
+  Future<SharedPreferences> initialize() async {
+    _prefs ??= await SharedPreferences.getInstance();
+    return _prefs!;
+  }
 
   Future<void> cacheDrops(Map<String, DropModel> drops) async {
     final prefs = await SharedPreferences.getInstance();

@@ -10,6 +10,7 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 class ListingProvider with ChangeNotifier {
   final String _baseUrl = 'https://api.pitdeck.app/api';
   List<ListingModel> _listings = [];
+  List<ListingModel> _filteredListings = [];
   late IO.Socket _socket;
 
   ListingProvider() {
@@ -58,6 +59,12 @@ class ListingProvider with ChangeNotifier {
       .where((listing) => listing.status == ListingStatus.ACTIVE)
       .toList();
 
+  List<ListingModel> get filteredListings => _filteredListings;
+  set filteredListings(List<ListingModel> value) {
+    _filteredListings = value;
+    notifyListeners();
+  }
+
   Future<List<ListingModel>> fetchListings() async {
     try {
       final userProvider = Provider.of<UserProvider>(
@@ -84,15 +91,7 @@ class ListingProvider with ChangeNotifier {
         final activeListings = listingsData
             .where((listing) => listing['status'] == 'ACTIVE')
             .toList();
-        final userProvider = Provider.of<UserProvider>(
-          navigatorKey.currentContext!,
-          listen: false,
-        );
-        final userId = userProvider.user?.id;
-        final filteredListings = activeListings
-            .where((listing) => listing['sellerId'] != userId)
-            .toList();
-        _listings = filteredListings
+        _listings = activeListings
             .map((json) {
               try {
                 return ListingModel.fromJson(json);
@@ -109,6 +108,42 @@ class ListingProvider with ChangeNotifier {
       } else {
         final errorData = json.decode(response.body);
         throw Exception(errorData['message'] ?? 'Failed to load listings');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<void> updateListingPrice(String listingId, int newPrice) async {
+    try {
+      final userProvider = Provider.of<UserProvider>(
+        navigatorKey.currentContext!,
+        listen: false,
+      );
+      final token = userProvider.user?.token;
+
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/marketplace/update-price/$listingId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({
+          'price': newPrice,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('Listing price updated successfully');
+        notifyListeners();
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(
+            errorData['message'] ?? 'Failed to update listing price');
       }
     } catch (e) {
       throw Exception('Network error: $e');
@@ -143,8 +178,7 @@ class ListingProvider with ChangeNotifier {
       );
 
       if (response.statusCode == 201) {
-        final newListing = ListingModel.fromJson(json.decode(response.body));
-        _listings.add(newListing);
+        print('Listing created successfully');
         notifyListeners();
       } else {
         final errorData = json.decode(response.body);
@@ -177,7 +211,7 @@ class ListingProvider with ChangeNotifier {
 
       if (response.statusCode == 201) {
         _listings.removeWhere((listing) => listing.id == listingId);
-        // Refetch listings
+        await userProvider.refreshUser();
         fetchListings();
         notifyListeners();
       } else {
@@ -219,6 +253,90 @@ class ListingProvider with ChangeNotifier {
     } catch (e) {
       throw Exception('Network error: $e');
     }
+  }
+
+  Future<void> removeFromSale(String listingId) async {
+    try {
+      final userProvider = Provider.of<UserProvider>(
+        navigatorKey.currentContext!,
+        listen: false,
+      );
+      final token = userProvider.user?.token;
+
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/marketplace/remove-from-sale/$listingId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 201) {
+        _listings.removeWhere((listing) => listing.id == listingId);
+        notifyListeners();
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to remove from sale');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  Future<List<String>> getListedCardIds() async {
+    final userProvider = Provider.of<UserProvider>(
+      navigatorKey.currentContext!,
+      listen: false,
+    );
+    final token = userProvider.user?.token;
+    final response = await http.get(
+      Uri.parse('$_baseUrl/marketplace/listings/card-ids'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> cardIds = json.decode(response.body);
+      return cardIds.map((id) => id.toString()).toList();
+    } else {
+      throw Exception('Failed to get listed card ids');
+    }
+  }
+
+  void applyFilters({
+    List<String>? rarities,
+    List<String>? types,
+    double? minPrice,
+    double? maxPrice,
+  }) {
+    filteredListings = listings.where((listing) {
+      if (rarities?.isNotEmpty ?? false) {
+        if (!rarities!.contains(listing.card.rarity.toUpperCase())) {
+          return false;
+        }
+      }
+
+      if (types?.isNotEmpty ?? false) {
+        if (!types!.contains(listing.card.type.toUpperCase())) {
+          return false;
+        }
+      }
+
+      if (minPrice != null && maxPrice != null) {
+        if (listing.price < minPrice || listing.price > maxPrice) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
+
+    notifyListeners();
   }
 
   @override

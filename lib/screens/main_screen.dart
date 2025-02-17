@@ -1,28 +1,26 @@
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' hide Size;
 import 'dart:async';
 import 'package:pitdeck/config/mapbox_config.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:permission_handler/permission_handler.dart';
-import 'package:pitdeck/screens/collection_screen.dart';
-import 'package:pitdeck/screens/market_screen.dart';
-import 'package:pitdeck/screens/packs_screen.dart';
+import 'package:pitdeck/providers/card_provider.dart';
 import 'package:pitdeck/services/cache_service.dart';
-import 'package:pitdeck/services/socket_service.dart';
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
-import 'package:pitdeck/providers/navigation_provider.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:pitdeck/models/drop.dart';
-import 'dart:math';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:pitdeck/components/control_center.dart';
-
+import 'package:pitdeck/screens/widgets/main/topbar_widget.dart';
+import 'package:pitdeck/screens/daily_login_rewards.dart';
+import 'package:pitdeck/services/daily_reward_service.dart';
+import 'package:lottie/lottie.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -35,39 +33,50 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   static final Map<String, DropModel> _cachedDrops = {};
   final CacheService _cacheService = CacheService();
   bool _isInitialLoad = true;
+  bool _isDropModalOpen = false;
 
   MapboxMap? _mapboxMap;
   MarkerManager? _markerManager;
   geo.Position? _userLocation;
   Timer? _locationTimer;
-  CircleAnnotationManager? _circleAnnotationManager;
-  bool _isLoading = false;
+  final bool _isLoading = false;
+  bool _isLoadingLocation = true;
   IO.Socket? _socket;
   Timer? _socketReconnectTimer;
   bool _isSocketConnecting = false;
   final _retryDelays = [2, 5, 10, 30];
+
   int _retryAttempt = 0;
 
   final baseUrl = 'https://api.pitdeck.app/api';
+
+  StreamSubscription<geo.Position>? _locationStreamSubscription;
+
+  bool _hasUnclaimedReward = false;
+  Map<String, dynamic>? _rewardStatus;
+
+  Timer? _locationCheckTimer;
 
   @override
   void initState() {
     super.initState();
     _loadCachedState();
-    _requestLocationPermission();
+    _checkLocationStatus();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeSocket();
       _initializeUserSocket();
+      _checkDailyReward();
     });
-    print('Current cached drops: ${_cachedDrops.length}');
   }
 
   @override
   void dispose() {
     _locationTimer?.cancel();
     _socketReconnectTimer?.cancel();
+    _locationStreamSubscription?.cancel();
     _socket?.disconnect();
     _socket?.dispose();
+    _locationCheckTimer?.cancel();
     super.dispose();
   }
 
@@ -82,11 +91,115 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     });
   }
 
-  Future<void> _requestLocationPermission() async {
-    final status = await Permission.locationWhenInUse.request();
-    if (status.isGranted) {
-      _enableLocationComponent();
-      _startLocationUpdates();
+  Future<void> _checkLocationStatus() async {
+    final locationService = LocationService();
+
+    // Initial check
+    bool hasLocation = await locationService.hasLocationPermission();
+    if (mounted) {
+      setState(() {
+        _isLoadingLocation = !hasLocation;
+      });
+
+      // If we have permission, start location updates
+      if (hasLocation) {
+        await _startLocationUpdates();
+      }
+    }
+
+    // Set up periodic check
+    _locationCheckTimer =
+        Timer.periodic(const Duration(seconds: 2), (timer) async {
+      bool hasLocation = await locationService.hasLocationPermission();
+      if (mounted) {
+        setState(() {
+          _isLoadingLocation = !hasLocation;
+        });
+
+        // If we have location, start updates and stop checking
+        if (hasLocation) {
+          await _startLocationUpdates();
+          _locationCheckTimer?.cancel();
+        }
+      }
+    });
+  }
+
+  Future<void> _startLocationUpdates() async {
+    _locationStreamSubscription?.cancel();
+
+    const geo.LocationSettings locationSettings = geo.LocationSettings(
+      accuracy: geo.LocationAccuracy.high,
+      distanceFilter: 10,
+    );
+
+    try {
+      // Get initial position first
+      final position = await geo.Geolocator.getCurrentPosition(
+          desiredAccuracy: geo.LocationAccuracy.high);
+
+      if (mounted) {
+        setState(() {
+          _userLocation = position;
+          _isLoadingLocation = false;
+        });
+
+        // Update map camera
+        await _mapboxMap?.setCamera(
+          CameraOptions(
+            center: Point(
+              coordinates: Position(position.longitude, position.latitude),
+            ),
+            zoom: 15.0,
+          ),
+        );
+
+        // Emit location update
+        _socket?.emit('location:update', {
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+        });
+      }
+
+      // Then start listening to stream
+      _locationStreamSubscription = geo.Geolocator.getPositionStream(
+        locationSettings: locationSettings,
+      ).listen((geo.Position position) {
+        if (mounted) {
+          setState(() {
+            _userLocation = position;
+            _isLoadingLocation = false;
+          });
+
+          _socket?.emit('location:update', {
+            'latitude': position.latitude,
+            'longitude': position.longitude,
+          });
+
+          _mapboxMap?.setCamera(
+            CameraOptions(
+              center: Point(
+                coordinates: Position(position.longitude, position.latitude),
+              ),
+              zoom: 15.0,
+            ),
+          );
+        }
+      }, onError: (error) {
+        debugPrint('Error getting location stream: $error');
+        if (mounted) {
+          setState(() {
+            _isLoadingLocation = true;
+          });
+        }
+      });
+    } catch (e) {
+      debugPrint('Error starting location updates: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingLocation = true;
+        });
+      }
     }
   }
 
@@ -97,11 +210,12 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       final auth = Provider.of<UserProvider>(context, listen: false);
       final lastLocation = auth.user?.lastLocation;
 
-      if (lastLocation != null) {;
+      if (lastLocation != null) {
         await _mapboxMap?.setCamera(
           CameraOptions(
             center: Point(
-              coordinates: Position(lastLocation.longitude, lastLocation.latitude),
+              coordinates:
+                  Position(lastLocation.longitude, lastLocation.latitude),
             ),
             zoom: 15.0,
           ),
@@ -114,11 +228,14 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
       setState(() {
         _userLocation = position;
+        _isLoadingLocation = false;
       });
+
       _socket?.emit('location:update', {
         'latitude': position.latitude,
         'longitude': position.longitude,
       });
+
       await _mapboxMap?.setCamera(
         CameraOptions(
           center: Point(
@@ -144,8 +261,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = Provider.of<UserProvider>(context, listen: false);
       final token = auth.user?.token;
-
-      print('Initializing socket with token: ${token?.substring(0, 10)}...');
 
       if (token == null) {
         print('Socket error: No auth token');
@@ -260,50 +375,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     }
   }
 
-  bool _areListsEqual(List<String> list1, List<String> list2) {
-    if (list1.length != list2.length) return false;
-    for (int i = 0; i < list1.length; i++) {
-      if (!list2.contains(list1[i])) return false;
-    }
-    return true;
-  }
-
-  Future<void> _updateRangeCircle(geo.Position position) async {
-    await _circleAnnotationManager?.deleteAll();
-
-    final auth = Provider.of<UserProvider>(context, listen: false);
-    final isPremium = auth.user?.isPremium ?? false;
-
-    final zoom =
-        await _mapboxMap?.getCameraState().then((state) => state.zoom) ?? 15.0;
-
-    final options = CircleAnnotationOptions(
-      geometry: Point(
-        coordinates: Position(position.longitude, position.latitude),
-      ),
-      circleRadius: isPremium ? 5000 / zoom : 1000 / zoom,
-      circleColor: Colors.blue.value,
-      circleOpacity: 0.2,
-      circleStrokeWidth: 2.0,
-      circleStrokeColor: Colors.blue.value,
-      circleStrokeOpacity: 0.5,
-      circleBlur: 1.0,
-    );
-
-    await _circleAnnotationManager?.create(options);
-  }
-
-  Future<void> _startLocationUpdates() async {
-    _locationTimer?.cancel();
-    _locationTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
-      if (mounted) {
-        _getCurrentLocation();
-      } else {
-        timer.cancel();
-      }
-    });
-  }
-
   Future<void> _enableLocationComponent() async {
     if (_mapboxMap != null) {
       await _mapboxMap?.location.updateSettings(
@@ -323,173 +394,54 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     final pointAnnotationManager =
         await mapboxMap.annotations.createPointAnnotationManager();
     _markerManager = MarkerManager(pointAnnotationManager, _showDropModal);
-    // _circleAnnotationManager =
-    //     await mapboxMap.annotations.createCircleAnnotationManager();
     await _getCurrentLocation();
   }
 
-  void _showDropModal(DropModel drop) {
+  void _showDropModal(DropModel drop) async {
     final newDrop = _markerManager?.getDropForId(drop.id);
-    final distance = _calculateDistance(newDrop!);
+    final distance = await _calculateDistance(newDrop!);
     final auth = Provider.of<UserProvider>(context, listen: false);
     final isPremium = auth.user?.isPremium ?? false;
-    final maxRange = isPremium ? 1500.0 : 100.0;
+    final maxRange = isPremium ? 500.0 : 100.0;
     final isInRange = distance <= maxRange;
 
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => TweenAnimationBuilder<double>(
-          duration: const Duration(milliseconds: 500),
-          tween: Tween(begin: 1.0, end: 0.0),
-          curve: Curves.easeOutBack,
-          builder: (context, value, child) => Transform.translate(
-            offset: Offset(0, 50 * value),
-            child: Opacity(
-              opacity: (1 - value).clamp(0.0, 1.0),
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.8),
+      builder: (context) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+          child: TweenAnimationBuilder<double>(
+            duration: const Duration(milliseconds: 500),
+            tween: Tween(begin: 0.8, end: 1.0),
+            curve: Curves.easeOutBack,
+            builder: (context, value, child) => Transform.scale(
+              scale: value,
               child: Container(
-                margin: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A2E),
-                  borderRadius: BorderRadius.circular(16),
+                  color: const Color(0xFF040412),
+                  borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: _getRarityColor(newDrop.rarity).withOpacity(0.3),
+                    width: 2,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _getRarityColor(newDrop.rarity).withOpacity(0.2),
+                      blurRadius: 30,
+                      spreadRadius: 5,
+                    ),
+                  ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: _getRarityColor(newDrop.rarity).withOpacity(0.1),
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(16),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          TweenAnimationBuilder<double>(
-                            duration: const Duration(milliseconds: 800),
-                            tween: Tween(begin: 0.0, end: 1.0),
-                            curve: Curves.elasticOut,
-                            builder: (context, value, child) => Transform.scale(
-                              scale: value,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _getRarityColor(newDrop.rarity)
-                                      .withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  newDrop.rarity.toString().split('.').last,
-                                  style: TextStyle(
-                                    color: _getRarityColor(newDrop.rarity),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const Spacer(),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                '${distance.toStringAsFixed(0)}m away',
-                                style: TextStyle(
-                                  color: isInRange ? Colors.green : Colors.red,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              if (!isPremium &&
-                                  distance > 100 &&
-                                  distance <= 1500) ...[
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Get Premium to reach this drop!',
-                                  style: TextStyle(
-                                    color: Colors.amber.shade300,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    TweenAnimationBuilder<double>(
-                      duration: const Duration(milliseconds: 800),
-                      tween: Tween(begin: 0.0, end: 1.0),
-                      curve: Curves.elasticOut,
-                      builder: (context, value, child) => Transform.scale(
-                        scale: value,
-                        child: Container(
-                          height: 200,
-                          margin: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: _getRarityColor(newDrop.rarity)
-                                .withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: _getRarityColor(newDrop.rarity)
-                                  .withOpacity(0.1),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: TweenAnimationBuilder<double>(
-                        duration: const Duration(milliseconds: 600),
-                        tween: Tween(begin: 0.0, end: 1.0),
-                        curve: Curves.easeOutCubic,
-                        builder: (context, value, child) => Transform.scale(
-                          scale: value,
-                          child: ElevatedButton(
-                            onPressed:
-                                isInRange ? () => _openDrop(newDrop) : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isInRange
-                                  ? _getRarityColor(newDrop.rarity)
-                                  : Colors.grey,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  isInRange ? Icons.lock_open : Icons.lock,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  isInRange ? 'Open Drop' : 'Too Far Away',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                    _buildDropHeader(newDrop, distance, isInRange, isPremium),
+                    _buildDropContent(newDrop, isInRange),
+                    _buildDropFooter(newDrop, isInRange),
                   ],
                 ),
               ),
@@ -500,12 +452,248 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-  double _calculateDistance(DropModel drop) {
-    if (_userLocation == null) return double.infinity;
+  Widget _buildDropHeader(
+      DropModel drop, double distance, bool isInRange, bool isPremium) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            _getRarityColor(drop.rarity).withOpacity(0.2),
+            Colors.transparent,
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _getRarityColor(drop.rarity).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _getRarityColor(drop.rarity).withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.auto_awesome,
+                      color: _getRarityColor(drop.rarity),
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      drop.rarity.toString().split('.').last,
+                      style: TextStyle(
+                        color: _getRarityColor(drop.rarity),
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Orbitron',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isInRange
+                      ? const Color(0xFF10B981).withOpacity(0.1)
+                      : const Color(0xFFEF4444).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isInRange
+                        ? const Color(0xFF10B981).withOpacity(0.3)
+                        : const Color(0xFFEF4444).withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      isInRange ? Icons.near_me : Icons.location_off,
+                      color: isInRange
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFEF4444),
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${distance.toStringAsFixed(0)}m',
+                      style: TextStyle(
+                        color: isInRange
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFFEF4444),
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Orbitron',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (!isPremium && distance > 100 && distance <= 500) ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFB800).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFFFFB800).withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFB800).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Icon(
+                      Icons.workspace_premium,
+                      color: Color(0xFFFFB800),
+                      size: 14,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Upgrade to Premium to Reach',
+                    style: TextStyle(
+                      color: Color(0xFFFFB800),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Orbitron',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
+  Widget _buildDropContent(DropModel drop, bool isInRange) {
+    return Container(
+      height: 280,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            _getRarityColor(drop.rarity).withOpacity(0.05),
+            Colors.transparent,
+            _getRarityColor(drop.rarity).withOpacity(0.05),
+          ],
+        ),
+        border: Border.symmetric(
+          horizontal: BorderSide(
+            color: _getRarityColor(drop.rarity).withOpacity(0.1),
+          ),
+        ),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 160,
+            height: 160,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  _getRarityColor(drop.rarity).withOpacity(0.2),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+          Icon(
+            Icons.card_giftcard,
+            color: _getRarityColor(drop.rarity).withOpacity(0.4),
+            size: 80,
+          ),
+          if (!isInRange)
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.black.withOpacity(0.5),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Icon(
+                Icons.lock,
+                color: _getRarityColor(drop.rarity),
+                size: 40,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropFooter(DropModel drop, bool isInRange) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          ElevatedButton(
+            onPressed: isInRange ? () => _openDrop(drop) : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isInRange
+                  ? _getRarityColor(drop.rarity)
+                  : const Color(0xFF1A1A2E),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  isInRange ? Icons.lock_open : Icons.lock,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  isInRange ? 'Open Drop' : 'Too Far Away',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Orbitron',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<double> _calculateDistance(DropModel drop) async {
+    if (_userLocation == null) return double.infinity;
+    // Get fresh location
+    final location = await geo.Geolocator.getCurrentPosition();
     return geo.Geolocator.distanceBetween(
-      _userLocation!.latitude,
-      _userLocation!.longitude,
+      location.latitude,
+      location.longitude,
       drop.latitude,
       drop.longitude,
     ).roundToDouble();
@@ -524,7 +712,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         );
         return;
       }
-
+      final location = await geo.Geolocator.getCurrentPosition();
       final response = await http.post(
         Uri.parse('$baseUrl/drops/claim'),
         headers: {
@@ -533,11 +721,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         },
         body: json.encode({
           'dropId': drop.id,
-          'latitude': _userLocation!.latitude,
-          'longitude': _userLocation!.longitude,
+          'latitude': location.latitude,
+          'longitude': location.longitude,
         }),
       );
-
       if (!mounted) return;
 
       if (response.statusCode == 201) {
@@ -545,16 +732,37 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         Navigator.pop(context);
         _cachedDrops.remove(drop.id);
         _markerManager?.removeMarker(drop.id);
+        setState(() {
+          _isDropModalOpen = false;
+        });
         _showRewardsDialog(rewards, drop.rarity);
       } else if (response.statusCode == 403) {
+        setState(() {
+          _isDropModalOpen = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You are too far away from this drop')),
+        );
+      } else if (response.statusCode == 500) {
+        setState(() {
+          _isDropModalOpen = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('You are too far away from this drop')),
         );
       } else {
-        throw Exception('Failed to claim drop');
+        setState(() {
+          _isDropModalOpen = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error claiming drop')),
+        );
       }
     } catch (e) {
       if (!mounted) return;
+      setState(() {
+        _isDropModalOpen = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error claiming drop: $e')),
       );
@@ -562,7 +770,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   }
 
   void _showRewardsDialog(Map<String, dynamic> rewards, DropRarity rarity) {
-    final List<dynamic> rewardsList = rewards['rewards'] ?? [];
+    final List<dynamic> rewardsList = rewards['rewards'];
+    final rarityColor = _getRarityColor(rarity);
 
     showDialog(
       context: context,
@@ -585,109 +794,104 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           );
         },
         builder: (context, value, child) => BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8 * value, sigmaY: 8 * value),
+          filter: ImageFilter.blur(sigmaX: 15 * value, sigmaY: 15 * value),
           child: Dialog.fullscreen(
             backgroundColor: Colors.transparent,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    const Color(0xFF1A1A2E),
-                    _getRarityColor(rarity).withOpacity(0.1),
-                    const Color(0xFF1A1A2E),
-                  ],
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Background animation
+                Lottie.network(
+                  'https://lottie.host/c7e44f6d-b2ed-4991-97e9-361dd205ed5e/x2YDkwPwFB.lottie',
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.height,
+                  fit: BoxFit.cover,
                 ),
-              ),
-              child: Center(
-                child: TweenAnimationBuilder<double>(
-                  duration: const Duration(milliseconds: 2000),
-                  tween: Tween(begin: 0, end: 1),
-                  builder: (context, value, child) => Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Outer rotating circles
-                      Transform.rotate(
-                        angle: value * 4 * pi,
-                        child: Container(
-                          width: 200,
-                          height: 200,
+                // Main content
+                Center(
+                  child: TweenAnimationBuilder<double>(
+                    duration: const Duration(milliseconds: 1500),
+                    tween: Tween(begin: 0, end: 1),
+                    curve: Curves.easeOutExpo,
+                    builder: (context, value, child) => Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Glow effect
+                        Container(
+                          width: 300,
+                          height: 300,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            gradient: SweepGradient(
-                              colors: [
-                                _getRarityColor(rarity).withOpacity(0),
-                                _getRarityColor(rarity),
-                                _getRarityColor(rarity).withOpacity(0),
-                              ],
-                              stops: [0, value, 1],
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Inner pulsing circle
-                      Transform.scale(
-                        scale: 1 + (0.2 * sin(value * 3 * pi)),
-                        child: Container(
-                          width: 160,
-                          height: 160,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: const Color(0xFF1A1A2E),
-                            border: Border.all(
-                              color: _getRarityColor(rarity),
-                              width: 2,
-                            ),
                             boxShadow: [
                               BoxShadow(
-                                color: _getRarityColor(rarity).withOpacity(0.5),
-                                blurRadius: 20,
-                                spreadRadius: value * 5,
+                                color: rarityColor.withOpacity(0.3 * value),
+                                blurRadius: 50,
+                                spreadRadius: 20,
                               ),
                             ],
                           ),
                         ),
-                      ),
-                      // Center icon
-                      TweenAnimationBuilder<double>(
-                        duration: const Duration(milliseconds: 1500),
-                        tween: Tween(begin: 0, end: 1),
-                        curve: Curves.elasticOut,
-                        builder: (context, scaleValue, child) =>
-                            Transform.scale(
-                          scale: scaleValue,
-                          child: Icon(
-                            Icons.card_giftcard,
-                            size: 50 + (20 * sin(value * 6 * pi)),
-                            color: _getRarityColor(rarity),
-                          ),
-                        ),
-                      ),
-                      // Particles
-                      ...List.generate(12, (index) {
-                        final angle = (index / 12) * 2 * pi;
-                        final radius = 150 * value;
-                        return Positioned(
-                          left: cos(angle) * radius + 100,
-                          top: sin(angle) * radius + 100,
-                          child: Transform.scale(
-                            scale: (1 - value) * 2,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _getRarityColor(rarity),
+                        // Card container
+                        Transform.scale(
+                          scale: value,
+                          child: Container(
+                            width: 200,
+                            height: 200,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF040412),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: rarityColor.withOpacity(0.5),
+                                width: 2,
                               ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: rarityColor.withOpacity(0.2),
+                                  blurRadius: 20,
+                                  spreadRadius: -5,
+                                ),
+                              ],
+                            ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                // Background pattern
+                                Positioned.fill(
+                                  child: CustomPaint(
+                                    painter: GridPainter(
+                                      color: rarityColor.withOpacity(0.1),
+                                      gridSize: 10,
+                                    ),
+                                  ),
+                                ),
+                                // Icon
+                                Icon(
+                                  Icons.card_giftcard,
+                                  size: 80,
+                                  color: rarityColor.withOpacity(0.8),
+                                ),
+                                // Animated border
+                                AnimatedBuilder(
+                                  animation: AlwaysStoppedAnimation(value),
+                                  builder: (context, child) {
+                                    return CustomPaint(
+                                      size: const Size(200, 200),
+                                      painter: BorderPainter(
+                                        progress: value,
+                                        color: rarityColor,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
                           ),
-                        );
-                      }),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
@@ -700,13 +904,12 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       backgroundColor: Colors.transparent,
       child: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+          gradient: RadialGradient(
+            center: Alignment.topCenter,
+            radius: 2.0,
             colors: [
-              const Color(0xFF1A1A2E),
-              _getRarityColor(rarity).withOpacity(0.1),
-              const Color(0xFF1A1A2E),
+              _getRarityColor(rarity).withOpacity(0.15),
+              const Color(0xFF040412),
             ],
           ),
         ),
@@ -722,106 +925,151 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: Column(
                           children: [
-                            const SizedBox(height:70),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.auto_awesome,
-                                  color: _getRarityColor(rarity),
-                                  size: 24,
+                            const SizedBox(height: 70),
+                            ShaderMask(
+                              shaderCallback: (bounds) => LinearGradient(
+                                colors: [
+                                  _getRarityColor(rarity),
+                                  _getRarityColor(rarity).withOpacity(0.7),
+                                ],
+                              ).createShader(bounds),
+                              child: const Text(
+                                'New Drop Unlocked!',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Orbitron',
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'New Drop Unlocked!',
-                                  style: TextStyle(
-                                    color: _getRarityColor(rarity),
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'Orbitron',
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                             const SizedBox(height: 32),
-                            Text(
-                              card['name'],
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Orbitron',
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 24),
+                              margin:
+                                  const EdgeInsets.symmetric(horizontal: 24),
                               decoration: BoxDecoration(
-                                color: _getRarityColor(rarity).withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(20),
+                                color: Colors.black.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color:
                                       _getRarityColor(rarity).withOpacity(0.3),
                                 ),
                               ),
-                              child: Text(
-                                '#${card['serialNumber']}',
-                                style: TextStyle(
-                                  color: _getRarityColor(rarity),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    card['name'],
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'Orbitron',
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          _getRarityColor(rarity)
+                                              .withOpacity(0.2),
+                                          _getRarityColor(rarity)
+                                              .withOpacity(0.1),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: _getRarityColor(rarity)
+                                            .withOpacity(0.3),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      '#${card['serialNumber']}',
+                                      style: TextStyle(
+                                        color: _getRarityColor(rarity),
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'Orbitron',
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 40),
+                            const SizedBox(height: 24),
                             Container(
-                              height: 400,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(24),
+                                borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
                                     color: _getRarityColor(rarity)
-                                        .withOpacity(0.3),
+                                        .withOpacity(0.2),
                                     blurRadius: 20,
                                     spreadRadius: 5,
                                   ),
                                 ],
                               ),
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(24),
+                                borderRadius: BorderRadius.circular(16),
                                 child: Image.network(
                                   card['imageUrl'],
                                   fit: BoxFit.cover,
+                                  height: 400,
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 40),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                _buildCardDetail(
-                                  Icons.calendar_today,
-                                  'Year',
-                                  card['year'].toString(),
+                            const SizedBox(height: 32),
+                            Container(
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.3),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color:
+                                      _getRarityColor(rarity).withOpacity(0.3),
                                 ),
-                                const SizedBox(width: 12),
-                                _buildCardDetail(
-                                  Icons.category,
-                                  'Series',
-                                  card['series'],
-                                ),
-                                const SizedBox(width: 12),
-                                _buildCardDetail(
-                                  Icons.auto_awesome,
-                                  'Rarity',
-                                  card['rarity'],
-                                  color: _getRarityColor(rarity),
-                                ),
-                              ],
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  _buildCardDetail(
+                                    Icons.calendar_today,
+                                    'Year',
+                                    card['year'].toString(),
+                                    color: _getRarityColor(rarity),
+                                  ),
+                                  Container(
+                                    width: 1,
+                                    height: 40,
+                                    color: Colors.white.withOpacity(0.1),
+                                  ),
+                                  _buildCardDetail(
+                                    Icons.category,
+                                    'Series',
+                                    card['series'],
+                                    color: _getRarityColor(rarity),
+                                  ),
+                                  Container(
+                                    width: 1,
+                                    height: 40,
+                                    color: Colors.white.withOpacity(0.1),
+                                  ),
+                                  _buildCardDetail(
+                                    Icons.auto_awesome,
+                                    'Rarity',
+                                    card['rarity'],
+                                    color: _getRarityColor(rarity),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -835,11 +1083,13 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.3),
-                border: Border(
-                  top: BorderSide(
-                    color: Colors.white.withOpacity(0.1),
-                  ),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.8),
+                  ],
                 ),
               ),
               child: Column(
@@ -847,16 +1097,20 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => {
+                        Provider.of<CardProvider>(context, listen: false).revalidateUserCards(),
+                        Navigator.pop(context),
+                      },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3B82F6),
+                        backgroundColor: _getRarityColor(rarity),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
+                        elevation: 0,
                       ),
                       child: const Text(
-                        'Confirm',
+                        'Add to Collection',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -870,28 +1124,16 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      IconButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          // TODO: Navigate to trade creation
-                        },
-                        icon: const Icon(
-                          Icons.swap_horiz,
-                          color: Colors.white,
-                          size: 28,
-                        ),
+                      _buildActionButton(
+                        Icons.swap_horiz,
+                        'Trade',
+                        () => Navigator.pop(context),
                       ),
                       const SizedBox(width: 40),
-                      IconButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          // TODO: Navigate to market listing
-                        },
-                        icon: const Icon(
-                          Icons.sell,
-                          color: Colors.white,
-                          size: 28,
-                        ),
+                      _buildActionButton(
+                        Icons.sell,
+                        'Sell',
+                        () => Navigator.pop(context),
                       ),
                     ],
                   ),
@@ -904,37 +1146,62 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildCardDetail(IconData icon, String label, String value,
-      {Color? color}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.1),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+  Widget _buildActionButton(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
         children: [
-          Icon(
-            icon,
-            color: color ?? Colors.white.withOpacity(0.7),
-            size: 14,
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 24,
+            ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(height: 8),
           Text(
-            value,
+            label,
             style: TextStyle(
-              color: color ?? Colors.white,
+              color: Colors.white.withOpacity(0.7),
               fontSize: 12,
-              fontWeight: FontWeight.bold,
               fontFamily: 'Orbitron',
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCardDetail(IconData icon, String label, String value,
+      {Color? color}) {
+    return Column(
+      children: [
+        Icon(icon, color: color ?? Colors.white, size: 24),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            color: color ?? Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Orbitron',
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 12,
+            fontFamily: 'Orbitron',
+          ),
+        ),
+      ],
     );
   }
 
@@ -953,64 +1220,123 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     }
   }
 
-  Color _getRarityColorString(String rarity) {
-    switch (rarity) {
-      case 'COMMON':
-        return Colors.grey;
-      case 'UNCOMMON':
-        return Colors.green;
-      case 'RARE':
-        return Colors.blue;
-      case 'EPIC':
-        return Colors.purple;
-      case 'LEGENDARY':
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  void _testDropAnimation() {
-    final mockRewards = {
-      "rewards": [
-        {
-          "type": "CARD",
-          "card": {
-            "id": "test123",
-            "name": "Lewis Hamilton",
-            "imageUrl": "https://picsum.photos/400/300",
-            "serialNumber": "123/999",
-            "rarity": "LEGENDARY",
-            "series": "2024 Season",
-            "year": "2024"
-          }
-        }
-      ]
-    };
-
-    _showRewardsDialog(mockRewards, DropRarity.LEGENDARY);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
           _buildMap(),
-          if (_isLoading)
-            Container(
-              color: Colors.black54,
-              child: const Center(
-                child: CircularProgressIndicator(),
+          if (_isLoadingLocation)
+            AnimatedOpacity(
+              opacity: _isLoadingLocation ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child: Scaffold(
+                backgroundColor: const Color(0xFF040412),
+                body: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      TweenAnimationBuilder<double>(
+                        duration: const Duration(seconds: 2),
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        builder: (context, value, child) {
+                          return Transform.rotate(
+                            angle: value * 2 * 3.14159,
+                            child: Container(
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: const Color(0xFF3B82F6),
+                                  width: 2,
+                                ),
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.location_searching,
+                                  color: Color(0xFF3B82F6),
+                                  size: 60,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      const Text(
+                        'Getting your location...',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Please enable location services to continue',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          _buildTopBar(),
+          const TopBarWidget(),
           _buildControlCenter(),
           _buildRefreshButton(),
           _buildEventBanner(),
+          Positioned(
+            left: 16,
+            bottom: 25,
+            child: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A2E),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.1),
+                    ),
+                  ),
+                  child: IconButton(
+                    onPressed: _showDailyReward,
+                    icon: const Icon(
+                      Icons.calendar_today_rounded,
+                      color: Color(0xFF3B82F6),
+                    ),
+                  ),
+                ),
+                if (_hasUnclaimedReward)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFEF4444),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Text(
+                        '1',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
@@ -1019,94 +1345,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       key: const ValueKey("mapWidget"),
       styleUri: MapboxConfig.styleUrl,
       onMapCreated: _onMapCreated,
-    );
-  }
-
-  Widget _buildTopBar() {
-    return SafeArea(
-      child: Container(
-        margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFF0A0A1A).withOpacity(0.9),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: const Color(0xFF3B82F6).withOpacity(0.3),
-          ),
-        ),
-        child: Row(
-          children: [
-            ShaderMask(
-              shaderCallback: (bounds) => const LinearGradient(
-                colors: [
-                  Color(0xFFEF4444),
-                  Color(0xFF3B82F6),
-                  Color(0xFFEFB344),
-                ],
-              ).createShader(bounds),
-              child: const Text(
-                'PITDECK',
-                style: TextStyle(
-                  fontFamily: 'Orbitron',
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            const Spacer(),
-            Row(
-              children: [
-                const SizedBox(width: 12),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: const Color(0xFF3B82F6).withOpacity(0.3),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.military_tech,
-                        color: Color(0xFF3B82F6),
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Consumer<UserProvider>(
-                        builder: (context, userProvider, _) => Text(
-                          'LVL ${userProvider.user?.level ?? 1}',
-                          style: const TextStyle(
-                            fontFamily: 'Orbitron',
-                            fontSize: 12,
-                            color: Color(0xFF3B82F6),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Consumer<UserProvider>(
-                  builder: (context, auth, _) => Text(
-                    auth.user?.name ?? 'Guest',
-                    style: const TextStyle(
-                      fontFamily: 'Orbitron',
-                      fontSize: 12,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -1120,87 +1358,85 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         children: [
           FloatingActionButton.extended(
             onPressed: () async {
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  barrierColor: Colors.black.withOpacity(0.5),
-                  builder: (context) => BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                    child: Center(
-                      child: Container(
-                        width: 200,
-                        height: 200,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // Outer rotating circle
-                            TweenAnimationBuilder<double>(
-                              duration: const Duration(seconds: 2),
-                              tween: Tween(begin: 0, end: 4 * 3.14159),
-                              curve: Curves.linear,
-                              builder: (context, value, child) =>
-                                  Transform.rotate(
-                                angle: value,
-                                child: Container(
-                                  width: 200,
-                                  height: 200,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: const Color(0xFF3B82F6)
-                                          .withOpacity(0.5),
-                                      width: 2,
-                                    ),
-                                    gradient: SweepGradient(
-                                      colors: [
-                                        const Color(0xFF3B82F6)
-                                            .withOpacity(0.1),
-                                        const Color(0xFF3B82F6)
-                                            .withOpacity(0.5),
-                                      ],
-                                    ),
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                barrierColor: Colors.black.withOpacity(0.5),
+                builder: (context) => BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                  child: Center(
+                    child: SizedBox(
+                      width: 200,
+                      height: 200,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Outer rotating circle
+                          TweenAnimationBuilder<double>(
+                            duration: const Duration(seconds: 2),
+                            tween: Tween(begin: 0, end: 4 * 3.14159),
+                            curve: Curves.linear,
+                            builder: (context, value, child) =>
+                                Transform.rotate(
+                              angle: value,
+                              child: Container(
+                                width: 200,
+                                height: 200,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: const Color(0xFF3B82F6)
+                                        .withOpacity(0.5),
+                                    width: 2,
+                                  ),
+                                  gradient: SweepGradient(
+                                    colors: [
+                                      const Color(0xFF3B82F6).withOpacity(0.1),
+                                      const Color(0xFF3B82F6).withOpacity(0.5),
+                                    ],
                                   ),
                                 ),
                               ),
                             ),
-                            // Inner scanning line
-                            TweenAnimationBuilder<double>(
-                              duration: const Duration(seconds: 2),
-                              tween: Tween(begin: -1, end: 1),
-                              curve: Curves.easeInOut,
-                              builder: (context, value, child) =>
-                                  Transform.translate(
-                                offset: Offset(0, 100 * value),
-                                child: Container(
-                                  width: 150,
-                                  height: 2,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Colors.blue.withOpacity(0),
-                                        Colors.blue.withOpacity(0.8),
-                                        Colors.blue.withOpacity(0),
-                                      ],
-                                    ),
+                          ),
+                          // Inner scanning line
+                          TweenAnimationBuilder<double>(
+                            duration: const Duration(seconds: 2),
+                            tween: Tween(begin: -1, end: 1),
+                            curve: Curves.easeInOut,
+                            builder: (context, value, child) =>
+                                Transform.translate(
+                              offset: Offset(0, 100 * value),
+                              child: Container(
+                                width: 150,
+                                height: 2,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.blue.withOpacity(0),
+                                      Colors.blue.withOpacity(0.8),
+                                      Colors.blue.withOpacity(0),
+                                    ],
                                   ),
                                 ),
                               ),
                             ),
-                            // Center dot
-                            Container(
-                              width: 10,
-                              height: 10,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF3B82F6),
-                                shape: BoxShape.circle,
-                              ),
+                          ),
+                          // Center dot
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF3B82F6),
+                              shape: BoxShape.circle,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                );
+                ),
+              );
 
               Navigator.of(context).pop();
             },
@@ -1261,110 +1497,88 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF0A0A1A),
-        border: Border(
-          top: BorderSide(
-            color: Colors.white.withOpacity(0.1),
-            width: 1,
-          ),
-        ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildNavItem(Icons.map, 'Map', true),
-              _buildNavItem(Icons.card_membership, 'Collection', false),
-              _buildNavItem(Icons.store, 'Market', false),
-              _buildNavItem(Icons.person, 'Profile', false),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label, bool isSelected) {
-    return GestureDetector(
-      onTap: () {
-        if (!isSelected) {
-          final int index = label == 'Collection'
-              ? 1
-              : label == 'Market'
-                  ? 2
-                  : label == 'Profile'
-                      ? 3
-                      : 0;
-          final navProvider =
-              Provider.of<NavigationProvider>(context, listen: false);
-
-          navProvider.changePage(index);
-        }
-      },
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? const Color(0xFF3B82F6) : Colors.grey,
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? const Color(0xFF3B82F6) : Colors.grey,
-                fontSize: 12,
-                fontFamily: 'Orbitron',
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildControlCenter() {
     return Positioned(
       right: 16,
       bottom: 25,
-      child: FloatingActionButton(
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => TweenAnimationBuilder<double>(
-              duration: const Duration(milliseconds: 500),
-              tween: Tween(begin: 1.0, end: 0.0),
-              curve: Curves.easeOutExpo,
-              builder: (context, value, child) => Transform.translate(
-                offset: Offset(0, 100 * value),
-                child: const ControlCenter(),
-              ),
-            ),
-          );
-        },
-        backgroundColor: const Color(0xFF1A1A2E),
-        child: const Icon(Icons.dashboard_customize, color: Color(0xFF3B82F6)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            heroTag: 'controlCenter',
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => TweenAnimationBuilder<double>(
+                  duration: const Duration(milliseconds: 500),
+                  tween: Tween(begin: 1.0, end: 0.0),
+                  curve: Curves.easeOutExpo,
+                  builder: (context, value, child) => Transform.translate(
+                    offset: Offset(0, 100 * value),
+                    child: const ControlCenter(),
+                  ),
+                ),
+              );
+            },
+            backgroundColor: const Color(0xFF1A1A2E),
+            child:
+                const Icon(Icons.dashboard_customize, color: Color(0xFF3B82F6)),
+          ),
+        ],
       ),
     );
   }
-}
 
-extension on Position? {
-  // ignore: recursive_getters
-  get longitude => this?.longitude ?? 0;
-  get latitude => this?.latitude ?? 0;
+  Future<void> _checkDailyReward() async {
+    try {
+      final token =
+          Provider.of<UserProvider>(context, listen: false).user?.token;
+      if (token == null) return;
+      final rewardService =
+          Provider.of<DailyRewardService>(context, listen: false);
+      final status = await rewardService.getDailyRewardStatus(token);
+      if (mounted) {
+        setState(() {
+          _rewardStatus = status;
+          _hasUnclaimedReward = status['canClaim'];
+        });
+      }
+    } catch (e) {
+      showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+                title: const Text('Error'),
+                content: Text('Error checking daily reward: $e'),
+                actions: [
+                  CupertinoDialogAction(
+                    child: const Text('OK'),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ));
+      print('Error checking daily reward: $e');
+    }
+  }
+
+  void _showDailyReward() {
+    final token = Provider.of<UserProvider>(context, listen: false).user?.token;
+    if (token != null) {
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierColor: Colors.black.withOpacity(0.5),
+        builder: (BuildContext context) {
+          return PopScope(
+            canPop: true,
+            child: DailyLoginRewardsPopup(token: token),
+          );
+        },
+      );
+    }
+  }
 }
 
 class MarkerManager {
@@ -1465,5 +1679,111 @@ class PointAnnotationClickListener extends OnPointAnnotationClickListener {
       onTap(clickedDrop);
     }
     return true;
+  }
+}
+
+// Add this custom clipper for hexagonal shape
+class HexagonClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    final height = size.height;
+    final width = size.width;
+
+    path.moveTo(width * 0.5, 0);
+    path.lineTo(width, height * 0.25);
+    path.lineTo(width, height * 0.75);
+    path.lineTo(width * 0.5, height);
+    path.lineTo(0, height * 0.75);
+    path.lineTo(0, height * 0.25);
+    path.close();
+
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+// Grid pattern painter
+class GridPainter extends CustomPainter {
+  final Color color;
+  final double gridSize;
+
+  GridPainter({required this.color, required this.gridSize});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 0.5;
+
+    for (double i = 0; i < size.width; i += gridSize) {
+      canvas.drawLine(
+        Offset(i, 0),
+        Offset(i, size.height),
+        paint,
+      );
+    }
+
+    for (double i = 0; i < size.height; i += gridSize) {
+      canvas.drawLine(
+        Offset(0, i),
+        Offset(size.width, i),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// Animated border painter
+class BorderPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+
+  BorderPainter({required this.progress, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    final path = Path()
+      ..moveTo(0, size.height * progress)
+      ..lineTo(0, 0)
+      ..lineTo(size.width * progress, 0);
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+// Add this service class to handle location checks
+class LocationService {
+  Future<bool> hasLocationPermission() async {
+    try {
+      final status = await geo.Geolocator.checkPermission();
+      if (status == geo.LocationPermission.denied) {
+        final requestStatus = await geo.Geolocator.requestPermission();
+        return requestStatus != geo.LocationPermission.denied &&
+            requestStatus != geo.LocationPermission.deniedForever;
+      }
+
+      // Check if location is enabled
+      final isEnabled = await geo.Geolocator.isLocationServiceEnabled();
+      return isEnabled &&
+          status != geo.LocationPermission.denied &&
+          status != geo.LocationPermission.deniedForever;
+    } catch (e) {
+      debugPrint('Error checking location permission: $e');
+      return false;
+    }
   }
 }

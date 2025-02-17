@@ -1,10 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:pitdeck/providers/user_provider.dart';
-import 'package:pitdeck/screens/main_screen.dart';
-import 'package:pitdeck/screens/onboarding_screen.dart';
+import 'package:pitdeck/screens/main_wrapper.dart';
+import 'package:pitdeck/screens/auth/onboarding_screen.dart';
+import 'package:pitdeck/screens/auth/auth_screen.dart';
+import 'package:pitdeck/services/push_notification_service.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/user.dart';
@@ -12,6 +15,8 @@ import 'package:provider/provider.dart';
 import '../main.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthProvider with ChangeNotifier {
   final _userSubject = BehaviorSubject<User?>();
@@ -19,9 +24,15 @@ class AuthProvider with ChangeNotifier {
   static const String _isLoggedIn = 'isLoggedIn';
   static const String _token = 'token';
   static const String _userId = 'userId';
+  final kDebugToken =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbTNsbGlmNnEwMDAwMTM1enh1NWdtOGJ1IiwiaWF0IjoxNzM5NTM0ODQyLCJleHAiOjE3NDAxMzk2NDJ9.CHNTGbn7m-SAgdlhzBB9Z5tHK-x1YqMt15OYz-x3pS8';
 
   User? get currentUser => _userSubject.valueOrNull;
   Stream<User?> get userStream => _userSubject.stream;
+
+  bool _hasCompletedOnboarding = true;
+
+  bool get hasCompletedOnboarding => _hasCompletedOnboarding;
 
   Future<void> saveUserToPrefs(User user) async {
     final prefs = await SharedPreferences.getInstance();
@@ -48,6 +59,7 @@ class AuthProvider with ChangeNotifier {
           email: data['user']['email'],
           name: data['user']['name'],
           token: data['token'],
+          league: data['user']['league'],
           createdAt: DateTime.parse(
               data['user']['createdAt'] ?? DateTime.now().toIso8601String()),
           updatedAt: DateTime.now(),
@@ -88,6 +100,7 @@ class AuthProvider with ChangeNotifier {
             updatedAt: DateTime.now(),
             isPremium: userDetails['isPremium'],
             token: initialUser.token,
+            league: userDetails['league'],
           );
           await saveUserToPrefs(fullUser);
           _userSubject.add(fullUser);
@@ -111,6 +124,12 @@ class AuthProvider with ChangeNotifier {
     await Provider.of<UserProvider>(navigatorKey.currentContext!, listen: false)
         .clearUser();
     _userSubject.add(null);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    // Show auth screen
+    Navigator.of(navigatorKey.currentContext!).pushReplacement(
+      MaterialPageRoute(builder: (context) => const AuthScreen()),
+    );
     notifyListeners();
   }
 
@@ -165,11 +184,13 @@ class AuthProvider with ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getString(_userId);
-      final token = prefs.getString(_token);
+      var token = prefs.getString(_token);
       if (userId == null || token == null) {
         throw Exception('User ID or token not found');
       }
-
+      if (kDebugMode) {
+        token = kDebugToken;
+      }
       final response = await http.get(
         Uri.parse('$_baseUrl/users/$userId'),
         headers: {
@@ -181,8 +202,13 @@ class AuthProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         final userDetails = json.decode(response.body);
         final user = User.fromJson(userDetails, token: token);
+        if (user.needUsernameSetup == true) {
+          await prefs.setBool('needUsernameSetup', true);
+          Navigator.of(navigatorKey.currentContext!).pushReplacement(
+            MaterialPageRoute(builder: (context) => OnboardingScreen(token: user.token)),
+          );
+        }
         _userSubject.add(user);
-
         await Provider.of<UserProvider>(navigatorKey.currentContext!,
                 listen: false)
             .updateUser(user);
@@ -213,7 +239,6 @@ class AuthProvider with ChangeNotifier {
 
       if (idToken == null) throw Exception('Failed to get ID token');
 
-      // Send to backend
       final response = await http.post(
         Uri.parse('$_baseUrl/auth/google/mobile'),
         headers: {'Content-Type': 'application/json'},
@@ -224,12 +249,13 @@ class AuthProvider with ChangeNotifier {
         }),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         final data = json.decode(response.body);
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', data['token']);
         await prefs.setString('userId', data['user']['id']);
         await prefs.setBool('isLoggedIn', true);
+
         await getUserDetails();
         notifyListeners();
       } else {
@@ -248,8 +274,7 @@ class AuthProvider with ChangeNotifier {
           AppleIDAuthorizationScopes.fullName,
         ],
       );
-
-      // Send to backend
+      final deviceToken = await PushNotificationService.retriveDeviceToken();
       final response = await http.post(
         Uri.parse('$_baseUrl/auth/mobile/apple'),
         headers: {'Content-Type': 'application/json'},
@@ -259,6 +284,7 @@ class AuthProvider with ChangeNotifier {
           'givenName': credential.givenName,
           'familyName': credential.familyName,
           'email': credential.email,
+          'deviceToken': deviceToken,
         }),
       );
 
@@ -270,15 +296,17 @@ class AuthProvider with ChangeNotifier {
         await prefs.setBool('isLoggedIn', true);
 
         await getUserDetails();
-        if (data['user']['needUsernameSetup']) {
+        if (data['user']['needUsernameSetup'] == true) {
+          await prefs.setBool('needUsernameSetup', true);
           Navigator.of(navigatorKey.currentContext!).pushReplacement(
-            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+            MaterialPageRoute(builder: (context) => OnboardingScreen(token: data['token'])),
           );
         } else {
           Navigator.of(navigatorKey.currentContext!).pushReplacement(
-            MaterialPageRoute(builder: (context) => const MainScreen()),
+            MaterialPageRoute(builder: (context) => const MainWrapper()),
           );
         }
+
         notifyListeners();
       } else {
         throw Exception('Failed to authenticate with Apple');
@@ -288,19 +316,21 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> updateUsername(String username) async {
+  Future<void> updateUsername(String username, String token) async {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/users/update/name'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${currentUser?.token}',
+          'Authorization': 'Bearer $token',
         },
         body: json.encode({'name': username}),
       );
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
         final user = User.fromJson(data['user'], token: currentUser?.token);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('needUsernameSetup', false);
         _userSubject.add(user);
         notifyListeners();
       } else {
@@ -309,6 +339,19 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<void> completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('hasCompletedOnboarding', true);
+    _hasCompletedOnboarding = true;
+    notifyListeners();
+  }
+
+  Future<void> checkOnboardingStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    _hasCompletedOnboarding = prefs.getBool('hasCompletedOnboarding') ?? false;
+    notifyListeners();
   }
 
   @override

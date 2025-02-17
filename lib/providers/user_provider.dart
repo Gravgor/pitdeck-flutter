@@ -3,16 +3,49 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:pitdeck/main.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../models/user.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../screens/main_wrapper.dart';
+import '../screens/auth/onboarding_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class UserProvider with ChangeNotifier {
   User? _user;
+  String? _token;
+  bool _isLoggedIn = false;
   final String _baseUrl = 'https://api.pitdeck.app/api';
   IO.Socket? _socket;
   bool isSocketConnected = false;
+    final kDebugToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbTNsbGlmNnEwMDAwMTM1enh1NWdtOGJ1IiwiaWF0IjoxNzM5NTM0ODQyLCJleHAiOjE3NDAxMzk2NDJ9.CHNTGbn7m-SAgdlhzBB9Z5tHK-x1YqMt15OYz-x3pS8';
+
+  bool _needUsernameSetup = false;
 
   User? get user => _user;
+  String? get token => _token;
+  bool get isLoggedIn => _isLoggedIn;
+
+  bool get needUsernameSetup => _needUsernameSetup;
+  set needUsernameSetup(bool value) {
+    _needUsernameSetup = value;
+    notifyListeners();
+  }
+
+  Future<void> initializeFromCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    _token = prefs.getString('token');
+    _isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+
+    if (_isLoggedIn && _token != null) {
+      try {
+        await fetchUserProfile();
+      } catch (e) {
+        await logout();
+      }
+    }
+  }
 
   Future<void> connectUserSocket() async {
     if (_user?.token == null) return;
@@ -61,8 +94,69 @@ class UserProvider with ChangeNotifier {
     });
   }
 
+  Future<void> fetchUserProfile() async {
+    try {
+      if (kDebugMode) {
+        _token = kDebugToken;
+      }
+      final response = await http.get(
+        Uri.parse('$_baseUrl/users/me'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final userData = json.decode(response.body);
+        _user = User.fromJson(userData, token: _token);
+        notifyListeners();
+        if (userData['needUsernameSetup'] == true) {
+          _needUsernameSetup = true;
+          notifyListeners();
+          Navigator.of(navigatorKey.currentContext!).pushReplacement(
+            MaterialPageRoute(builder: (context) => OnboardingScreen(token: _token!)),
+          );
+        } else {
+          needUsernameSetup = false;
+          _user = _user!.copyWith(needUsernameSetup: false);
+          notifyListeners();
+        }
+      } else if (response.statusCode == 401) {
+        await logout();
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+
+
+  Future<void> updateCoins(int coins) async {
+    _user = _user?.copyWith(coins: coins);
+    notifyListeners();
+  }
+
+  Future<void> fetchUserProfileID(String userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/users/$userId'),
+      );
+      if (response.statusCode == 200) {
+        final userData = json.decode(response.body);
+        _user = User.fromJson(userData, token: _token);
+        notifyListeners();
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> fetchUserDetails(String userId, String token) async {
     try {
+      if (kDebugMode) {
+        token = kDebugToken;
+      }
       final response = await http.get(
         Uri.parse('$_baseUrl/users/$userId'),
         headers: {
@@ -86,6 +180,29 @@ class UserProvider with ChangeNotifier {
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<User?> fetchAnotherUser(String userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/users/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final userData = json.decode(response.body);
+        return User.fromJson(userData, token: _token);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      rethrow;
+    }
+
+
   }
 
   Future<void> updateUser(User user) async {
@@ -122,9 +239,46 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateUserBio(String newBio) async {
+    // Add your API call here if needed
+    _user = _user?.copyWith(bio: newBio);
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _socket?.dispose();
     super.dispose();
+  }
+
+  Future<void> refreshUser() async {
+    await fetchUserProfile();
+    notifyListeners();
+  }
+
+  Future<void> login(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', token);
+    await prefs.setBool('isLoggedIn', true);
+    _token = token;
+
+    _isLoggedIn = true;
+    await fetchUserProfile();
+    notifyListeners();
+  }
+
+  Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    await prefs.setBool('isLoggedIn', false);
+    _token = null;
+    _user = null;
+    _isLoggedIn = false;
+    await DefaultCacheManager().removeFile('user_details');
+    await DefaultCacheManager().removeFile('daily_reward_status');
+    Navigator.of(navigatorKey.currentContext!).pushReplacement(
+      MaterialPageRoute(builder: (context) => const MainWrapper()),
+    );
+    notifyListeners();
   }
 }

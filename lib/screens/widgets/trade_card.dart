@@ -3,7 +3,8 @@ import 'package:intl/intl.dart';
 import '../../models/trade.dart';
 import '../../models/card.dart';
 import '../../utils/color_utils.dart';
-import '../../screens/make_offer_screen.dart';
+import '../trades/make_offer_screen.dart';
+import '../../widgets/user_avatar.dart';
 
 class TradeCard extends StatelessWidget {
   final TradeModel trade;
@@ -24,16 +25,17 @@ class TradeCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF1A1A2E),
+            const Color(0xFF0F0F1E),
+            const Color(0xFF0A0A1A),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.1)),
       ),
       child: Column(
         children: [
@@ -51,50 +53,59 @@ class TradeCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          if (trade.sender.image != null)
-            Container(
-              width: 32,
-              height: 32,
-              margin: const EdgeInsets.only(right: 12),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.network(
-                  trade.sender.image!,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                trade.sender.name ?? 'Unknown Trader',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Orbitron',
-                ),
-              ),
-              Text(
-                'Level ${trade.sender.level}',
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 12,
-                ),
-              ),
-            ],
+          UserAvatar(
+            userId: trade.sender.id,
+            imageUrl: trade.sender.image,
+            size: 40,
           ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 8,
-              vertical: 4,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+
+              children: [
+                Text(
+                  trade.sender.name ?? 'Unknown Trader',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Orbitron',
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3B82F6).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFF3B82F6).withOpacity(0.3),
+                    ),
+                  ),
+                  child: Text(
+                    'Level ${trade.sender.level}',
+                    style: const TextStyle(
+                      color: Color(0xFF3B82F6),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Orbitron',
+                    ),
+                  ),
+                ),
+              ],
             ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color:
-                  ColorUtils.getTradeStatusColor(trade.status, null).withOpacity(0.2),
-              borderRadius: BorderRadius.circular(6),
+              color: ColorUtils.getTradeStatusColor(trade.status, null)
+                  .withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: ColorUtils.getTradeStatusColor(trade.status, null)
+                    .withOpacity(0.3),
+              ),
             ),
             child: Text(
               trade.status.toString().split('.').last,
@@ -102,6 +113,7 @@ class TradeCard extends StatelessWidget {
                 color: ColorUtils.getTradeStatusColor(trade.status, null),
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
+                fontFamily: 'Orbitron',
               ),
             ),
           ),
@@ -114,17 +126,28 @@ class TradeCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'Offering:',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 14,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF3B82F6).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: const Color(0xFF3B82F6).withOpacity(0.3),
+              ),
+            ),
+            child: const Text(
+              'Offering',
+              style: TextStyle(
+                color: Color(0xFF3B82F6),
+                fontSize: 14,
+                fontFamily: 'Orbitron',
+              ),
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         SizedBox(
           height: 160,
           child: ListView.builder(
@@ -140,54 +163,58 @@ class TradeCard extends StatelessWidget {
   }
 
   Widget _buildCardItem(BuildContext context, CardDetailModel card) {
+    final isLegendary = card.rarity.toUpperCase() == 'LEGENDARY';
+    final rarityColor = ColorUtils.getRarityColor(card.rarity);
+
     return GestureDetector(
       onTap: () => onCardTap(context, card),
       child: Container(
         width: 120,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFF0A0A1A),
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFF0A0A1A),
+              if (isLegendary) rarityColor.withOpacity(0.1),
+              const Color(0xFF070711),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: ColorUtils.getRarityColor(card.rarity).withOpacity(0.3),
+            color: isLegendary
+                ? rarityColor.withOpacity(0.3)
+                : Colors.white.withOpacity(0.1),
           ),
+          boxShadow: isLegendary
+              ? [
+                  BoxShadow(
+                    color: rarityColor.withOpacity(0.2),
+                    blurRadius: 16,
+                    spreadRadius: 0,
+                  ),
+                ]
+              : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(11)),
-                  child: Image.network(
-                    card.imageUrl,
-                    height: 100,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
+            ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(12)),
+              child: AspectRatio(
+                aspectRatio: 1.2,
+                child: Image.network(
+                  card.imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: Colors.white.withOpacity(0.1),
+                    child: const Icon(Icons.image_not_supported,
+                        color: Colors.white54),
                   ),
                 ),
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      '#${card.serialNumber}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
             Padding(
               padding: const EdgeInsets.all(8),
@@ -200,27 +227,27 @@ class TradeCard extends StatelessWidget {
                       color: Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
+                      fontFamily: 'Orbitron',
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: ColorUtils.getRarityColor(card.rarity)
-                          .withOpacity(0.2),
+                      color: rarityColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: rarityColor.withOpacity(0.3)),
                     ),
                     child: Text(
-                      card.rarity.toUpperCase(),
+                      card.rarity,
                       style: TextStyle(
-                        color: ColorUtils.getRarityColor(card.rarity),
+                        color: rarityColor,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
+                        fontFamily: 'Orbitron',
                       ),
                     ),
                   ),
@@ -234,67 +261,80 @@ class TradeCard extends StatelessWidget {
   }
 
   Widget _buildCoinsOffer(String formattedCoins) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Text(
-        '+ $formattedCoins coins',
-        style: const TextStyle(
-          color: Colors.amber,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFB800).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFFFFB800).withOpacity(0.3),
         ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.monetization_on, color: Color(0xFFFFB800), size: 20),
+          const SizedBox(width: 8),
+          Text(
+            '$formattedCoins coins',
+            style: const TextStyle(
+              color: Color(0xFFFFB800),
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildActions(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(color: Colors.white10),
+          top: BorderSide(color: Colors.white.withOpacity(0.1)),
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                trade.note ?? 'No note provided',
-                style: TextStyle(
-                  color: trade.note != null
-                      ? Colors.grey
-                      : Colors.grey.withOpacity(0.5),
-                  fontSize: 14,
-                  fontStyle: FontStyle.italic,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              trade.note ?? 'No note provided',
+              style: TextStyle(
+                color: Colors.white.withOpacity(trade.note != null ? 0.7 : 0.3),
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+                fontFamily: 'Orbitron',
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 16),
+          ElevatedButton(
+            onPressed: () => _showMakeOfferModal(context, trade),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3B82F6),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 0,
+            ),
+            child: const Text(
+              'Make Offer',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Orbitron',
               ),
             ),
-            ElevatedButton(
-              onPressed: () => _showMakeOfferModal(context, trade),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3B82F6),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'Make Offer',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Orbitron',
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

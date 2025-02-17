@@ -168,17 +168,22 @@ class TradeProvider with ChangeNotifier {
       );
       final token = userProvider.user?.token;
 
-      await http.delete(
+      final response = await http.delete(
         Uri.parse('$_baseUrl/marketplace/trades/cancel/$tradeId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
-      _trades.removeWhere((trade) => trade.id == tradeId);
-      _myListings.removeWhere((trade) => trade.id == tradeId);
-      _receivedOffers.remove(tradeId);
-      notifyListeners();
+      if (response.statusCode == 200) {
+        _trades.removeWhere((trade) => trade.id == tradeId);
+        _myListings.removeWhere((trade) => trade.id == tradeId);
+        _receivedOffers.remove(tradeId);
+        notifyListeners();
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to cancel trade');
+      }
     } catch (e) {
       throw Exception('Network error: $e');
     }
@@ -204,7 +209,7 @@ class TradeProvider with ChangeNotifier {
         },
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         final updatedTrade = TradeModel.fromJson(json.decode(response.body));
         final index = _trades.indexWhere((trade) => trade.id == tradeId);
         if (index != -1) {
@@ -280,7 +285,7 @@ class TradeProvider with ChangeNotifier {
           'coinsOffered': coinsOffered,
         }),
       );
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         final updatedTrade = TradeModel.fromJson(json.decode(response.body));
         final index = _trades.indexWhere((trade) => trade.id == tradeId);
         if (index != -1) {
@@ -325,8 +330,14 @@ class TradeProvider with ChangeNotifier {
                 trade.status != TradeStatus.ACCEPTED)
             .toList();
 
+        // Safely fetch offers for each listing
         for (var trade in _myListings) {
-          await fetchReceivedOffers(trade.id);
+          try {
+            await fetchReceivedOffers(trade.id);
+          } catch (e) {
+            print('Error fetching offers for trade ${trade.id}: $e');
+            _receivedOffers[trade.id] = [];
+          }
         }
 
         notifyListeners();
@@ -335,6 +346,9 @@ class TradeProvider with ChangeNotifier {
         throw Exception(errorData['message'] ?? 'Failed to load my listings');
       }
     } catch (e) {
+      print('Error fetching my listings: $e');
+      _myListings = []; // Reset to empty list on error
+      notifyListeners();
       throw Exception('Network error: $e');
     }
   }
@@ -359,6 +373,7 @@ class TradeProvider with ChangeNotifier {
         final List<dynamic> offersData = json.decode(response.body);
         _receivedOffers[tradeId] =
             offersData.map((json) => TradeOfferModel.fromJson(json)).toList();
+        print('Received offers: ${_receivedOffers[tradeId]}');
         notifyListeners();
       } else {
         final errorData = json.decode(response.body);
@@ -366,6 +381,7 @@ class TradeProvider with ChangeNotifier {
             errorData['message'] ?? 'Failed to load received offers');
       }
     } catch (e) {
+      print('Error fetching offers: $e');
       throw Exception('Network error: $e');
     }
   }
@@ -386,11 +402,17 @@ class TradeProvider with ChangeNotifier {
       );
       if (response.statusCode == 200) {
         final List<dynamic> tradesData = json.decode(response.body);
-        _allReceivedOffers = tradesData.map((json) => TradeModel.fromJson(json)).toList();
+        print(tradesData);
+        _allReceivedOffers =
+            tradesData.map((json) => TradeModel.fromJson(json)).toList();
+        _allReceivedOffers = _allReceivedOffers
+            .where((trade) => trade.status == TradeStatus.PENDING)
+            .toList();
         notifyListeners();
       } else {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to load received offers');
+        throw Exception(
+            errorData['message'] ?? 'Failed to load received offers');
       }
     } catch (e) {
       throw Exception('Network error: $e');
@@ -411,13 +433,17 @@ class TradeProvider with ChangeNotifier {
           'Authorization': 'Bearer $token',
         },
       );
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         final updatedTrade = TradeModel.fromJson(json.decode(response.body));
-        final index = _allReceivedOffers.indexWhere((trade) => trade.id == updatedTrade.id);
+        final index = _allReceivedOffers
+            .indexWhere((trade) => trade.id == updatedTrade.id);
         if (index != -1) {
-          _allReceivedOffers[index] = updatedTrade;
+          _receivedOffers.remove(updatedTrade.id);
           notifyListeners();
         }
+      } else if (response.statusCode == 400) {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to accept offer');
       }
     } catch (e) {
       throw Exception('Network error: $e');
@@ -440,7 +466,8 @@ class TradeProvider with ChangeNotifier {
       );
       if (response.statusCode == 200) {
         final updatedTrade = TradeModel.fromJson(json.decode(response.body));
-        final index = _allReceivedOffers.indexWhere((trade) => trade.id == updatedTrade.id);
+        final index = _allReceivedOffers
+            .indexWhere((trade) => trade.id == updatedTrade.id);
         if (index != -1) {
           _allReceivedOffers[index] = updatedTrade;
           notifyListeners();
@@ -448,6 +475,27 @@ class TradeProvider with ChangeNotifier {
       }
     } catch (e) {
       throw Exception('Network error: $e');
+    }
+  }
+
+  Future<List<String>> getActiveTradeCardIds() async {
+    final userProvider = Provider.of<UserProvider>(
+      navigatorKey.currentContext!,
+      listen: false,
+    );
+    final token = userProvider.user?.token;
+    final response = await http.get(
+      Uri.parse('$_baseUrl/marketplace/trades/active-trade-card-ids'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> cardIds = json.decode(response.body);
+      return cardIds.map((id) => id.toString()).toList();
+    } else {
+      throw Exception('Failed to get active trade card ids');
     }
   }
 
