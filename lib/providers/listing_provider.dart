@@ -137,18 +137,18 @@ class ListingProvider with ChangeNotifier {
         }),
       );
 
-      if (response.statusCode == 200) { 
+      if (response.statusCode == 200) {
         print('Listing price updated successfully');
         notifyListeners();
       } else {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to update listing price');
+        throw Exception(
+            errorData['message'] ?? 'Failed to update listing price');
       }
     } catch (e) {
       throw Exception('Network error: $e');
     }
   }
-
 
   Future<void> createListing({
     required String cardId,
@@ -214,7 +214,6 @@ class ListingProvider with ChangeNotifier {
         await userProvider.refreshUser();
         fetchListings();
         notifyListeners();
-        
       } else {
         final errorData = json.decode(response.body);
         throw Exception(errorData['message'] ?? 'Failed to buy listing');
@@ -288,10 +287,6 @@ class ListingProvider with ChangeNotifier {
     }
   }
 
-
-  
-  
-
   Future<List<String>> getListedCardIds() async {
     final userProvider = Provider.of<UserProvider>(
       navigatorKey.currentContext!,
@@ -313,6 +308,36 @@ class ListingProvider with ChangeNotifier {
     }
   }
 
+  void applyFilters({
+    List<String>? rarities,
+    List<String>? types,
+    double? minPrice,
+    double? maxPrice,
+  }) {
+    filteredListings = listings.where((listing) {
+      if (rarities?.isNotEmpty ?? false) {
+        if (!rarities!.contains(listing.card.rarity.toUpperCase())) {
+          return false;
+        }
+      }
+
+      if (types?.isNotEmpty ?? false) {
+        if (!types!.contains(listing.card.type.toUpperCase())) {
+          return false;
+        }
+      }
+
+      if (minPrice != null && maxPrice != null) {
+        if (listing.price < minPrice || listing.price > maxPrice) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
+
+    notifyListeners();
+  }
 
   @override
   void dispose() {

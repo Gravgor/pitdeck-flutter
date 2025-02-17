@@ -217,7 +217,7 @@ class _MarketScreenState extends State<MarketScreen>
     );
   }
 
-    Widget _buildMarketplace() {
+  Widget _buildMarketplace() {
     return Consumer<ListingProvider>(
       builder: (context, listingProvider, child) {
         if (isLoading) {
@@ -275,7 +275,8 @@ class _MarketScreenState extends State<MarketScreen>
                           onPressed: () => _showAddListingModal(context),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF3B82F6),
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -399,6 +400,16 @@ class _MarketScreenState extends State<MarketScreen>
   }
 
   void _showFilterModal() {
+    final List<String> rarities = [
+      'COMMON',
+      'UNCOMMON',
+      'RARE',
+      'EPIC',
+      'LEGENDARY'
+    ];
+    final List<String> types = ['DRIVER', 'CAR', 'TRACK', 'TEAM', 'MOMENT'];
+    RangeValues _priceRange = const RangeValues(0, 100000);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -406,28 +417,238 @@ class _MarketScreenState extends State<MarketScreen>
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Container(
           height: MediaQuery.of(context).size.height * 0.85,
-          padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(
-            color: Color(0xFF1A1A2E),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
           ),
-          child: const Column(
+          child: Column(
             children: [
-              Text(
-                'Filter Listings',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Orbitron',
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Filter Listings',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Orbitron',
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        setModalState(() {
+                          _selectedRarities.clear();
+                          _selectedTypes.clear();
+                          _priceRange = const RangeValues(0, 100000);
+                        });
+                      },
+                      icon: const Icon(Icons.refresh, color: Colors.white),
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(height: 24),
-              // Add your filter options here
-              // Rarity filters
-              // Type filters
-              // Price range filters
-              // etc.
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'RARITY',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: rarities.map((rarity) {
+                          final isSelected = _selectedRarities.contains(rarity);
+                          return FilterChip(
+                            selected: isSelected,
+                            label: Text(rarity),
+                            labelStyle: TextStyle(
+                              color: isSelected ? Colors.white : Colors.white70,
+                              fontFamily: 'Orbitron',
+                            ),
+                            backgroundColor: const Color(0xFF0A0A1A),
+                            selectedColor: const Color(0xFF3B82F6),
+                            checkmarkColor: Colors.white,
+                            side: BorderSide(
+                              color: isSelected
+                                  ? const Color(0xFF3B82F6)
+                                  : Colors.white.withOpacity(0.1),
+                            ),
+                            onSelected: (selected) {
+                              setModalState(() {
+                                if (selected) {
+                                  _selectedRarities.add(rarity);
+                                } else {
+                                  _selectedRarities.remove(rarity);
+                                }
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 32),
+                      const Text(
+                        'TYPE',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: types.map((type) {
+                          final isSelected = _selectedTypes.contains(type);
+                          return FilterChip(
+                            selected: isSelected,
+                            label: Text(type),
+                            labelStyle: TextStyle(
+                              color: isSelected ? Colors.white : Colors.white70,
+                              fontFamily: 'Orbitron',
+                            ),
+                            backgroundColor: const Color(0xFF0A0A1A),
+                            selectedColor: const Color(0xFF3B82F6),
+                            checkmarkColor: Colors.white,
+                            side: BorderSide(
+                              color: isSelected
+                                  ? const Color(0xFF3B82F6)
+                                  : Colors.white.withOpacity(0.1),
+                            ),
+                            onSelected: (selected) {
+                              setModalState(() {
+                                if (selected) {
+                                  _selectedTypes.add(type);
+                                } else {
+                                  _selectedTypes.remove(type);
+                                }
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 32),
+                      const Text(
+                        'PRICE RANGE',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      RangeSlider(
+                        values: _priceRange,
+                        min: 0,
+                        max: 100000,
+                        divisions: 100,
+                        activeColor: const Color(0xFF3B82F6),
+                        inactiveColor: Colors.white.withOpacity(0.1),
+                        labels: RangeLabels(
+                          '${_priceRange.start.round()} RC',
+                          '${_priceRange.end.round()} RC',
+                        ),
+                        onChanged: (values) {
+                          setModalState(() {
+                            _priceRange = values;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: Colors.white.withOpacity(0.1)),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withOpacity(0.1),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'CANCEL',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Orbitron',
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          final listingProvider = Provider.of<ListingProvider>(
+                              context,
+                              listen: false);
+
+                          listingProvider.applyFilters(
+                            rarities: _selectedRarities.toList(),
+                            types: _selectedTypes.toList(),
+                            minPrice: _priceRange.start,
+                            maxPrice: _priceRange.end,
+                          );
+
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF3B82F6),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'APPLY FILTERS',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Orbitron',
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -455,7 +676,7 @@ class _MarketScreenState extends State<MarketScreen>
   }
 
   Widget _buildListingCard(ListingModel listing) {
-  final currentUser = Provider.of<UserProvider>(context, listen: false).user;
+    final currentUser = Provider.of<UserProvider>(context, listen: false).user;
     final isOwnListing = currentUser?.id == listing.seller.id;
     final formattedPrice = NumberFormat('#,###').format(listing.price);
     return Container(
@@ -569,46 +790,46 @@ class _MarketScreenState extends State<MarketScreen>
                         ],
                       ),
                       if (isOwnListing)
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => _showEditPriceModal(listing),
-                      icon: const Icon(
-                        Icons.edit,
-                        color: Color(0xFF3B82F6),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => _showDeleteConfirmation(listing),
-                      icon: const Icon(
-                        Icons.delete_outline,
-                        color: Colors.red,
-                      ),
-                    ),
-                  ],
-                )
-              else
-                      ElevatedButton(
-                        onPressed: () => _showBuyCardModal(context, listing),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3B82F6),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
+                        Row(
+                          children: [
+                            IconButton(
+                              onPressed: () => _showEditPriceModal(listing),
+                              icon: const Icon(
+                                Icons.edit,
+                                color: Color(0xFF3B82F6),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () => _showDeleteConfirmation(listing),
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ],
+                        )
+                      else
+                        ElevatedButton(
+                          onPressed: () => _showBuyCardModal(context, listing),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF3B82F6),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                          child: const Text(
+                            'BUY NOW',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Orbitron',
+                            ),
                           ),
                         ),
-                        child: const Text(
-                          'BUY NOW',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Orbitron',
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                   GestureDetector(
@@ -661,57 +882,119 @@ class _MarketScreenState extends State<MarketScreen>
     );
   }
 
-   void _showEditPriceModal(ListingModel listing) {
-    final priceController = TextEditingController(text: listing.price.toString());
-    
+  void _showEditPriceModal(ListingModel listing) {
+    final priceController =
+        TextEditingController(text: listing.price.toString());
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => Container(
-        padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24),
-        decoration: const BoxDecoration(
-          color: Color(0xFF1A1A2E),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        padding: EdgeInsets.fromLTRB(
+            24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+          ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3B82F6).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.edit_outlined,
+                color: Color(0xFF3B82F6),
+                size: 32,
+              ),
+            ),
+            const SizedBox(height: 24),
             const Text(
               'Edit Price',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 20,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Orbitron',
               ),
             ),
+            const SizedBox(height: 8),
+            Text(
+              'Enter new price for your card',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 14,
+              ),
+            ),
             const SizedBox(height: 24),
-            TextField(
-              controller: priceController,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: 'New Price',
-                labelStyle: TextStyle(color: Colors.grey),
-                border: OutlineInputBorder(),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF0A0A1A),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white.withOpacity(0.1)),
+              ),
+              child: TextField(
+                controller: priceController,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontFamily: 'Orbitron',
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Enter new price',
+                  hintStyle: TextStyle(
+                    color: Colors.white.withOpacity(0.3),
+                    fontFamily: 'Orbitron',
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.all(16),
+                  prefixIcon: Icon(
+                    Icons.monetization_on_outlined,
+                    color: Colors.white.withOpacity(0.5),
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () async {
-                final newPrice = int.tryParse(priceController.text);
-                if (newPrice != null) {
-                  await Provider.of<ListingProvider>(context, listen: false)
-                      .updateListingPrice(listing.id, newPrice);
-                  Navigator.pop(context);
-                  _loadListings();
-                }
-              },
-              child: const Text('UPDATE PRICE'),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  final newPrice = int.tryParse(priceController.text);
+                  if (newPrice != null) {
+                    await Provider.of<ListingProvider>(context, listen: false)
+                        .updateListingPrice(listing.id, newPrice);
+                    Navigator.pop(context);
+                    _loadListings();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF3B82F6),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'UPDATE PRICE',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Orbitron',
+                    color: Colors.white,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -722,34 +1005,111 @@ class _MarketScreenState extends State<MarketScreen>
   void _showDeleteConfirmation(ListingModel listing) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => Dialog(
         backgroundColor: const Color(0xFF1A1A2E),
-        title: const Text(
-          'Remove Listing',
-          style: TextStyle(color: Colors.white, fontFamily: 'Orbitron'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
         ),
-        content: const Text(
-          'Are you sure you want to remove this card from sale?',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('CANCEL'),
-          ),
-          TextButton(
-            onPressed: () async {
-              await Provider.of<ListingProvider>(context, listen: false)
-                  .removeFromSale(listing.id);
-              Navigator.pop(context);
-              _loadListings();
-            },
-            child: const Text(
-              'REMOVE',
-              style: TextStyle(color: Colors.red),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
             ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.delete_outline,
+                  color: Colors.red.shade400,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Remove Listing',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Orbitron',
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Are you sure you want to remove this card from sale?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white.withOpacity(0.1),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'CANCEL',
+                        style: TextStyle(
+                          fontFamily: 'Orbitron',
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await Provider.of<ListingProvider>(context,
+                                listen: false)
+                            .removeFromSale(listing.id);
+                        Navigator.pop(context);
+                        _loadListings();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade400,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'REMOVE',
+                        style: TextStyle(
+                          fontFamily: 'Orbitron',
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1998,8 +2358,8 @@ class _MarketScreenState extends State<MarketScreen>
           Provider.of<ListingProvider>(context, listen: false);
       final allListings = listingProvider.listings;
       List<ListingModel> filtered = [...allListings];
-       final currentUser =
-              Provider.of<UserProvider>(context, listen: false).user;
+      final currentUser =
+          Provider.of<UserProvider>(context, listen: false).user;
 
       switch (filter) {
         case 'my_listings':
@@ -2019,16 +2379,19 @@ class _MarketScreenState extends State<MarketScreen>
           break;
         case 'price_asc':
           filtered.sort((a, b) => (a.price ?? 0).compareTo(b.price ?? 0));
-          filtered = filtered.where((l) => l.seller.id != currentUser?.id).toList();
+          filtered =
+              filtered.where((l) => l.seller.id != currentUser?.id).toList();
           break;
         case 'price_desc':
           filtered.sort((a, b) => (b.price ?? 0).compareTo(a.price ?? 0));
-          filtered = filtered.where((l) => l.seller.id != currentUser?.id).toList();
+          filtered =
+              filtered.where((l) => l.seller.id != currentUser?.id).toList();
           break;
         case 'recent':
           filtered.sort((a, b) => (b.createdAt ?? DateTime.now())
               .compareTo(a.createdAt ?? DateTime.now()));
-          filtered = filtered.where((l) => l.seller.id != currentUser?.id).toList();
+          filtered =
+              filtered.where((l) => l.seller.id != currentUser?.id).toList();
           break;
       }
 

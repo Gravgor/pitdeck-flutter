@@ -59,6 +59,7 @@ class AuthProvider with ChangeNotifier {
           email: data['user']['email'],
           name: data['user']['name'],
           token: data['token'],
+          league: data['user']['league'],
           createdAt: DateTime.parse(
               data['user']['createdAt'] ?? DateTime.now().toIso8601String()),
           updatedAt: DateTime.now(),
@@ -99,6 +100,7 @@ class AuthProvider with ChangeNotifier {
             updatedAt: DateTime.now(),
             isPremium: userDetails['isPremium'],
             token: initialUser.token,
+            league: userDetails['league'],
           );
           await saveUserToPrefs(fullUser);
           _userSubject.add(fullUser);

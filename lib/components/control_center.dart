@@ -4,6 +4,7 @@ import 'package:pitdeck/services/daily_reward_service.dart';
 import 'dart:ui';
 import 'package:pitdeck/screens/pack/packs_screen.dart';
 import 'package:pitdeck/screens/quests_screen.dart';
+import 'package:pitdeck/screens/leaderboard/leaderboard_screen.dart';
 import 'package:provider/provider.dart';
 
 class ControlTile {
@@ -103,7 +104,13 @@ class ControlCenter extends StatelessWidget {
         label: 'Leaderboard',
         description: 'View rankings',
         accentColor: const Color(0xFF8B5CF6),
-        onTap: () {},
+        onTap: () {
+          Navigator.pop(context);
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const LeaderboardScreen()),
+          );
+        },
       ),
     ];
   }

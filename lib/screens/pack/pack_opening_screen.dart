@@ -150,7 +150,7 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(32),
                     decoration: BoxDecoration(
                       color: const Color(0xFF3B82F6).withOpacity(0.1),
                       shape: BoxShape.circle,
@@ -158,37 +158,34 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
                     child: const Icon(
                       Icons.card_giftcard,
                       color: Color(0xFF3B82F6),
-                      size: 48,
+                      size: 64,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
                   const Text(
                     'Your Pack Awaits',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 32,
+                      fontSize: 36,
                       fontWeight: FontWeight.bold,
                       fontFamily: 'Orbitron',
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
                   Text(
-                    'Tap to begin your selection',
+                    'Tap to reveal your cards',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.7),
-                      fontSize: 16,
+                      fontSize: 18,
                       fontFamily: 'Orbitron',
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 48),
                   AnimatedBuilder(
                     animation: _controller,
                     builder: (context, child) {
                       return Transform.translate(
-                        offset: Offset(
-                          0,
-                          4 * sin(_controller.value * 2 * pi),
-                        ),
+                        offset: Offset(0, 6 * sin(_controller.value * 2 * pi)),
                         child: _buildFloatingCards(),
                       );
                     },
@@ -199,11 +196,7 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
             Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: () {
-                  setState(() {
-                    _hasStartedSelection = true;
-                  });
-                },
+                onTap: () => setState(() => _hasStartedSelection = true),
                 child: Container(
                   color: Colors.transparent,
                   width: double.infinity,
@@ -223,21 +216,21 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
       children: List.generate(
         3,
         (index) => Transform.translate(
-          offset: Offset(
-            (index - 1) * 40.0,
-            0,
-          ),
+          offset: Offset((index - 1) * 50.0, 0),
           child: Transform.rotate(
             angle: (index - 1) * 0.2,
             child: Container(
-              width: 120,
-              height: 180,
+              width: 140,
+              height: 200,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF1A1A2E), Color(0xFF0A0A1A)],
+                  colors: [
+                    const Color(0xFF3B82F6).withOpacity(0.2),
+                    const Color(0xFF1A1A2E),
+                  ],
                 ),
                 border: Border.all(
                   color: const Color(0xFF3B82F6).withOpacity(0.3),
@@ -246,8 +239,8 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
                 boxShadow: [
                   BoxShadow(
                     color: const Color(0xFF3B82F6).withOpacity(0.1),
-                    blurRadius: 8,
-                    spreadRadius: 2,
+                    blurRadius: 16,
+                    spreadRadius: 4,
                   ),
                 ],
               ),
@@ -275,10 +268,7 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
         ),
       ),
       child: GridView.builder(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 24,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           childAspectRatio: 0.75,
@@ -341,10 +331,13 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
   Widget _buildCardBack() {
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1A1A2E), Color(0xFF0A0A1A)],
+          colors: [
+            const Color(0xFF3B82F6).withOpacity(0.2),
+            const Color(0xFF1A1A2E),
+          ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
@@ -354,36 +347,17 @@ class _PackOpeningScreenState extends State<PackOpeningScreen>
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF3B82F6).withOpacity(0.1),
-            blurRadius: 8,
-            spreadRadius: 2,
+            blurRadius: 16,
+            spreadRadius: 4,
           ),
         ],
       ),
-      child: Stack(
-        children: [
-          Center(
-            child: Icon(
-              Icons.help_outline,
-              color: Colors.white.withOpacity(0.3),
-              size: 48,
-            ),
-          ),
-          if (!_isRevealed)
-            Positioned(
-              bottom: 16,
-              left: 0,
-              right: 0,
-              child: Text(
-                'Tap to Reveal',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 14,
-                  fontFamily: 'Orbitron',
-                ),
-              ),
-            ),
-        ],
+      child: Center(
+        child: Icon(
+          Icons.help_outline,
+          color: Colors.white.withOpacity(0.3),
+          size: 48,
+        ),
       ),
     );
   }

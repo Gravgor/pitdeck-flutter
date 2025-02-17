@@ -61,6 +61,7 @@ class User {
   final DateTime? lastActive;
   final String? backgroundImage;
   final bool needUsernameSetup;
+  final String league;
   final String token;
   final List<UserLocation> locations;
 
@@ -86,7 +87,8 @@ class User {
     this.lastActive,
     required this.token,
     this.locations = const [],
-  });
+    required this.league,
+    });
 
   factory User.fromJson(Map<String, dynamic> json, {String? token}) {
     return User(
@@ -106,6 +108,7 @@ class User {
       role: json['role'] ?? 'user',
       isPremium: json['isPremium'] ?? false,
       needUsernameSetup: json['needUsernameSetup'] ?? false,
+      league: json['league'] ?? 'ROOKIE',
       createdAt: DateTime.parse(json['createdAt'].toString()),
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'].toString())
@@ -157,6 +160,7 @@ class User {
     String? bio,
     String? token,
     bool? needUsernameSetup,
+    String? league,
   }) {
     return User(
       id: id,
@@ -168,6 +172,7 @@ class User {
       level: level ?? this.level,
       token: token ?? this.token,
       needUsernameSetup: needUsernameSetup ?? this.needUsernameSetup,
+      league: league ?? this.league,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );

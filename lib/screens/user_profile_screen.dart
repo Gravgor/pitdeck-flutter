@@ -54,6 +54,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         token: '1234567890',
+        league: 'ROOKIE',
       );
       setState(() => _isLoading = false);
     }
