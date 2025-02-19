@@ -110,6 +110,7 @@ class UserProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         final userData = json.decode(response.body);
         _user = User.fromJson(userData, token: _token);
+        await fetchLeaguePosition();
         notifyListeners();
         if (userData['needUsernameSetup'] == true) {
           _needUsernameSetup = true;
@@ -127,6 +128,21 @@ class UserProvider with ChangeNotifier {
       }
     } catch (e) {
       rethrow;
+    }
+  }
+
+  Future<void> fetchLeaguePosition() async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/leaderboard/me'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $_token',
+      },
+    );
+    if (response.statusCode == 200) {
+      final leagueData = json.decode(response.body);
+      _user = _user!.copyWith(leaguePosition: leagueData['rank']);
+      notifyListeners();
     }
   }
 
