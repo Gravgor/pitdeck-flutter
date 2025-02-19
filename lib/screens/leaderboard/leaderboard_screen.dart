@@ -14,9 +14,10 @@ class LeaderboardScreen extends StatefulWidget {
 
 class _LeaderboardScreenState extends State<LeaderboardScreen> {
   late String _currentLeague;
-  Map<String, dynamic>? _leaderboardData;
+  List<dynamic>? _leaderboardData;
   bool _isLoading = true;
   String baseUrl = 'https://api.pitdeck.app/api';
+  int? _currentWeek;
 
   final Map<String, Color> _leagueColors = {
     'ROOKIE': const Color(0xFF6B7280),
@@ -44,14 +45,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final response = await http.get(
-        Uri.parse(
-            '$baseUrl/leaderboard/league/$_currentLeague/position/${userProvider.user!.id}'),
+        Uri.parse('$baseUrl/leaderboard/league/$_currentLeague'),
         headers: {'Authorization': 'Bearer ${userProvider.user!.token}'},
       );
 
       if (response.statusCode == 200) {
+        final data = json.decode(response.body);
         setState(() {
-          _leaderboardData = json.decode(response.body);
+          _leaderboardData = data['leaderboard'];
+          _currentWeek = data['currentWeek'];
           _isLoading = false;
         });
       }
@@ -117,7 +119,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             ),
             const Spacer(),
             Text(
-              '${_leaderboardData?['totalPlayers'] ?? '-'} Players',
+              '${_leaderboardData?.length ?? '-'} Players',
               style: TextStyle(
                 color: Colors.white.withOpacity(0.7),
                 fontSize: 12,
@@ -236,8 +238,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                         '${player['weeklyPoints']} PTS',
                         style: TextStyle(
                           color: _leagueColors[_currentLeague],
-                          fontSize: 12,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
                         ),
                       ),
                     ),
@@ -349,7 +352,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Week ${_leaderboardData?['currentWeek'] ?? '-'}',
+                          'Week ${_currentWeek ?? '-'}',
                           style: const TextStyle(
                             color: Color(0xFF3B82F6),
                             fontFamily: 'Orbitron',
@@ -371,18 +374,31 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   ),
                 ),
               )
-            else if (_leaderboardData != null)
+            else if (_leaderboardData != null && _leaderboardData!.isNotEmpty)
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.all(24),
-                  itemCount: _leaderboardData!['surroundingPlayers'].length,
+                  itemCount: _leaderboardData!.length,
                   itemBuilder: (context, index) {
-                    final startRank = _leaderboardData!['userRank'] - 5;
+                    final player = _leaderboardData![index];
                     return _buildLeaderboardEntry(
-                      _leaderboardData!['surroundingPlayers'][index],
-                      startRank + index,
+                      player,
+                      index + 1, // Position starts from 1
                     );
                   },
+                ),
+              )
+            else
+              Expanded(
+                child: Center(
+                  child: Text(
+                    'No players with points yet',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 16,
+                      fontFamily: 'Orbitron',
+                    ),
+                  ),
                 ),
               ),
           ],

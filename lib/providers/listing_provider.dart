@@ -31,7 +31,6 @@ class ListingProvider with ChangeNotifier {
     );
 
     _socket.onConnect((_) {
-      print('Connected to WebSocket');
       _socket.emit('subscribeMarketplace');
     });
 

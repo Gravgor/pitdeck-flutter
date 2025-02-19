@@ -343,42 +343,42 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   Future<void> _updateDrops(List<DropModel> drops) async {
     if (!mounted) return;
     try {
-      for (var drop in drops) {
-        _cachedDrops[drop.id.toString()] = drop;
-      }
+      // Create a map of new drops for faster lookup
+      final Map<String, DropModel> newDropsMap = {
+        for (var drop in drops) drop.id.toString(): drop
+      };
 
       if (_isInitialLoad) {
         await _markerManager?.clearAllMarkers();
+        _cachedDrops.clear();
+        _cachedDrops.addAll(newDropsMap);
         for (var drop in _cachedDrops.values) {
           await _markerManager?.addDropMarker(drop);
         }
         _isInitialLoad = false;
         await _cacheService.setInitialLoad(false);
-      } else {
-        final List<String> newDropIds =
-            drops.map((drop) => drop.id.toString()).toList();
-        final List<String> currentDropIds =
-            _markerManager?.getCurrentDropIds() ?? [];
+        return;
+      }
 
-        final Set<String> newDropSet = Set.from(newDropIds);
-        final Set<String> currentDropSet = Set.from(currentDropIds);
-
-        final dropsToRemove = currentDropSet.difference(newDropSet);
-        final dropsToAdd = newDropSet.difference(currentDropSet);
-
-        // Remove old markers
-        for (var dropId in dropsToRemove) {
-          await _markerManager?.removeMarker(dropId);
-          _cachedDrops.remove(dropId);
+      // Update or add new drops
+      for (var drop in drops) {
+        final dropId = drop.id.toString();
+        if (_cachedDrops[dropId] != null) {
+          await _markerManager?.updateMarker(drop);
+        } else {
+          await _markerManager?.addDropMarker(drop);
         }
+        _cachedDrops[dropId] = drop;
+      }
 
-        // Add new markers
-        for (var dropId in dropsToAdd) {
-          final drop = _cachedDrops[dropId];
-          if (drop != null) {
-            await _markerManager?.addDropMarker(drop);
-          }
-        }
+      // Remove drops that no longer exist
+      final dropsToRemove = _cachedDrops.keys
+          .where((id) => !newDropsMap.containsKey(id))
+          .toList();
+
+      for (var dropId in dropsToRemove) {
+        await _markerManager?.removeMarker(dropId);
+        _cachedDrops.remove(dropId);
       }
     } catch (e) {
       print('Error updating drops: $e');
@@ -722,7 +722,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Unable to get your location'),
-            content: const Text('Please check your location settings and try again.'),
+            content: const Text(
+                'Please check your location settings and try again.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -761,24 +762,28 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         setState(() {
           _isDropModalOpen = false;
         });
-        SnackBarUtils.showError(context, title: 'Error', message: 'You are too far away from this drop');
+        SnackBarUtils.showError(context,
+            title: 'Error', message: 'You are too far away from this drop');
       } else if (response.statusCode == 500) {
         setState(() {
           _isDropModalOpen = false;
         });
-        SnackBarUtils.showError(context, title: 'Error', message: 'Error claiming drop');
+        SnackBarUtils.showError(context,
+            title: 'Error', message: 'Error claiming drop');
       } else {
         setState(() {
           _isDropModalOpen = false;
         });
-        SnackBarUtils.showError(context, title: 'Error', message: 'Error claiming drop');
+        SnackBarUtils.showError(context,
+            title: 'Error', message: 'Error claiming drop');
       }
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _isDropModalOpen = false;
       });
-      SnackBarUtils.showError(context, title: 'Error', message: 'Error claiming drop: $e');
+      SnackBarUtils.showError(context,
+          title: 'Error', message: 'Error claiming drop: $e');
     }
   }
 
@@ -1111,7 +1116,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () => {
-                        Provider.of<CardProvider>(context, listen: false).revalidateUserCards(),
+                        Provider.of<CardProvider>(context, listen: false)
+                            .revalidateUserCards(),
                         Navigator.pop(context),
                       },
                       style: ElevatedButton.styleFrom(
@@ -1395,7 +1401,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                             duration: const Duration(seconds: 2),
                             tween: Tween(begin: 0, end: 4 * 3.14159),
                             curve: Curves.linear,
-                            builder: (context, value, child) => Transform.rotate(
+                            builder: (context, value, child) =>
+                                Transform.rotate(
                               angle: value,
                               child: Container(
                                 width: 160,
@@ -1403,7 +1410,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: const Color(0xFF3B82F6).withOpacity(0.5),
+                                    color: const Color(0xFF3B82F6)
+                                        .withOpacity(0.5),
                                     width: 2,
                                   ),
                                   gradient: SweepGradient(
@@ -1608,6 +1616,16 @@ class MarkerManager {
   DropModel? getDropForId(String id) {
     return _markerDrops[id];
   }
+
+  Future<DropModel?> updateMarker(DropModel drop) async {
+    if (_dropMarkers.containsKey(drop.id)) {
+      await _pointAnnotationManager.delete(_dropMarkers[drop.id]!);
+      _dropMarkers.remove(drop.id);
+      _markerDrops.remove(drop.id);
+    }
+    return drop;
+  }
+
 
   DropModel? getDropByAnnotationId(String annotationId) {
     final dropId = _annotationToDropId[annotationId];
