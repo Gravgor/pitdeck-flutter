@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pitdeck/screens/trades/my_listings_screen.dart';
 import 'package:pitdeck/utils/color_utils.dart';
+import 'package:pitdeck/utils/snackbar_utils.dart';
 import '../../models/card.dart';
-import '../../models/trade_offer.dart';
 import '../../providers/trade_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -16,7 +16,6 @@ class TradeModal extends StatefulWidget {
 }
 
 class _TradeModalState extends State<TradeModal> {
-  String _tradeId = '';
   TextEditingController _coinsOfferedController = TextEditingController();
   bool _isLoading = false;
 
@@ -168,7 +167,7 @@ class _TradeModalState extends State<TradeModal> {
                           ),
 
                         ),
-                        onChanged: (value) => setState(() => _tradeId = value),
+                        onChanged: (value) => setState(() => _coinsOfferedController.text = value),
                       ),
                     ),
                   ],
@@ -283,26 +282,13 @@ class _TradeModalState extends State<TradeModal> {
     try {
       await Provider.of<TradeProvider>(context, listen: false)
           .createTrade(offeredCardIds: [widget.card.id], coinsOffered: 0);
-      if (mounted) 
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: const Color(0xFF10B981),
-          duration: const Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          content: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: const Text('Trade offer created successfully'),
-          ),
-        ),
-      );
-      Navigator.push(context, MaterialPageRoute(builder: (context) => MyListingsScreen()));
+      if (mounted) {
+        Navigator.pop(context);
+        SnackBarUtils.showSuccess(context, title: 'Success', message: 'Trade offer created successfully');
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const MyListingsScreen()));
+      }
     } catch (e) {
-      print(e);
+      SnackBarUtils.showError(context, title: 'Error', message: 'Error creating trade offer: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

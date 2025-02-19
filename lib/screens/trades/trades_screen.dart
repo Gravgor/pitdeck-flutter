@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pitdeck/models/trade.dart';
 import 'package:pitdeck/screens/trades/received_offers_screen.dart';
+import 'package:pitdeck/utils/snackbar_utils.dart';
 import '../../models/card.dart';
 import 'package:provider/provider.dart';
 import '../../providers/trade_provider.dart';
@@ -237,9 +238,7 @@ class _TradesScreenState extends State<TradesScreen>
       final tradeProvider = Provider.of<TradeProvider>(context, listen: false);
       await tradeProvider.acceptTrade(tradeId);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error accepting offer: $e')),
-      );
+      SnackBarUtils.showError(context, title: 'Error', message: 'Error accepting offer: $e');
     }
   }
 
@@ -248,9 +247,7 @@ class _TradesScreenState extends State<TradesScreen>
       final tradeProvider = Provider.of<TradeProvider>(context, listen: false);
       await tradeProvider.declineTrade(tradeId);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error declining offer: $e')),
-      );
+      SnackBarUtils.showError(context, title: 'Error', message: 'Error declining offer: $e');
     }
   }
 

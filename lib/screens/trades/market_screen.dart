@@ -6,6 +6,7 @@ import 'package:pitdeck/providers/trade_provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
 import 'package:pitdeck/screens/trades/my_listings_screen.dart';
 import 'package:pitdeck/screens/trades/trades_screen.dart';
+import 'package:pitdeck/utils/snackbar_utils.dart';
 import '../../models/card.dart';
 import 'package:provider/provider.dart';
 import '../../providers/navigation_provider.dart';
@@ -1528,70 +1529,15 @@ class _MarketScreenState extends State<MarketScreen>
                                         listen: false)
                                     .fetchUserCards();
                                 ScaffoldMessenger.of(context).clearSnackBars();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: const Color(0xFF10B981),
-                                    duration: const Duration(seconds: 3),
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    content: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 8),
-                                      child: const Row(
-                                        children: [
-                                          Icon(
-                                            Icons.check_circle_outline,
-                                            color: Colors.white,
-                                            size: 20,
-                                          ),
-                                          SizedBox(width: 12),
-                                          Text(
-                                            'Card purchased successfully',
-                                            style:
-                                                TextStyle(color: Colors.white),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                );
+                                SnackBarUtils.showSuccess(context, title: 'Success', message: 'Card purchased successfully');
+                                  
                               } catch (e) {
                                 setState(() {
                                   isProcessing = false;
                                 });
                                 Navigator.pop(context);
                                 ScaffoldMessenger.of(context).clearSnackBars();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: const Color(0xFFE53935),
-                                    duration: const Duration(seconds: 3),
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    content: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 8),
-                                      child: const Row(
-                                        children: [
-                                          Icon(
-                                            Icons.error_outline,
-                                            color: Colors.white,
-                                            size: 20,
-                                          ),
-                                          SizedBox(width: 12),
-                                          Text(
-                                            'Failed to purchase card',
-                                            style:
-                                                TextStyle(color: Colors.white),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                );
+                                SnackBarUtils.showError(context, title: 'Error', message: 'Failed to purchase card');
                               }
                             },
                       style: ElevatedButton.styleFrom(

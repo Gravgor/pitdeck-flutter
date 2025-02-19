@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pitdeck/utils/snackbar_utils.dart';
 import 'package:provider/provider.dart';
 import '../../providers/card_provider.dart';
 import '../../providers/trade_provider.dart';
@@ -38,13 +39,9 @@ class _CreateTradeScreenState extends State<CreateTradeScreen> {
       );
       if (!mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Trade created successfully!')),
-      );
+      SnackBarUtils.showSuccess(context, title: 'Success', message: 'Trade created successfully!');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error creating trade: $e')),
-      );
+      SnackBarUtils.showError(context, title: 'Error', message: 'Error creating trade: $e');
     } finally {
       setState(() => _isLoading = false);
     }

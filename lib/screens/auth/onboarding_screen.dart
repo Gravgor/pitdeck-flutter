@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../main_wrapper.dart';
+import '../../utils/snackbar_utils.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key, required this.token});
@@ -67,9 +68,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+      SnackBarUtils.showError(context, title: 'Error', message: e.toString().split(':')[1].trim());
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

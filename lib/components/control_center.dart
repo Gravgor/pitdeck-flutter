@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:pitdeck/providers/user_provider.dart';
+  import 'package:pitdeck/providers/user_provider.dart';
 import 'package:pitdeck/services/daily_reward_service.dart';
 import 'dart:ui';
 import 'package:pitdeck/screens/pack/packs_screen.dart';
 import 'package:pitdeck/screens/quests_screen.dart';
 import 'package:pitdeck/screens/leaderboard/leaderboard_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:pitdeck/utils/snackbar_utils.dart';
 
 class ControlTile {
   final IconData icon;
@@ -386,33 +387,7 @@ class ControlCenter extends StatelessWidget {
         
         // Show success message
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: const Color(0xFF10B981),
-              behavior: SnackBarBehavior.floating,
-              margin: const EdgeInsets.all(16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              content: Row(
-                children: [
-                  const Icon(
-                    Icons.check_circle,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Claimed ${_formatNumber(result['rewardAmount'])} coins!',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontFamily: 'Orbitron',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
+          SnackBarUtils.showSuccess(context, title: 'Success', message: 'Reward claimed');
         }
         
       }

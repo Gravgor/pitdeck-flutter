@@ -335,6 +335,11 @@ class AuthProvider with ChangeNotifier {
         await prefs.setBool('needUsernameSetup', false);
         _userSubject.add(user);
         notifyListeners();
+      } else if (response.statusCode == 401) {
+        await logout();
+      } else if (response.statusCode == 400) {
+        final data = json.decode(response.body);
+        throw Exception(data['message']);
       } else {
         throw Exception('Failed to update username');
       }

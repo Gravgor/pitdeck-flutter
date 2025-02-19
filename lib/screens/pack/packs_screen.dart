@@ -1,8 +1,11 @@
+
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:pitdeck/utils/color_utils.dart';
+import 'package:pitdeck/utils/snackbar_utils.dart';
 import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
@@ -128,21 +131,11 @@ class _PacksScreenState extends State<PacksScreen>
 
                 if (completeResponse.statusCode == 201) {
                   completer.complete();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Pack opened successfully!'),
-                      backgroundColor: Color(0xFF3B82F6),
-                    ),
-                  );
+                    SnackBarUtils.showSuccess(context, title: 'Success', message: 'Pack opened successfully!');
                 }
               } catch (e) {
                 completer.completeError(e);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Failed to complete pack opening'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                SnackBarUtils.showError(context, title: 'Error', message: 'Failed to complete pack opening');
               }
             },
           ),
@@ -151,20 +144,11 @@ class _PacksScreenState extends State<PacksScreen>
         if (!mounted) return;
       } else if (response.statusCode == 400) {
         setState(() => _isOpeningLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('You do not have enough coins to open this pack'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        SnackBarUtils.showError(context, title: 'Error', message: 'You do not have enough coins to open this pack');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to open pack'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      setState(() => _isOpeningLoading = false);
+      SnackBarUtils.showError(context, title: 'Error', message: 'Failed to open pack');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

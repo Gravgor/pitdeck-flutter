@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pitdeck/models/quest.dart';
 import 'package:pitdeck/providers/user_provider.dart';
 import 'package:pitdeck/services/quest_service.dart';
+import 'package:pitdeck/utils/snackbar_utils.dart';
 import 'package:provider/provider.dart';
 
 class QuestsScreen extends StatefulWidget {
@@ -689,61 +690,11 @@ class _QuestCard extends StatelessWidget {
         onClaimed();
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: const Color(0xFF10B981),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          content: Row(
-            children: [
-              const Icon(
-                Icons.check_circle,
-                color: Colors.white,
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Quest rewards claimed!',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontFamily: 'Orbitron',
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      SnackBarUtils.showSuccess(context, title: 'Success', message: 'Quest rewards claimed!');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: const Color(0xFFEF4444),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          content: Row(
-            children: [
-              const Icon(
-                Icons.error_outline,
-                color: Colors.white,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                e.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontFamily: 'Orbitron',
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      SnackBarUtils.showError(context, title: 'Error', message: 'Error claiming quest rewards: $e');
     }
   }
 }
+
+      

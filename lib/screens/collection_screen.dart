@@ -5,6 +5,7 @@ import 'package:pitdeck/providers/listing_provider.dart';
 import 'package:pitdeck/providers/trade_provider.dart';
 import 'package:pitdeck/screens/pack/packs_screen.dart';
 import 'package:pitdeck/utils/color_utils.dart';
+import 'package:pitdeck/utils/snackbar_utils.dart';
 import 'package:provider/provider.dart';
 import '../providers/card_provider.dart';
 import 'dart:async';
@@ -1472,78 +1473,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: const Color(0xFF3B82F6),
-          duration: const Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          content: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.check_circle_outline,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Card Removed from Sale',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Orbitron',
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${card.name} has been removed from the marketplace',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
+      SnackBarUtils.showSuccess(context, title: 'Success', message: 'Card removed from sale');
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: const Color(0xFFDC2626),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          content: Text(
-            'Failed to remove card from sale: $e',
-            style: const TextStyle(color: Colors.white),
-          ),
-        ),
-      );
+      SnackBarUtils.showError(context, title: 'Error', message: e.toString().split(':')[1].trim());
     }
   }
 }

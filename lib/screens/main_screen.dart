@@ -10,6 +10,7 @@ import 'package:pitdeck/config/mapbox_config.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:pitdeck/providers/card_provider.dart';
 import 'package:pitdeck/services/cache_service.dart';
+import 'package:pitdeck/utils/snackbar_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
 import 'dart:convert';
@@ -716,8 +717,19 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
     try {
       if (_userLocation == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to get your location')),
+        // Show here native dialog
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Unable to get your location'),
+            content: const Text('Please check your location settings and try again.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
         );
         return;
       }
@@ -749,32 +761,24 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         setState(() {
           _isDropModalOpen = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('You are too far away from this drop')),
-        );
+        SnackBarUtils.showError(context, title: 'Error', message: 'You are too far away from this drop');
       } else if (response.statusCode == 500) {
         setState(() {
           _isDropModalOpen = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('You are too far away from this drop')),
-        );
+        SnackBarUtils.showError(context, title: 'Error', message: 'Error claiming drop');
       } else {
         setState(() {
           _isDropModalOpen = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error claiming drop')),
-        );
+        SnackBarUtils.showError(context, title: 'Error', message: 'Error claiming drop');
       }
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _isDropModalOpen = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error claiming drop: $e')),
-      );
+      SnackBarUtils.showError(context, title: 'Error', message: 'Error claiming drop: $e');
     }
   }
 

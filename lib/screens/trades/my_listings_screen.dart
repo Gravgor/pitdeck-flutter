@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pitdeck/models/card.dart';
+import 'package:pitdeck/utils/snackbar_utils.dart';
 import 'package:pitdeck/widgets/trade/trade_card.dart';
 import 'package:provider/provider.dart';
 import '../../providers/trade_provider.dart';
@@ -29,9 +30,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
           .fetchMyListings();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading listings: $e')),
-        );
+        SnackBarUtils.showError(context, title: 'Error', message: 'Error loading listings: $e'); 
       }
     } finally {
       if (mounted) {
@@ -44,13 +43,9 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
     try {
       await Provider.of<TradeProvider>(context, listen: false)
           .cancelTrade(tradeId);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Listing cancelled successfully')),
-      );
+      SnackBarUtils.showSuccess(context, title: 'Success', message: 'Listing cancelled successfully');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error cancelling listing: $e')),
-      );
+      SnackBarUtils.showError(context, title: 'Error', message: 'Error cancelling listing: $e');
     }
   }
 

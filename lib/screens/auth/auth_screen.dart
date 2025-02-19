@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pitdeck/screens/main_wrapper.dart';
+import 'package:pitdeck/utils/snackbar_utils.dart';
 import 'dart:io' show Platform;
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/auth_provider.dart';
@@ -348,12 +349,7 @@ class _AuthScreenState extends State<AuthScreen>
       );
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Google sign in failed: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      SnackBarUtils.showError(context, title: 'Error', message: 'Google sign in failed: ${e.toString()}');
     }
   }
 
@@ -363,12 +359,7 @@ class _AuthScreenState extends State<AuthScreen>
       if (!context.mounted) return;
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Apple sign in failed: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      SnackBarUtils.showError(context, title: 'Error', message: 'Apple sign in failed: ${e.toString()}');
     }
   }
 
@@ -385,12 +376,7 @@ class _AuthScreenState extends State<AuthScreen>
       );
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Debug login failed: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      SnackBarUtils.showError(context, title: 'Error', message: 'Debug login failed: ${e.toString()}');
     }
   }
 }

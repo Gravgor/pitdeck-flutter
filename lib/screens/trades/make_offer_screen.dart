@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pitdeck/utils/snackbar_utils.dart';
 import 'package:provider/provider.dart';
 import '../../providers/card_provider.dart';
 import '../../providers/trade_provider.dart';
@@ -46,13 +47,9 @@ class _MakeOfferScreenState extends State<MakeOfferScreen> {
       );
       if (!mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Offer made successfully!')),
-      );
+      SnackBarUtils.showSuccess(context, title: 'Success', message: 'Offer made successfully!');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error making offer: $e')),
-      );
+      SnackBarUtils.showError(context, title: 'Error', message: 'Error making offer: $e');
     } finally {
       setState(() => _isLoading = false);
     }
