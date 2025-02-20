@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pitdeck/models/card.dart';
 import 'package:pitdeck/providers/listing_provider.dart';
 import 'package:pitdeck/providers/trade_provider.dart';
@@ -112,17 +113,21 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 64, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 56, 16, 16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+          colors: [
+            Color(0xFF1A1A2E),
+            Color(0xFF0F0F1E),
+            Color(0xFF0A0A1A),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -130,21 +135,26 @@ class _CollectionScreenState extends State<CollectionScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Collection Overview',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Orbitron',
-              letterSpacing: 1,
+          ShaderMask(
+            shaderCallback: (bounds) => const LinearGradient(
+              colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+            ).createShader(bounds),
+            child: const Text(
+              'Collection Overview',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Orbitron',
+                letterSpacing: 1,
+              ),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Manage and explore your racing cards',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withOpacity(0.6),
               fontSize: 14,
               letterSpacing: 0.5,
               fontFamily: 'Orbitron',
@@ -153,6 +163,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
           const SizedBox(height: 24),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
             child: Row(
               children: [
                 _buildStatCard('Total', totalCards.toString(),
@@ -174,78 +185,112 @@ class _CollectionScreenState extends State<CollectionScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF0A0A1A),
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.1),
+                    ),
                   ),
                   child: TextField(
                     controller: _searchController,
                     style: const TextStyle(
                       color: Colors.white,
                       fontFamily: 'Orbitron',
+                      fontSize: 14,
                     ),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Search by name, type, or series...',
                       hintStyle: TextStyle(
-                        color: Colors.grey,
+                        color: Colors.white.withOpacity(0.3),
                         fontFamily: 'Orbitron',
+                        fontSize: 14,
                       ),
                       border: InputBorder.none,
-                      icon: Icon(Icons.search, color: Colors.grey),
+                      icon: Icon(
+                        Icons.search,
+                        color: Colors.white.withOpacity(0.3),
+                        size: 20,
+                      ),
                     ),
                     onChanged: _handleSearch,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: _showFilterModal,
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: _hasActiveFilters
-                        ? const LinearGradient(
-                            colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          )
-                        : null,
-                    color: _hasActiveFilters ? null : const Color(0xFF0A0A1A),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.filter_list,
-                        color: _hasActiveFilters ? Colors.white : Colors.grey,
-                        size: 20,
+              const SizedBox(width: 12),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _showFilterModal,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: _hasActiveFilters
+                          ? const LinearGradient(
+                              colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            )
+                          : null,
+                      color: _hasActiveFilters ? null : const Color(0xFF0A0A1A),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _hasActiveFilters
+                            ? Colors.transparent
+                            : Colors.white.withOpacity(0.1),
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Filters',
-                        style: TextStyle(
-                          color: _hasActiveFilters ? Colors.white : Colors.grey,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Orbitron',
+                      boxShadow: _hasActiveFilters
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFF3B82F6).withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.filter_list,
+                          color: _hasActiveFilters
+                              ? Colors.white
+                              : Colors.white.withOpacity(0.5),
+                          size: 18,
                         ),
-                      ),
-                      if (_hasActiveFilters)
-                        Container(
-                          margin: const EdgeInsets.only(left: 4),
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Filters',
+                          style: TextStyle(
+                            color: _hasActiveFilters
+                                ? Colors.white
+                                : Colors.white.withOpacity(0.5),
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Orbitron',
+                            fontSize: 14,
                           ),
-                          child: Text(
-                            (_selectedRarities.length + _selectedTypes.length)
-                                .toString(),
-                            style: const TextStyle(
-                              color: Color(0xFF3B82F6),
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Orbitron',
+                        ),
+                        if (_hasActiveFilters) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              (_selectedRarities.length + _selectedTypes.length)
+                                  .toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Orbitron',
+                              ),
                             ),
                           ),
-                        ),
-                    ],
+                        ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -258,18 +303,28 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
   Widget _buildStatCard(String title, String value, IconData icon) {
     return Container(
-      margin: const EdgeInsets.only(right: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      margin: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF0A0A1A),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.1),
+        ),
       ),
       child: Row(
         children: [
-          Icon(
-            icon,
-            color: Colors.white.withOpacity(0.5),
-            size: 20,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: Colors.white.withOpacity(0.7),
+              size: 18,
+            ),
           ),
           const SizedBox(width: 12),
           Column(
@@ -279,17 +334,19 @@ class _CollectionScreenState extends State<CollectionScreen> {
                 value,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Orbitron',
                 ),
               ),
+              const SizedBox(height: 4),
               Text(
                 title,
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.5),
                   fontSize: 12,
                   fontFamily: 'Orbitron',
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
@@ -376,7 +433,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
             _filteredCards.where((card) => card.isForSale).toList();
       }
       if (_selectedFilter == 'all') {
-        _filteredCards = cardProvider.cards.where((card) => !card.isForTrade && !card.isForSale).toList();
+        _filteredCards = cardProvider.cards
+            .where((card) => !card.isForTrade && !card.isForSale)
+            .toList();
       }
     });
   }
@@ -432,11 +491,25 @@ class _CollectionScreenState extends State<CollectionScreen> {
             : null,
         color: isSelected ? null : const Color(0xFF1A1A2E),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color:
+              isSelected ? Colors.transparent : Colors.white.withOpacity(0.1),
+        ),
+        boxShadow: isSelected
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF3B82F6).withOpacity(0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
+            HapticFeedback.lightImpact();
             setState(() {
               _selectedFilter = value;
               _applyFilters();
@@ -448,32 +521,52 @@ class _CollectionScreenState extends State<CollectionScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                Icon(
+                  _getFilterIcon(value),
+                  color:
+                      isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
                 Text(
                   label,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.white70,
+                    color: isSelected
+                        ? Colors.white
+                        : Colors.white.withOpacity(0.7),
                     fontWeight:
                         isSelected ? FontWeight.bold : FontWeight.normal,
                     fontSize: 14,
                     fontFamily: 'Orbitron',
+                    letterSpacing: 0.5,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? Colors.white.withOpacity(0.2)
                         : const Color(0xFF0A0A1A),
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSelected
+                          ? Colors.white.withOpacity(0.2)
+                          : Colors.white.withOpacity(0.1),
+                    ),
                   ),
                   child: Text(
                     count.toString(),
                     style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.white70,
+                      color: isSelected
+                          ? Colors.white
+                          : Colors.white.withOpacity(0.7),
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
+                      fontFamily: 'Orbitron',
                     ),
                   ),
                 ),
@@ -483,6 +576,19 @@ class _CollectionScreenState extends State<CollectionScreen> {
         ),
       ),
     );
+  }
+
+  IconData _getFilterIcon(String value) {
+    switch (value) {
+      case 'all':
+        return Icons.grid_view_rounded;
+      case 'trade':
+        return Icons.swap_horiz_rounded;
+      case 'market':
+        return Icons.store_rounded;
+      default:
+        return Icons.grid_view_rounded;
+    }
   }
 
   Widget _buildCardGrid() {
@@ -568,35 +674,38 @@ class _CollectionScreenState extends State<CollectionScreen> {
         itemBuilder: (context, index) {
           final card = _filteredCards[index];
           final isLegendary = card.rarity == 'LEGENDARY';
+          final rarityColor = ColorUtils.getRarityColor(card.rarity);
 
           return GestureDetector(
             onTap: () => _showCardDetails(context, card.id),
             child: Container(
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF1A1A2E),
+                    const Color(0xFF0F0F1E),
+                    if (isLegendary) rarityColor.withOpacity(0.05),
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   if (isLegendary) ...[
                     BoxShadow(
-                      color: ColorUtils.getRarityColor(card.rarity)
-                          .withOpacity(0.2),
-                      blurRadius: 16,
-                      spreadRadius: 2,
+                      color: rarityColor.withOpacity(0.15),
+                      blurRadius: 20,
+                      spreadRadius: 1,
                     ),
                     BoxShadow(
-                      color: ColorUtils.getRarityColor(card.rarity)
-                          .withOpacity(0.1),
-                      blurRadius: 24,
-                      spreadRadius: 4,
+                      color: rarityColor.withOpacity(0.1),
+                      blurRadius: 30,
+                      spreadRadius: 2,
                     ),
                   ] else
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 8,
+                      color: Colors.black.withOpacity(0.25),
+                      blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
                 ],
@@ -604,69 +713,137 @@ class _CollectionScreenState extends State<CollectionScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ClipRRect(
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(16)),
-                    child: AspectRatio(
-                      aspectRatio: 1.2, // Makes image slightly smaller
-                      child: Image.network(
-                        card.imageUrl,
-                        fit: BoxFit.cover,
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(20)),
+                        child: AspectRatio(
+                          aspectRatio: 1.1,
+                          child: ShaderMask(
+                            shaderCallback: (Rect bounds) {
+                              return LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withOpacity(0.3)
+                                ],
+                                stops: const [0.7, 1.0],
+                              ).createShader(bounds);
+                            },
+                            blendMode: BlendMode.darken,
+                            child: Image.network(
+                              card.imageUrl,
+                              fit: BoxFit.cover,
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Container(
+                                  color: const Color(0xFF1A1A2E),
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      color: rarityColor,
+                                      value:
+                                          loadingProgress.expectedTotalBytes !=
+                                                  null
+                                              ? loadingProgress
+                                                      .cumulativeBytesLoaded /
+                                                  loadingProgress
+                                                      .expectedTotalBytes!
+                                              : null,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                      if (isLegendary)
+                        Positioned.fill(
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(20)),
+                            child: CustomPaint(
+                              painter: GlowingBorderPainter(
+                                color: rarityColor,
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   Padding(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          card.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Orbitron',
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                card.name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Orbitron',
+                                  height: 1.2,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Text(
+                              '#${card.serialNumber}',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.5),
+                                fontSize: 11,
+                                fontFamily: 'Orbitron',
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: ColorUtils.getRarityColor(card.rarity)
-                                .withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(6),
+                            color: rarityColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
                             border: isLegendary
                                 ? Border.all(
-                                    color:
-                                        ColorUtils.getRarityColor(card.rarity)
-                                            .withOpacity(0.3),
+                                    color: rarityColor.withOpacity(0.3),
                                     width: 1,
                                   )
                                 : null,
                           ),
-                          child: Text(
-                            card.rarity,
-                            style: TextStyle(
-                              color: ColorUtils.getRarityColor(card.rarity),
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Orbitron',
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '#${card.serialNumber}',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
-                            fontSize: 12,
-                            fontFamily: 'Orbitron',
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isLegendary) ...[
+                                Icon(
+                                  Icons.auto_awesome,
+                                  color: rarityColor,
+                                  size: 12,
+                                ),
+                                const SizedBox(width: 4),
+                              ],
+                              Text(
+                                card.rarity,
+                                style: TextStyle(
+                                  color: rarityColor,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Orbitron',
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -693,53 +870,26 @@ class _CollectionScreenState extends State<CollectionScreen> {
         future: cardFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.85,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-              ),
-              child: const Center(
-                child: CircularProgressIndicator(color: Color(0xFF3B82F6)),
-              ),
-            );
+            return _buildLoadingState(context);
           }
 
           if (snapshot.hasError || !snapshot.hasData) {
-            debugPrint('Error loading card details: ${snapshot.error}');
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.85,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-              ),
-              child: Center(
-                child: Text(
-                  'Failed to load card details',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                    fontSize: 16,
-                    fontFamily: 'Orbitron',
-                  ),
-                ),
-              ),
-            );
+            return _buildErrorState(context, snapshot.error);
           }
 
           final card = snapshot.data!;
+          final rarityColor = ColorUtils.getRarityColor(card.rarity);
+          final isLegendary = card.rarity == 'LEGENDARY';
+
           return Container(
             height: MediaQuery.of(context).size.height * 0.85,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF1A1A2E),
+                  const Color(0xFF0F0F1E),
+                  if (isLegendary) rarityColor.withOpacity(0.05),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -747,9 +897,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
                   const BorderRadius.vertical(top: Radius.circular(32)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 16,
-                  offset: const Offset(0, -4),
+                  color: Colors.black.withOpacity(0.4),
+                  blurRadius: 20,
+                  offset: const Offset(0, -6),
                 ),
               ],
             ),
@@ -767,35 +917,78 @@ class _CollectionScreenState extends State<CollectionScreen> {
                 const SizedBox(height: 24),
                 Expanded(
                   child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Stack(
                           children: [
+                            Hero(
+                              tag: 'card_${card.id}',
+                              child: Container(
+                                height: 360,
+                                decoration: BoxDecoration(
+                                  image: DecorationImage(
+                                    image: NetworkImage(card.imageUrl),
+                                    fit: BoxFit.cover,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.3),
+                                      blurRadius: 16,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            if (isLegendary)
+                              Positioned.fill(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: rarityColor.withOpacity(0.3),
+                                      width: 1,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             Container(
-                              height: 300,
+                              height: 360,
                               decoration: BoxDecoration(
-                                image: DecorationImage(
-                                  image: NetworkImage(card.imageUrl),
-                                  fit: BoxFit.cover,
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withOpacity(0.6),
+                                  ],
+                                  stops: const [0.7, 1.0],
                                 ),
                               ),
                             ),
                             Positioned(
                               top: 16,
                               right: 16,
-                              child: IconButton(
-                                onPressed: () => Navigator.pop(context),
-                                icon: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.5),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.close,
-                                    color: Colors.white,
-                                    size: 20,
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () => Navigator.pop(context),
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.5),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: Colors.white.withOpacity(0.1),
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.close,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -808,8 +1001,6 @@ class _CollectionScreenState extends State<CollectionScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
                                     child: Column(
@@ -820,9 +1011,10 @@ class _CollectionScreenState extends State<CollectionScreen> {
                                           card.name,
                                           style: const TextStyle(
                                             color: Colors.white,
-                                            fontSize: 24,
+                                            fontSize: 28,
                                             fontWeight: FontWeight.bold,
                                             fontFamily: 'Orbitron',
+                                            height: 1.2,
                                           ),
                                         ),
                                         const SizedBox(height: 8),
@@ -833,143 +1025,25 @@ class _CollectionScreenState extends State<CollectionScreen> {
                                                 Colors.white.withOpacity(0.7),
                                             fontSize: 16,
                                             fontFamily: 'Orbitron',
+                                            letterSpacing: 0.5,
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 8,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          ColorUtils.getRarityColor(card.rarity)
-                                              .withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: ColorUtils.getRarityColor(
-                                                card.rarity)
-                                            .withOpacity(0.3),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      card.rarity,
-                                      style: TextStyle(
-                                        color: ColorUtils.getRarityColor(
-                                            card.rarity),
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: 'Orbitron',
-                                      ),
-                                    ),
-                                  ),
+                                  _buildRarityBadge(card.rarity, rarityColor),
                                 ],
                               ),
-                              const SizedBox(height: 24),
-                              _buildDetailRow(
-                                  'Serial Number', '#${card.serialNumber}'),
-                              _buildDetailRow(
-                                  'Type', card.type.replaceAll('_', ' ')),
-                              _buildDetailRow('Year', card.year.toString()),
-                              _buildDetailRow(
-                                  'Edition', card.edition.toString()),
+                              const SizedBox(height: 32),
+                              _buildDetailsSection(card),
                               if (card.description != null) ...[
-                                const SizedBox(height: 24),
-                                const Text(
-                                  'Description',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'Orbitron',
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  card.description,
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.7),
-                                    fontSize: 14,
-                                    height: 1.5,
-                                  ),
-                                ),
+                                const SizedBox(height: 32),
+                                _buildDescriptionSection(card.description!),
                               ],
+                              const SizedBox(height: 32),
                               _buildCardStats(card),
                               const SizedBox(height: 32),
-                              if (card.isForSale) ...[
-                                _buildActionButton(
-                                  label: 'REMOVE FROM SALE',
-                                  icon: Icons.remove_circle_outline,
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    _removeFromSale(card);
-                                  },
-                                  gradient: const [
-                                    Color(0xFFDC2626),
-                                    Color(0xFFB91C1C)
-                                  ],
-                                ),
-                              ] else if (card.isForTrade &&
-                                  !card.isForSale) ...[
-                                _buildActionButton(
-                                  label: 'IN ACTIVE TRADE',
-                                  icon: Icons.swap_horiz,
-                                  onPressed: null, // Disabled state
-                                  gradient: const [
-                                    Color(0xFF6B7280),
-                                    Color(0xFF4B5563)
-                                  ],
-                                ),
-                                _buildActionButton(
-                                  label: 'REMOVE FROM TRADE',
-                                  icon: Icons.remove_circle_outline,
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    _removeFromTrade(card);
-                                  },
-                                  gradient: const [
-                                    Color(0xFFDC2626),
-                                    Color(0xFFB91C1C)
-                                  ],
-                                ),
-                              ] else ...[
-                                // Default state - card is available for trade/sale
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _buildActionButton(
-                                        label: 'TRADE',
-                                        icon: Icons.swap_horiz,
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                          _initiateTradeOffer(card);
-                                        },
-                                        gradient: const [
-                                          Color(0xFF3B82F6),
-                                          Color(0xFF2563EB)
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: _buildActionButton(
-                                        label: 'SELL',
-                                        icon: Icons.sell,
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                          _listForSale(card);
-                                        },
-                                        gradient: const [
-                                          Color(0xFF10B981),
-                                          Color(0xFF059669)
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                              _buildActionButtons(context, card),
                             ],
                           ),
                         ),
@@ -985,27 +1059,37 @@ class _CollectionScreenState extends State<CollectionScreen> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
-              fontSize: 14,
-              fontFamily: 'Orbitron',
-            ),
+  Widget _buildRarityBadge(String rarity, Color color) {
+    final isLegendary = rarity == 'LEGENDARY';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.1),
+            blurRadius: 8,
+            spreadRadius: 0,
           ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isLegendary) ...[
+            Icon(Icons.auto_awesome, color: color, size: 16),
+            const SizedBox(width: 8),
+          ],
           Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
+            rarity,
+            style: TextStyle(
+              color: color,
               fontSize: 14,
               fontWeight: FontWeight.bold,
               fontFamily: 'Orbitron',
+              letterSpacing: 0.5,
             ),
           ),
         ],
@@ -1013,316 +1097,82 @@ class _CollectionScreenState extends State<CollectionScreen> {
     );
   }
 
-  Widget _buildActionButton({
-    required String label,
-    required IconData icon,
-    required VoidCallback? onPressed,
-    required List<Color> gradient,
-  }) {
-    final isDisabled = onPressed == null;
-    final colors = isDisabled
-        ? gradient.map((c) => c.withOpacity(0.5)).toList()
-        : gradient;
-
+  Widget _buildLoadingState(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: colors,
+          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          if (!isDisabled)
-            BoxShadow(
-              color: colors[0].withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-        ],
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  color: Colors.white.withOpacity(isDisabled ? 0.5 : 1),
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(isDisabled ? 0.5 : 1),
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Orbitron',
-                  ),
-                ),
-              ],
-            ),
+      child: const Center(
+        child: CircularProgressIndicator(color: Color(0xFF3B82F6)),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, dynamic error) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      child: Center(
+        child: Text(
+          'Failed to load card details',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 16,
+            fontFamily: 'Orbitron',
           ),
         ),
       ),
     );
   }
 
-  void _removeFromTrade(CardDetailModel card) {
-    Provider.of<TradeProvider>(context, listen: false).cancelTrade(card.id);
-  }
-
-  void _showFilterModal() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          height: MediaQuery.of(context).size.height * 0.85,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 16,
-                offset: const Offset(0, -4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16),
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Filter Collection',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Orbitron',
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: Icon(
-                        Icons.close,
-                        color: Colors.white.withOpacity(0.5),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Rarity',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Orbitron',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        'LEGENDARY',
-                        'EPIC',
-                        'RARE',
-                        'UNCOMMON',
-                        'COMMON'
-                      ]
-                          .map((rarity) => _buildFilterOption(
-                                label: rarity,
-                                isSelected: _selectedRarities.contains(rarity),
-                                color: ColorUtils.getRarityColor(rarity),
-                                onTap: () {
-                                  setModalState(() {
-                                    if (_selectedRarities.contains(rarity)) {
-                                      _selectedRarities.remove(rarity);
-                                    } else {
-                                      _selectedRarities.add(rarity);
-                                    }
-                                  });
-                                },
-                              ))
-                          .toList(),
-                    ),
-                    const SizedBox(height: 32),
-                    const Text(
-                      'Type',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Orbitron',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children:
-                          ['F1_DRIVER', 'CIRCUIT', 'HISTORIC_MOMENT', 'TEAM']
-                              .map((type) => _buildFilterOption(
-                                    label: type.replaceAll('_', ' '),
-                                    isSelected: _selectedTypes.contains(type),
-                                    color: const Color(0xFF3B82F6),
-                                    onTap: () {
-                                      setModalState(() {
-                                        if (_selectedTypes.contains(type)) {
-                                          _selectedTypes.remove(type);
-                                        } else {
-                                          _selectedTypes.add(type);
-                                        }
-                                      });
-                                    },
-                                  ))
-                              .toList(),
-                    ),
-                  ],
-                ),
-              ),
-              const Spacer(),
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () {
-                          setModalState(() {
-                            _selectedRarities.clear();
-                            _selectedTypes.clear();
-                          });
-                          _applyFilters();
-                          Navigator.pop(context);
-                        },
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'CLEAR ALL',
-                          style: TextStyle(
-                            color: Color(0xFF3B82F6),
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Orbitron',
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          _applyFilters();
-                          Navigator.pop(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3B82F6),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'APPLY FILTERS',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Orbitron',
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+  Widget _buildDetailsSection(CardDetailModel card) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildDetailRow('Serial Number', '#${card.serialNumber}'),
+        _buildDetailRow('Type', card.type.replaceAll('_', ' ')),
+        _buildDetailRow('Year', card.year.toString()),
+        _buildDetailRow('Edition', card.edition.toString()),
+      ],
     );
   }
 
-  Widget _buildFilterOption({
-    required String label,
-    required bool isSelected,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : const Color(0xFF0A0A1A),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? color : Colors.white.withOpacity(0.1),
+  Widget _buildDescriptionSection(String description) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Description',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Orbitron',
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isSelected) ...[
-              Icon(
-                Icons.check,
-                color: color,
-                size: 16,
-              ),
-              const SizedBox(width: 8),
-            ],
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? color : Colors.white.withOpacity(0.7),
-                fontSize: 14,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                fontFamily: 'Orbitron',
-              ),
-            ),
-          ],
+        const SizedBox(height: 8),
+        Text(
+          description,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 14,
+            height: 1.5,
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -1448,6 +1298,527 @@ class _CollectionScreenState extends State<CollectionScreen> {
     );
   }
 
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.5),
+              fontSize: 14,
+              fontFamily: 'Orbitron',
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context, CardDetailModel card) {
+    if (card.isForSale) {
+      return _buildActionButton(
+        label: 'REMOVE FROM SALE',
+        icon: Icons.remove_circle_outline,
+        onPressed: () {
+          Navigator.pop(context);
+          _removeFromSale(card);
+        },
+        gradient: const [Color(0xFFDC2626), Color(0xFFB91C1C)],
+      );
+    } else if (card.isForTrade && !card.isForSale) {
+      return Row(
+        children: [
+          Expanded(
+            child: _buildActionButton(
+              label: 'IN ACTIVE TRADE',
+              icon: Icons.swap_horiz,
+              onPressed: null, // Disabled state
+              gradient: const [Color(0xFF6B7280), Color(0xFF4B5563)],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _buildActionButton(
+              label: 'REMOVE FROM TRADE',
+              icon: Icons.remove_circle_outline,
+              onPressed: () {
+                Navigator.pop(context);
+                _removeFromTrade(card);
+              },
+              gradient: const [Color(0xFFDC2626), Color(0xFFB91C1C)],
+            ),
+          ),
+        ],
+      );
+    } else {
+      return Row(
+        children: [
+          Expanded(
+            child: _buildActionButton(
+              label: 'TRADE',
+              icon: Icons.swap_horiz,
+              onPressed: () {
+                Navigator.pop(context);
+                _initiateTradeOffer(card);
+              },
+              gradient: const [Color(0xFF3B82F6), Color(0xFF2563EB)],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _buildActionButton(
+              label: 'SELL',
+              icon: Icons.sell,
+              onPressed: () {
+                Navigator.pop(context);
+                _listForSale(card);
+              },
+              gradient: const [Color(0xFF10B981), Color(0xFF059669)],
+            ),
+          ),
+        ],
+      );
+    }
+  }
+
+  Widget _buildActionButton({
+    required String label,
+    required IconData icon,
+    required VoidCallback? onPressed,
+    required List<Color> gradient,
+  }) {
+    final isDisabled = onPressed == null;
+    final colors = isDisabled
+        ? gradient.map((c) => c.withOpacity(0.5)).toList()
+        : gradient;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: colors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          if (!isDisabled)
+            BoxShadow(
+              color: colors[0].withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  color: Colors.white.withOpacity(isDisabled ? 0.5 : 1),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(isDisabled ? 0.5 : 1),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Orbitron',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _removeFromTrade(CardDetailModel card) {
+    Provider.of<TradeProvider>(context, listen: false).cancelTrade(card.id);
+  }
+
+  void _showFilterModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          height: MediaQuery.of(context).size.height * 0.85,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E), Color(0xFF0A0A1A)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.4),
+                blurRadius: 20,
+                offset: const Offset(0, -6),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                      ).createShader(bounds),
+                      child: const Text(
+                        'Filter Collection',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.pop(context);
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF3B82F6).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.auto_awesome,
+                              color: Color(0xFF3B82F6),
+                              size: 16,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Rarity',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Orbitron',
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          'LEGENDARY',
+                          'EPIC',
+                          'RARE',
+                          'UNCOMMON',
+                          'COMMON'
+                        ]
+                            .map((rarity) => _buildFilterOption(
+                                  label: rarity,
+                                  isSelected:
+                                      _selectedRarities.contains(rarity),
+                                  color: ColorUtils.getRarityColor(rarity),
+                                  onTap: () {
+                                    HapticFeedback.selectionClick();
+                                    setModalState(() {
+                                      if (_selectedRarities.contains(rarity)) {
+                                        _selectedRarities.remove(rarity);
+                                      } else {
+                                        _selectedRarities.add(rarity);
+                                      }
+                                    });
+                                  },
+                                ))
+                            .toList(),
+                      ),
+                      const SizedBox(height: 32),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF3B82F6).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.category,
+                              color: Color(0xFF3B82F6),
+                              size: 16,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Type',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Orbitron',
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children:
+                            ['F1_DRIVER', 'CIRCUIT', 'HISTORIC_MOMENT', 'TEAM']
+                                .map((type) => _buildFilterOption(
+                                      label: type.replaceAll('_', ' '),
+                                      isSelected: _selectedTypes.contains(type),
+                                      color: const Color(0xFF3B82F6),
+                                      onTap: () {
+                                        HapticFeedback.selectionClick();
+                                        setModalState(() {
+                                          if (_selectedTypes.contains(type)) {
+                                            _selectedTypes.remove(type);
+                                          } else {
+                                            _selectedTypes.add(type);
+                                          }
+                                        });
+                                      },
+                                    ))
+                                .toList(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF0A0A1A).withOpacity(0),
+                      const Color(0xFF0A0A1A),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () {
+                          HapticFeedback.mediumImpact();
+                          setModalState(() {
+                            _selectedRarities.clear();
+                            _selectedTypes.clear();
+                          });
+                          _applyFilters();
+                          Navigator.pop(context);
+                        },
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: const Color(0xFF3B82F6).withOpacity(0.5),
+                            ),
+                          ),
+                        ),
+                        child: const Text(
+                          'CLEAR ALL',
+                          style: TextStyle(
+                            color: Color(0xFF3B82F6),
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Orbitron',
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF3B82F6).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              HapticFeedback.mediumImpact();
+                              _applyFilters();
+                              Navigator.pop(context);
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: const Center(
+                                child: Text(
+                                  'APPLY FILTERS',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Orbitron',
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterOption({
+    required String label,
+    required bool isSelected,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withOpacity(0.1) : const Color(0xFF0A0A1A),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? color : Colors.white.withOpacity(0.1),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isSelected) ...[
+              Icon(
+                Icons.check,
+                color: color,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? color : Colors.white.withOpacity(0.7),
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontFamily: 'Orbitron',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _removeFromSale(CardDetailModel card) async {
+    try {
+      await Provider.of<ListingProvider>(context, listen: false)
+          .removeFromSale(card.id);
+
+      if (!mounted) return;
+
+      SnackBarUtils.showSuccess(context,
+          title: 'Success', message: 'Card removed from sale');
+    } catch (e) {
+      SnackBarUtils.showError(context,
+          title: 'Error', message: e.toString().split(':')[1].trim());
+    }
+  }
+
   void _initiateTradeOffer(CardDetailModel card) {
     showModalBottomSheet(
       context: context,
@@ -1464,19 +1835,6 @@ class _CollectionScreenState extends State<CollectionScreen> {
       isScrollControlled: true,
       builder: (context) => ListForSaleModal(card: card),
     );
-  }
-
-  Future<void> _removeFromSale(CardDetailModel card) async {
-    try {
-      await Provider.of<ListingProvider>(context, listen: false)
-          .removeFromSale(card.id);
-
-      if (!mounted) return;
-
-      SnackBarUtils.showSuccess(context, title: 'Success', message: 'Card removed from sale');
-    } catch (e) {
-      SnackBarUtils.showError(context, title: 'Error', message: e.toString().split(':')[1].trim());
-    }
   }
 }
 
@@ -1539,4 +1897,27 @@ class PriceHistoryPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+class GlowingBorderPainter extends CustomPainter {
+  final Color color;
+  final double width;
+
+  GlowingBorderPainter({required this.color, required this.width});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = width
+      ..maskFilter = const MaskFilter.blur(BlurStyle.outer, 3);
+
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
+  }
+
+  @override
+  bool shouldRepaint(GlowingBorderPainter oldDelegate) {
+    return color != oldDelegate.color || width != oldDelegate.width;
+  }
 }

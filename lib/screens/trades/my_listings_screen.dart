@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pitdeck/models/card.dart';
 import 'package:pitdeck/utils/snackbar_utils.dart';
 import 'package:pitdeck/widgets/trade/trade_card.dart';
@@ -6,7 +7,7 @@ import 'package:provider/provider.dart';
 import '../../providers/trade_provider.dart';
 import '../../models/trade.dart';
 import '../../utils/color_utils.dart';
-
+import 'package:intl/intl.dart';
 
 class MyListingsScreen extends StatefulWidget {
   const MyListingsScreen({super.key});
@@ -30,7 +31,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
           .fetchMyListings();
     } catch (e) {
       if (mounted) {
-        SnackBarUtils.showError(context, title: 'Error', message: 'Error loading listings: $e'); 
+        SnackBarUtils.showError(context,
+            title: 'Error', message: 'Error loading listings: $e');
       }
     } finally {
       if (mounted) {
@@ -43,9 +45,11 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
     try {
       await Provider.of<TradeProvider>(context, listen: false)
           .cancelTrade(tradeId);
-      SnackBarUtils.showSuccess(context, title: 'Success', message: 'Listing cancelled successfully');
+      SnackBarUtils.showSuccess(context,
+          title: 'Success', message: 'Listing cancelled successfully');
     } catch (e) {
-      SnackBarUtils.showError(context, title: 'Error', message: 'Error cancelling listing: $e');
+      SnackBarUtils.showError(context,
+          title: 'Error', message: 'Error cancelling listing: $e');
     }
   }
 
@@ -57,22 +61,31 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.8,
         decoration: const BoxDecoration(
-          color: Color(0xFF1A1A2E),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          gradient: LinearGradient(
+            colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E), Color(0xFF0A0A1A)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
         child: Column(
           children: [
             _buildModalHeader(trade),
             Expanded(
               child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildOfferedCards(trade),
-                    if (trade.coinsOffered > 0) _buildCoinsOffered(trade.coinsOffered),
-                    _buildTradeNote(trade),
-                    _buildReceivedOffers(trade),
-                  ],
+                physics: const BouncingScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildOfferedCards(trade),
+                      if (trade.coinsOffered > 0)
+                        _buildCoinsOffered(trade.coinsOffered),
+                      _buildTradeNote(trade),
+                      _buildReceivedOffers(trade),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -91,6 +104,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
           return const Center(
             child: CircularProgressIndicator(
               color: Color(0xFF3B82F6),
+              strokeWidth: 3,
             ),
           );
         }
@@ -101,18 +115,37 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.list_alt_outlined,
-                  size: 48,
-                  color: Colors.white.withOpacity(0.2),
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3B82F6).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.list_alt_outlined,
+                    size: 48,
+                    color: const Color(0xFF3B82F6).withOpacity(0.8),
+                  ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'No active listings',
+                const SizedBox(height: 24),
+                const Text(
+                  'No Active Listings',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
-                    fontSize: 16,
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                     fontFamily: 'Orbitron',
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Your trade listings will appear here',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.6),
+                    fontSize: 14,
+                    fontFamily: 'Orbitron',
+                    letterSpacing: 0.5,
                   ),
                 ),
               ],
@@ -122,6 +155,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
 
         return ListView.builder(
           padding: const EdgeInsets.all(16),
+          physics: const BouncingScrollPhysics(),
           itemCount: listings.length,
           itemBuilder: (context, index) => _buildListingCard(listings[index]),
         );
@@ -130,11 +164,28 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
   }
 
   Widget _buildListingCard(TradeModel trade) {
-    return TradeCard(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E), Color(0xFF0A0A1A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -145,23 +196,95 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                       'Trade Listing',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 18,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Orbitron',
+                        letterSpacing: 1,
                       ),
                     ),
                     _buildStatusChip(trade.status),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 _buildCardsList(trade.offeredCards),
-                if (trade.coinsOffered > 0)
+                if (trade.coinsOffered > 0) ...[
+                  const SizedBox(height: 16),
                   _buildCoinsOffered(trade.coinsOffered),
-                if (trade.note != null) _buildNote(trade.note!),
+                ],
+                if (trade.note != null && trade.note!.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _buildNote(trade.note!),
+                ],
               ],
             ),
           ),
-          _buildCardActions(trade),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.3),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(20),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    _showListingDetails(context, trade);
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF3B82F6),
+                    textStyle: const TextStyle(
+                      fontFamily: 'Orbitron',
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  child: const Text('VIEW DETAILS'),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.red.withOpacity(0.1),
+                        Colors.red.withOpacity(0.2)
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        HapticFeedback.mediumImpact();
+                        _cancelListing(trade.id);
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
+                        child: const Text(
+                          'CANCEL',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Orbitron',
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -196,64 +319,78 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
         itemCount: cards.length,
         itemBuilder: (context, index) {
           final card = cards[index];
-          return Container(
-            width: 120,
-            margin: const EdgeInsets.only(right: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        card.imageUrl,
-                        height: 120,
-                        width: 120,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 4,
-                      left: 4,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '#${card.serialNumber}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+          return _buildCardItem(card);
+        },
+      ),
+    );
+  }
+
+  Widget _buildCardItem(CardDetailModel card) {
+    return Container(
+      width: 140,
+      margin: const EdgeInsets.only(right: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  card.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    card.imageUrl,
+                    height: 140,
+                    width: 140,
+                    fit: BoxFit.cover,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
-                _buildRarityChip(card.rarity),
-              ],
+              ),
+              Positioned(
+                bottom: 8,
+                left: 8,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '#${card.serialNumber}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            card.name,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
             ),
-          );
-        },
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          _buildRarityChip(card.rarity),
+        ],
       ),
     );
   }
@@ -278,22 +415,29 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
   }
 
   Widget _buildCoinsOffered(int coins) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.amber.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.amber.withOpacity(0.3)),
+      ),
       child: Row(
         children: [
           const Icon(
-            Icons.monetization_on,
+            Icons.monetization_on_rounded,
             color: Colors.amber,
-            size: 20,
+            size: 24,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Text(
-            '$coins coins',
+            '${NumberFormat('#,###').format(coins)} coins offered',
             style: const TextStyle(
               color: Colors.amber,
-              fontSize: 14,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
             ),
           ),
         ],
@@ -320,165 +464,90 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
     );
   }
 
-  Widget _buildCardActions(TradeModel trade) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF3B82F6).withOpacity(0.1),
-            const Color(0xFF2563EB).withOpacity(0.05),
-          ],
-        ),
-        borderRadius: const BorderRadius.vertical(
-          bottom: Radius.circular(16),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          TextButton(
-            onPressed: () => _showListingDetails(context, trade),
-            child: const Text(
-              'View Details',
-              style: TextStyle(
-                color: Color(0xFF3B82F6),
-                fontFamily: 'Orbitron',
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton(
-            onPressed: () => _cancelListing(trade.id),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.withOpacity(0.1),
-              foregroundColor: Colors.red,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                fontFamily: 'Orbitron',
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildModalHeader(TradeModel trade) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Listing Details',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Orbitron',
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              ShaderMask(
+                shaderCallback: (bounds) => const LinearGradient(
+                  colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                ).createShader(bounds),
+                child: const Text(
+                  'Listing Details',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Orbitron',
+                    letterSpacing: 1,
+                  ),
+                ),
+              ),
+              Container(
+                height: 40,
+                width: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: IconButton(
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    Navigator.pop(context);
+                  },
+                  icon: Icon(
+                    Icons.close_rounded,
+                    size: 20,
+                    color: Colors.white.withOpacity(0.7),
+                  ),
+                  padding: EdgeInsets.zero,
+                ),
+              ),
+            ],
           ),
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.close, color: Colors.white),
-          ),
+          const SizedBox(height: 16),
+          _buildStatusChip(trade.status),
         ],
       ),
     );
   }
 
   Widget _buildOfferedCards(TradeModel trade) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Offered Cards',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Offered Cards',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Orbitron',
+            letterSpacing: 0.5,
           ),
-          const SizedBox(height: 12),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              childAspectRatio: 0.75,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-            ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 200,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
             itemCount: trade.offeredCards.length,
-            itemBuilder: (context, index) {
-              final card = trade.offeredCards[index];
-              return Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0A0A1A),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(8),
-                      ),
-                      child: Image.network(
-                        card.imageUrl,
-                        height: 100,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            card.name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '#${card.serialNumber}',
-                            style: TextStyle(
-                              color: Colors.grey.shade400,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
+            itemBuilder: (context, index) =>
+                _buildCardItem(trade.offeredCards[index]),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -486,25 +555,34 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
     if (trade.note == null || trade.note!.isEmpty)
       return const SizedBox.shrink();
 
-    return Padding(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Note',
             style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 14,
               fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+              letterSpacing: 0.5,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             trade.note!,
             style: TextStyle(
-              color: Colors.grey.shade400,
+              color: Colors.white.withOpacity(0.9),
               fontSize: 14,
+              height: 1.5,
             ),
           ),
         ],
@@ -674,32 +752,87 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
 
   Widget _buildModalActions(TradeModel trade) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.3),
         border: Border(
           top: BorderSide(color: Colors.white.withOpacity(0.1)),
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Close',
-              style: TextStyle(color: Colors.grey),
-            ),
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton(
-            onPressed: () => _cancelListing(trade.id),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          Expanded(
+            child: TextButton(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Navigator.pop(context);
+              },
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                ),
+              ),
+              child: Text(
+                'CLOSE',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Orbitron',
+                  letterSpacing: 1,
+                ),
               ),
             ),
-            child: const Text('Cancel Listing'),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.red.withOpacity(0.8),
+                    Colors.red.withOpacity(0.6)
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.red.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    _cancelListing(trade.id);
+                    Navigator.pop(context);
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: const Text(
+                      'CANCEL LISTING',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Orbitron',
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),

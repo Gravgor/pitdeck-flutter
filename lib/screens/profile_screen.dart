@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:pitdeck/providers/trade_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
@@ -24,7 +26,6 @@ class ProfileScreen extends StatefulWidget {
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
-
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
@@ -40,7 +41,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadAchievements();
     _loadBadges();
   }
-
 
   Future<void> _initializeUserSocket() async {
     final auth = Provider.of<UserProvider>(context, listen: false);
@@ -63,9 +63,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadBadges() async {
-    
     final auth = Provider.of<UserProvider>(context, listen: false);
-
 
     if (auth.user?.token != null) {
       await Provider.of<BadgeProvider>(context, listen: false)
@@ -73,260 +71,220 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF040412),
       body: Stack(
         children: [
-          // Mock background image for premium users
+          // Premium background with gradient overlay
           Positioned.fill(
-            child: Image.network(
-              'https://images.unsplash.com/photo-1494976388531-d1058494cdd8', // Sports car image
-              fit: BoxFit.cover,
+            child: ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [Colors.black, Colors.transparent],
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+              ).createShader(bounds),
+              blendMode: BlendMode.dstIn,
+              child: Image.network(
+                'https://images.unsplash.com/photo-1494976388531-d1058494cdd8',
+                fit: BoxFit.cover,
+              ),
             ),
           ),
-          // Dark overlay for better readability
+          // Dark gradient overlay
           Positioned.fill(
             child: Container(
-              color: const Color(0xFF040412).withOpacity(0.85),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF040412).withOpacity(0.9),
+                    const Color(0xFF040412).withOpacity(0.85),
+                    const Color(0xFF040412).withOpacity(0.8),
+                  ],
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                ),
+              ),
             ),
           ),
           Column(
             children: [
-              Container(
-                color: const Color(0xFF0A0A1A).withOpacity(0.8),
-                child: SafeArea(
-                  bottom: false,
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Profile',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Orbitron',
-                              ),
-                            ),
-                            if (widget.isCurrentUser)
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(
-                                    Icons.settings,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const SettingsScreen(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 80,
-                                  height: 80,
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: Colors.red.withOpacity(0.5),
-                                      width: 2,
-                                    ),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Image.network(
-                                    Provider.of<UserProvider>(context)
-                                            .user
-                                            ?.image ??
-                                        'https://via.placeholder.com/150',
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        Provider.of<UserProvider>(context)
-                                                .user
-                                                ?.name ??
-                                            'null',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: 'Orbitron',
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFF4B9FFF)
-                                                  .withOpacity(0.2),
-                                              borderRadius:
-                                                  BorderRadius.circular(4),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                const Icon(
-                                                  Icons.military_tech,
-                                                  color: Color(0xFF4B9FFF),
-                                                  size: 14,
-                                                ),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  'LVL ${Provider.of<UserProvider>(context).user?.level ?? 'null'}',
-                                                  style: const TextStyle(
-                                                    color: Color(0xFF4B9FFF),
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontFamily: 'Orbitron',
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFFFD700)
-                                                  .withOpacity(0.2),
-                                              borderRadius:
-                                                  BorderRadius.circular(4),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                const Icon(
-                                                  Icons.monetization_on,
-                                                  color: Color(0xFFFFD700),
-                                                  size: 14,
-                                                ),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  '${Provider.of<UserProvider>(context).user?.coins ?? 'null'} RC',
-                                                  style: const TextStyle(
-                                                    color: Color(0xFFFFD700),
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontFamily: 'Orbitron',
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                             const SizedBox(height: 16),
-            Consumer<BadgeProvider>(
-              builder: (context, provider, child) {
-                if (provider.badges.isEmpty) {
-                  return const SizedBox.shrink();
-                }
-                return _buildBadges();
-              },
-            ),
-                            const SizedBox(height: 16),
-
-                            GestureDetector(
-                              onTap: widget.isCurrentUser
-
-                                  ? _showEditBioModal
-                                  : null,
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        Provider.of<UserProvider>(context)
-                                                .user
-                                                ?.bio ??
-                                            'Add bio...',
-                                        style: TextStyle(
-                                          color: Provider.of<UserProvider>(
-                                                          context)
-                                                      .user
-                                                      ?.bio !=
-                                                  null
-                                              ? Colors.white.withOpacity(0.7)
-                                              : Colors.white.withOpacity(0.3),
-                                          fontSize: 14,
-                                          fontFamily: 'Orbitron',
-                                        ),
-                                      ),
-                                    ),
-                                    if (widget.isCurrentUser)
-                                      Icon(
-                                        Icons.edit,
-                                        color: Colors.white.withOpacity(0.5),
-                                        size: 16,
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              _buildHeader(),
               Expanded(
                 child: _buildMainContent(),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF0A0A1A).withOpacity(0.95),
+            const Color(0xFF0A0A1A).withOpacity(0.9),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ShaderMask(
+                    shaderCallback: (bounds) => const LinearGradient(
+                      colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                    ).createShader(bounds),
+                    child: const Text(
+                      'Profile',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Orbitron',
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                  if (widget.isCurrentUser)
+                    Container(
+                      height: 40,
+                      width: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: IconButton(
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SettingsScreen(),
+                            ),
+                          );
+                        },
+                        icon: Icon(
+                          Icons.settings_rounded,
+                          size: 20,
+                          color: Colors.white.withOpacity(0.7),
+                        ),
+                        padding: EdgeInsets.zero,
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFF3B82F6).withOpacity(0.2),
+                          const Color(0xFF60A5FA).withOpacity(0.2),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    padding: const EdgeInsets.all(2),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.network(
+                        Provider.of<UserProvider>(context).user?.image ??
+                            'https://via.placeholder.com/150',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          Provider.of<UserProvider>(context).user?.name ??
+                              'null',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Orbitron',
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            _buildStatChip(
+                              Icons.military_tech_rounded,
+                              'LVL ${Provider.of<UserProvider>(context).user?.level ?? "null"}',
+                              const Color(0xFF3B82F6),
+                            ),
+                            const SizedBox(width: 12),
+                            _buildStatChip(
+                              Icons.monetization_on_rounded,
+                              '${NumberFormat('#,###').format(Provider.of<UserProvider>(context).user?.coins ?? 0)} RC',
+                              const Color(0xFFFFD700),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Consumer<BadgeProvider>(
+                builder: (context, provider, child) {
+                  if (provider.badges.isEmpty) return const SizedBox.shrink();
+                  return _buildBadges();
+                },
+              ),
+              const SizedBox(height: 20),
+              _buildBioSection(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatChip(IconData icon, String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+            ),
           ),
         ],
       ),
@@ -342,7 +300,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         height: 40,
         fit: BoxFit.cover,
       ),
-
     );
   }
 
@@ -707,7 +664,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             }
 
             if (provider.error != null) {
-             return Container(
+              return Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: const Color(0xFF0A0A1A),
@@ -904,6 +861,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Icons.directions_car,
         color: Color(0xFF4B9FFF),
         size: 32,
+      ),
+    );
+  }
+
+  Widget _buildBioSection() {
+    final user = Provider.of<UserProvider>(context).user;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Bio',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Orbitron',
+                  letterSpacing: 0.5,
+                ),
+              ),
+              if (widget.isCurrentUser)
+                TextButton(
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    _showEditBioModal();
+                  },
+                  child: Text(
+                    'EDIT',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.5),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Orbitron',
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            user?.bio ?? 'No bio added yet.',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.9),
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+        ],
       ),
     );
   }

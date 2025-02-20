@@ -1,8 +1,7 @@
-
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:pitdeck/utils/color_utils.dart';
 import 'package:pitdeck/utils/snackbar_utils.dart';
@@ -131,11 +130,13 @@ class _PacksScreenState extends State<PacksScreen>
 
                 if (completeResponse.statusCode == 201) {
                   completer.complete();
-                    SnackBarUtils.showSuccess(context, title: 'Success', message: 'Pack opened successfully!');
+                  SnackBarUtils.showSuccess(context,
+                      title: 'Success', message: 'Pack opened successfully!');
                 }
               } catch (e) {
                 completer.completeError(e);
-                SnackBarUtils.showError(context, title: 'Error', message: 'Failed to complete pack opening');
+                SnackBarUtils.showError(context,
+                    title: 'Error', message: 'Failed to complete pack opening');
               }
             },
           ),
@@ -144,11 +145,14 @@ class _PacksScreenState extends State<PacksScreen>
         if (!mounted) return;
       } else if (response.statusCode == 400) {
         setState(() => _isOpeningLoading = false);
-        SnackBarUtils.showError(context, title: 'Error', message: 'You do not have enough coins to open this pack');
+        SnackBarUtils.showError(context,
+            title: 'Error',
+            message: 'You do not have enough coins to open this pack');
       }
     } catch (e) {
       setState(() => _isOpeningLoading = false);
-      SnackBarUtils.showError(context, title: 'Error', message: 'Failed to open pack');
+      SnackBarUtils.showError(context,
+          title: 'Error', message: 'Failed to open pack');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -473,134 +477,189 @@ class _PacksScreenState extends State<PacksScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF040412),
-      body: Column(
+      body: Stack(
         children: [
-          _buildHeader(),
-          _buildFilterChips(),
-          Expanded(
-            child: _isLoading ? _buildLoadingState() : _buildPacksList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 16,
-        left: 16,
-        right: 24,
-        bottom: 16,
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0xFF040412),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(
-              Icons.arrow_back_ios,
-              color: Colors.white,
-              size: 20,
+          // Premium background with gradient overlay
+          Positioned.fill(
+            child: ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [Colors.black, Colors.transparent],
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+              ).createShader(bounds),
+              blendMode: BlendMode.dstIn,
+              child: Image.network(
+                'https://images.unsplash.com/photo-1494976388531-d1058494cdd8',
+                fit: BoxFit.cover,
+              ),
             ),
-            style: IconButton.styleFrom(
-              backgroundColor: const Color(0xFF1A1A2E),
-              padding: const EdgeInsets.all(12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: const Color(0xFF3B82F6).withOpacity(0.3),
+          ),
+          // Dark gradient overlay
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF040412).withOpacity(0.9),
+                    const Color(0xFF040412).withOpacity(0.85),
+                    const Color(0xFF040412).withOpacity(0.8),
+                  ],
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
-          const Text(
-            'PACKS',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Orbitron',
-            ),
-          ),
-          const Spacer(),
-          Consumer<UserProvider>(
-            builder: (context, userProvider, _) {
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFB800).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: const Color(0xFFFFB800).withOpacity(0.3),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.monetization_on,
-                      color: Color(0xFFFFB800),
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _formatNumber(userProvider.user?.coins ?? 0),
-                      style: const TextStyle(
-                        color: Color(0xFFFFB800),
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Orbitron',
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
+          Column(
+            children: [
+              _buildHeader(),
+              _buildSearchBar(),
+              _buildFilterChips(),
+              Expanded(
+                child: _isLoading ? _buildLoadingState() : _buildPacksList(),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
+ Widget _buildHeader() {
+  return Container(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [
+          const Color(0xFF0A0A1A).withOpacity(0.95),
+          const Color(0xFF0A0A1A).withOpacity(0.9),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ),
+    ),
+    child: SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  height: 40,
+                  width: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.arrow_back_rounded,
+                      color: Colors.white.withOpacity(0.7),
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                  ).createShader(bounds),
+                  child: const Text(
+                    'PACKS',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Orbitron',
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Consumer<UserProvider>(
+              builder: (context, userProvider, _) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFFFFB800).withOpacity(0.1),
+                        const Color(0xFFFFD700).withOpacity(0.1),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFFFFB800).withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.monetization_on_rounded,
+                        color: Color(0xFFFFB800),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _formatNumber(userProvider.user?.coins ?? 0),
+                        style: const TextStyle(
+                          color: Color(0xFFFFB800),
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
   Widget _buildSearchBar() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+      margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFF3B82F6).withOpacity(0.3),
-        ),
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: TextField(
         controller: _searchController,
         style: const TextStyle(
           color: Colors.white,
           fontSize: 16,
+          fontFamily: 'Orbitron',
         ),
         decoration: InputDecoration(
           hintText: 'Search packs...',
           hintStyle: TextStyle(
-            color: Colors.white.withOpacity(0.5),
+            color: Colors.white.withOpacity(0.3),
             fontSize: 16,
+            fontFamily: 'Orbitron',
           ),
           prefixIcon: Icon(
-            Icons.search,
-            color: Colors.white.withOpacity(0.5),
+            Icons.search_rounded,
+            color: Colors.white.withOpacity(0.3),
+            size: 20,
           ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
@@ -613,58 +672,62 @@ class _PacksScreenState extends State<PacksScreen>
   }
 
   Widget _buildFilterChips() {
-    final filters = ['ALL', 'COMMON', 'RARE', 'EPIC', 'LEGENDARY'];
-
     return Container(
       height: 40,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: ListView.builder(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: filters.length,
-        itemBuilder: (context, index) {
-          final filter = filters[index];
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        children: [
+          'ALL',
+          'COMMON',
+          'RARE',
+          'EPIC',
+          'LEGENDARY',
+        ].map((filter) {
           final isSelected = _selectedFilter == filter;
-          final color = _getRarityColor(filter);
-
-          return Container(
-            margin: const EdgeInsets.symmetric(horizontal: 8),
+          return Padding(
+            padding: const EdgeInsets.only(right: 12),
             child: FilterChip(
               selected: isSelected,
-              showCheckmark: false,
-              label: Text(filter),
-              labelStyle: TextStyle(
-                color: isSelected ? color : Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Orbitron',
-              ),
-              backgroundColor: const Color(0xFF1A1A2E),
-              selectedColor: color.withOpacity(0.2),
-              side: BorderSide(
-                color: isSelected ? color : color.withOpacity(0.3),
-                width: 1.5,
-              ),
               onSelected: (selected) {
-                setState(() {
-                  _selectedFilter = filter;
-                  _filterPacks();
-                });
+                HapticFeedback.lightImpact();
+                setState(() => _selectedFilter = filter);
               },
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              label: Text(
+                filter,
+                style: TextStyle(
+                  color:
+                      isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Orbitron',
+                  letterSpacing: 0.5,
+                ),
+              ),
+              backgroundColor: Colors.white.withOpacity(0.05),
+              selectedColor: const Color(0xFF3B82F6),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
+                side: BorderSide(
+                  color: isSelected
+                      ? const Color(0xFF3B82F6)
+                      : Colors.white.withOpacity(0.1),
+                ),
               ),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
             ),
           );
-        },
+        }).toList(),
       ),
     );
   }
 
   Widget _buildPacksList() {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 24),
       itemCount: _filteredPacks.length,
       itemBuilder: (context, index) => _buildPackCard(_filteredPacks[index]),
     );

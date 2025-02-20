@@ -86,12 +86,6 @@ class _DailyLoginRewardsPopupState extends State<DailyLoginRewardsPopup>
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF3B82F6)),
-      );
-    }
-
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
       child: Center(
@@ -100,15 +94,7 @@ class _DailyLoginRewardsPopupState extends State<DailyLoginRewardsPopup>
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 24),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF1A1A2E),
-                  const Color(0xFF3B82F6).withOpacity(0.1),
-                  const Color(0xFF1A1A2E),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
+              color: const Color(0xFF1A1A2E),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
                 color: const Color(0xFF3B82F6).withOpacity(0.3),
@@ -121,22 +107,156 @@ class _DailyLoginRewardsPopupState extends State<DailyLoginRewardsPopup>
                 ),
               ],
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildHeader(),
-                _buildRewardContent(),
-                _buildStreakInfo(),
-                _buildClaimButton(),
-              ],
-            ),
+            child: _isLoading
+                ? const _LoadingView()
+                : _error
+                    ? _ErrorView(message: _errorMessage)
+                    : _RewardView(
+                        rewardStatus: _rewardStatus!,
+                        isCollecting: _isCollecting,
+                        onCollect: _collectReward,
+                      ),
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildHeader() {
+class _LoadingView extends StatelessWidget {
+  const _LoadingView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 400,
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          TweenAnimationBuilder<double>(
+            duration: const Duration(seconds: 2),
+            tween: Tween(begin: 0, end: 4 * 3.14159),
+            curve: Curves.linear,
+            builder: (context, value, child) => Transform.rotate(
+              angle: value,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: const Color(0xFF3B82F6).withOpacity(0.5),
+                    width: 2,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Loading Rewards...',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontFamily: 'Orbitron',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  final String message;
+
+  const _ErrorView({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.error_outline,
+            color: Color(0xFFEF4444),
+            size: 64,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Error Loading Rewards',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3B82F6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'CLOSE',
+              style: TextStyle(
+                fontFamily: 'Orbitron',
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RewardView extends StatelessWidget {
+  final Map<String, dynamic> rewardStatus;
+  final bool isCollecting;
+  final VoidCallback onCollect;
+
+  const _RewardView({
+    required this.rewardStatus,
+    required this.isCollecting,
+    required this.onCollect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool canClaim = rewardStatus['canClaim'] ?? false;
+    final int streak = rewardStatus['currentStreak'] ?? 0;
+    final int nextReward = rewardStatus['nextReward'] ?? 0;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildHeader(streak),
+        _buildRewardAmount(nextReward),
+        _buildStreakInfo(streak),
+        _buildClaimButton(canClaim),
+      ],
+    );
+  }
+
+  Widget _buildHeader(int streak) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -148,7 +268,6 @@ class _DailyLoginRewardsPopupState extends State<DailyLoginRewardsPopup>
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         children: [
@@ -173,27 +292,7 @@ class _DailyLoginRewardsPopupState extends State<DailyLoginRewardsPopup>
                   size: 40,
                 ),
               ),
-              if (_rewardStatus?['canClaim'] == true)
-                TweenAnimationBuilder<double>(
-                  duration: const Duration(seconds: 2),
-                  tween: Tween(begin: 0.0, end: 1.0),
-                  builder: (context, value, child) {
-                    return Transform.rotate(
-                      angle: value * 2 * 3.14159,
-                      child: Container(
-                        width: 90,
-                        height: 90,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: const Color(0xFF3B82F6).withOpacity(0.5),
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+              if (rewardStatus['canClaim'] == true) _buildRotatingRing(),
             ],
           ),
           const SizedBox(height: 16),
@@ -211,13 +310,36 @@ class _DailyLoginRewardsPopupState extends State<DailyLoginRewardsPopup>
     );
   }
 
-  Widget _buildRewardContent() {
-    return Padding(
-      padding: const EdgeInsets.all(24),
+  Widget _buildRotatingRing() {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(seconds: 2),
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Transform.rotate(
+          angle: value * 2 * 3.14159,
+          child: Container(
+            width: 90,
+            height: 90,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: const Color(0xFF3B82F6).withOpacity(0.5),
+                width: 2,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRewardAmount(int amount) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 24),
       child: Column(
         children: [
           Text(
-            '+${_rewardStatus?['nextReward'] ?? 0}',
+            '+$amount',
             style: const TextStyle(
               color: Color(0xFF3B82F6),
               fontSize: 48,
@@ -241,8 +363,7 @@ class _DailyLoginRewardsPopupState extends State<DailyLoginRewardsPopup>
     );
   }
 
-  Widget _buildStreakInfo() {
-    final currentStreak = _rewardStatus?['currentStreak'] ?? 0;
+  Widget _buildStreakInfo(int streak) {
     return Container(
       margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
       padding: const EdgeInsets.all(16),
@@ -263,7 +384,7 @@ class _DailyLoginRewardsPopupState extends State<DailyLoginRewardsPopup>
           ),
           const SizedBox(width: 8),
           Text(
-            '$currentStreak Day${currentStreak == 1 ? '' : 's'} Streak!',
+            '$streak Day${streak == 1 ? '' : 's'} Streak!',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 16,
@@ -276,12 +397,12 @@ class _DailyLoginRewardsPopupState extends State<DailyLoginRewardsPopup>
     );
   }
 
-  Widget _buildClaimButton() {
+  Widget _buildClaimButton(bool canClaim) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       child: ElevatedButton(
-        onPressed: _rewardStatus?['canClaim'] == true ? _collectReward : null,
+        onPressed: canClaim ? onCollect : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF3B82F6),
           foregroundColor: Colors.white,
@@ -291,7 +412,7 @@ class _DailyLoginRewardsPopupState extends State<DailyLoginRewardsPopup>
           ),
           elevation: 0,
         ),
-        child: _isCollecting
+        child: isCollecting
             ? const SizedBox(
                 height: 20,
                 width: 20,
@@ -301,14 +422,11 @@ class _DailyLoginRewardsPopupState extends State<DailyLoginRewardsPopup>
                 ),
               )
             : Text(
-                _rewardStatus?['canClaim'] == true
-                    ? 'CLAIM REWARD'
-                    : 'COME BACK TOMORROW',
+                canClaim ? 'CLAIM REWARD' : 'COME BACK TOMORROW',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Orbitron',
-                  color: Colors.white,
                 ),
               ),
       ),

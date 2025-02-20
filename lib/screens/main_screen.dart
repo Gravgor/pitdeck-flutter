@@ -385,8 +385,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     }
   }
 
-  
-
   Future<void> _enableLocationComponent() async {
     if (_mapboxMap != null) {
       await _mapboxMap?.location.updateSettings(
@@ -420,31 +418,31 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.8),
+      barrierColor: Colors.black.withOpacity(0.9),
       builder: (context) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
           child: TweenAnimationBuilder<double>(
-            duration: const Duration(milliseconds: 500),
-            tween: Tween(begin: 0.8, end: 1.0),
-            curve: Curves.easeOutBack,
+            duration: const Duration(milliseconds: 600),
+            tween: Tween(begin: 0.6, end: 1.0),
+            curve: Curves.elasticOut,
             builder: (context, value, child) => Transform.scale(
               scale: value,
               child: Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFF040412),
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(28),
                   border: Border.all(
-                    color: _getRarityColor(newDrop.rarity).withOpacity(0.3),
+                    color: _getRarityColor(newDrop.rarity).withOpacity(0.4),
                     width: 2,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: _getRarityColor(newDrop.rarity).withOpacity(0.2),
-                      blurRadius: 30,
-                      spreadRadius: 5,
+                      color: _getRarityColor(newDrop.rarity).withOpacity(0.25),
+                      blurRadius: 40,
+                      spreadRadius: 10,
                     ),
                   ],
                 ),
@@ -467,11 +465,12 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   Widget _buildDropHeader(
       DropModel drop, double distance, bool isInRange, bool isPremium) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            _getRarityColor(drop.rarity).withOpacity(0.2),
+            _getRarityColor(drop.rarity).withOpacity(0.3),
+            _getRarityColor(drop.rarity).withOpacity(0.1),
             Colors.transparent,
           ],
           begin: Alignment.topCenter,
@@ -483,117 +482,141 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: _getRarityColor(drop.rarity).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: _getRarityColor(drop.rarity).withOpacity(0.3),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.auto_awesome,
-                      color: _getRarityColor(drop.rarity),
-                      size: 16,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      drop.rarity.toString().split('.').last,
-                      style: TextStyle(
-                        color: _getRarityColor(drop.rarity),
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Orbitron',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isInRange
-                      ? const Color(0xFF10B981).withOpacity(0.1)
-                      : const Color(0xFFEF4444).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isInRange
-                        ? const Color(0xFF10B981).withOpacity(0.3)
-                        : const Color(0xFFEF4444).withOpacity(0.3),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      isInRange ? Icons.near_me : Icons.location_off,
-                      color: isInRange
-                          ? const Color(0xFF10B981)
-                          : const Color(0xFFEF4444),
-                      size: 16,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${distance.toStringAsFixed(0)}m',
-                      style: TextStyle(
-                        color: isInRange
-                            ? const Color(0xFF10B981)
-                            : const Color(0xFFEF4444),
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Orbitron',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              _buildRarityBadge(drop),
+              _buildDistanceBadge(distance, isInRange),
             ],
           ),
-          if (!isPremium && distance > 100 && distance <= 500) ...[
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFB800).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFFFFB800).withOpacity(0.3),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFB800).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Icon(
-                      Icons.workspace_premium,
-                      color: Color(0xFFFFB800),
-                      size: 14,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Upgrade to Premium to Reach',
-                    style: TextStyle(
-                      color: Color(0xFFFFB800),
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Orbitron',
-                    ),
-                  ),
-                ],
-              ),
+          if (!isPremium && distance > 100 && distance <= 500)
+            _buildPremiumBanner(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRarityBadge(DropModel drop) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: _getRarityColor(drop.rarity).withOpacity(0.15),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: _getRarityColor(drop.rarity).withOpacity(0.4),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: _getRarityColor(drop.rarity).withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.auto_awesome,
+            color: _getRarityColor(drop.rarity),
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            drop.rarity.toString().split('.').last,
+            style: TextStyle(
+              color: _getRarityColor(drop.rarity),
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+              letterSpacing: 1,
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDistanceBadge(double distance, bool isInRange) {
+    final color = isInRange ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withOpacity(0.4)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isInRange ? Icons.near_me : Icons.location_off,
+            color: color,
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '${distance.toStringAsFixed(0)}m',
+            style: TextStyle(
+              color: color,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+              letterSpacing: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPremiumBanner() {
+    return Container(
+      margin: const EdgeInsets.only(top: 20),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFB800).withOpacity(0.15),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFFFFB800).withOpacity(0.4),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFFB800).withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFB800).withOpacity(0.25),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.workspace_premium,
+              color: Color(0xFFFFB800),
+              size: 16,
+            ),
+          ),
+          const SizedBox(width: 10),
+          const Text(
+            'Upgrade to Premium to Reach',
+            style: TextStyle(
+              color: Color(0xFFFFB800),
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+              letterSpacing: 0.5,
+            ),
+          ),
         ],
       ),
     );
@@ -1627,7 +1650,6 @@ class MarkerManager {
     }
     return drop;
   }
-
 
   DropModel? getDropByAnnotationId(String annotationId) {
     final dropId = _annotationToDropId[annotationId];

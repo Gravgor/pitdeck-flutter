@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-  import 'package:pitdeck/providers/user_provider.dart';
+import 'package:flutter/services.dart';
+import 'package:pitdeck/providers/user_provider.dart';
 import 'package:pitdeck/services/daily_reward_service.dart';
 import 'dart:ui';
 import 'package:pitdeck/screens/pack/packs_screen.dart';
@@ -121,12 +122,26 @@ class ControlCenter extends StatelessWidget {
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
       decoration: BoxDecoration(
-        color: const Color(0xFF040412),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF1A1A2E).withOpacity(0.95),
+            const Color(0xFF0F0F1E).withOpacity(0.95),
+            const Color(0xFF0A0A1A).withOpacity(0.95),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         border: Border.all(
           color: Colors.white.withOpacity(0.1),
-          width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -140,17 +155,23 @@ class ControlCenter extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
               children: [
-                Text(
-                  'CONTROL CENTER',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'Orbitron',
+                ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                  ).createShader(bounds),
+                  child: const Text(
+                    'CONTROL CENTER',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Orbitron',
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
               ],
@@ -198,19 +219,28 @@ class ControlCenter extends StatelessWidget {
     return status;
   }
 
-   Widget _buildDailyRewards(BuildContext context) {
+  Widget _buildDailyRewards(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>>(
       future: getDailyRewardStatus(context),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildDailyRewardsContainer(
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFF2D1619).withOpacity(0.9),
+                const Color(0xFF1F1013).withOpacity(0.9),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             child: Column(
               children: [
                 _buildDailyRewardsHeader(),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 const Center(
                   child: CircularProgressIndicator(
                     color: Color(0xFF10B981),
+                    strokeWidth: 3,
                   ),
                 ),
               ],
@@ -220,29 +250,40 @@ class ControlCenter extends StatelessWidget {
 
         if (snapshot.hasError) {
           return _buildDailyRewardsContainer(
-            borderColor: const Color(0xFFEF4444).withOpacity(0.3),
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFF2D1619).withOpacity(0.9),
+                const Color(0xFF1F1013).withOpacity(0.9),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEF4444).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFFEF4444).withOpacity(0.3),
+                    ),
                   ),
                   child: const Icon(
-                    Icons.error_outline,
+                    Icons.error_outline_rounded,
                     color: Color(0xFFEF4444),
-                    size: 20,
+                    size: 24,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 const Text(
                   'Error Loading Rewards',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.bold,
                     fontFamily: 'Orbitron',
+                    letterSpacing: 0.5,
                   ),
                 ),
               ],
@@ -256,6 +297,14 @@ class ControlCenter extends StatelessWidget {
         final nextReward = status['nextReward'] as int;
 
         return _buildDailyRewardsContainer(
+          gradient: LinearGradient( 
+            colors: [
+              const Color(0xFF0A0A1A).withOpacity(0.9),
+              const Color(0xFF040412).withOpacity(0.9),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -269,7 +318,12 @@ class ControlCenter extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withOpacity(0.1),
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFF10B981).withOpacity(0.1),
+                          const Color(0xFF059669).withOpacity(0.1),
+                        ],
+                      ),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: const Color(0xFF10B981).withOpacity(0.3),
@@ -278,7 +332,7 @@ class ControlCenter extends StatelessWidget {
                     child: Row(
                       children: [
                         const Icon(
-                          Icons.local_fire_department,
+                          Icons.local_fire_department_rounded,
                           color: Color(0xFF10B981),
                           size: 16,
                         ),
@@ -287,9 +341,10 @@ class ControlCenter extends StatelessWidget {
                           '$currentStreak',
                           style: const TextStyle(
                             color: Color(0xFF10B981),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
                             fontFamily: 'Orbitron',
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ],
@@ -297,71 +352,112 @@ class ControlCenter extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              InkWell(
-                onTap: canClaim ? () => _handleClaim(context) : null,
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: canClaim 
-                        ? const Color(0xFF0A2F25)
-                        : const Color(0xFF1F1F3F),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: canClaim
-                          ? const Color(0xFF10B981)
-                          : Colors.white.withOpacity(0.1),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.monetization_on,
+              const SizedBox(height: 24),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: canClaim
+                      ? () {
+                          HapticFeedback.mediumImpact();
+                          _handleClaim(context);
+                        }
+                      : null,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: canClaim
+                            ? [
+                                const Color(0xFF0A2F25).withOpacity(0.9),
+                                const Color(0xFF051F19).withOpacity(0.9),
+                              ]
+                            : [
+                                const Color(0xFF1F1F3F).withOpacity(0.5),
+                                const Color(0xFF15152F).withOpacity(0.5),
+                              ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
                         color: canClaim
-                            ? const Color(0xFFFFD700)
-                            : const Color(0xFFFFD700).withOpacity(0.3),
-                        size: 32,
+                            ? const Color(0xFF10B981)
+                            : Colors.white.withOpacity(0.1),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _formatNumber(nextReward),
-                        style: TextStyle(
-                          color: canClaim
-                              ? Colors.white
-                              : Colors.white.withOpacity(0.3),
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Orbitron',
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            canClaim ? 'Claim Daily Reward' : 'Come back tomorrow',
-                            style: TextStyle(
-                              color: canClaim
-                                  ? const Color(0xFF10B981)
-                                  : Colors.white.withOpacity(0.5),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'Orbitron',
+                      boxShadow: canClaim
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFF10B981).withOpacity(0.1),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFD700).withOpacity(0.1),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFFFFD700).withOpacity(0.3),
                             ),
                           ),
-                          if (canClaim) ...[
-                            const SizedBox(width: 8),
-                            Icon(
-                              Icons.arrow_forward,
-                              color: const Color(0xFF10B981),
-                              size: 16,
+                          child: Icon(
+                            Icons.monetization_on_rounded,
+                            color: canClaim
+                                ? const Color(0xFFFFD700)
+                                : const Color(0xFFFFD700).withOpacity(0.3),
+                            size: 32,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _formatNumber(nextReward),
+                          style: TextStyle(
+                            color: canClaim
+                                ? Colors.white
+                                : Colors.white.withOpacity(0.3),
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Orbitron',
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              canClaim
+                                  ? 'Claim Daily Reward'
+                                  : 'Come back tomorrow',
+                              style: TextStyle(
+                                color: canClaim
+                                    ? const Color(0xFF10B981)
+                                    : Colors.white.withOpacity(0.5),
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Orbitron',
+                                letterSpacing: 0.5,
+                              ),
                             ),
+                            if (canClaim) ...[
+                              const SizedBox(width: 8),
+                              const Icon(
+                                Icons.arrow_forward_rounded,
+                                color: Color(0xFF10B981),
+                                size: 18,
+                              ),
+                            ],
                           ],
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -374,22 +470,24 @@ class ControlCenter extends StatelessWidget {
 
   Future<void> _handleClaim(BuildContext context) async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final rewardService = Provider.of<DailyRewardService>(context, listen: false);
-    
+    final rewardService =
+        Provider.of<DailyRewardService>(context, listen: false);
+
     try {
-      final result = await rewardService.claimDailyReward(userProvider.user?.token ?? '');
-      
+      final result =
+          await rewardService.claimDailyReward(userProvider.user?.token ?? '');
+
       if (result != null) {
         // Update user's coins
         if (result['coins'] != null) {
           userProvider.updateCoins(result['coins']);
         }
-        
+
         // Show success message
         if (context.mounted) {
-          SnackBarUtils.showSuccess(context, title: 'Success', message: 'Reward claimed');
+          SnackBarUtils.showSuccess(context,
+              title: 'Success', message: 'Reward claimed');
         }
-        
       }
     } catch (e) {
       if (context.mounted) {
@@ -425,6 +523,7 @@ class ControlCenter extends StatelessWidget {
   }
 
   Widget _buildDailyRewardsContainer({
+    required Gradient gradient,
     required Widget child,
     Color? borderColor,
   }) {
@@ -432,7 +531,7 @@ class ControlCenter extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A0A1A),
+        gradient: gradient,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: borderColor ?? Colors.white.withOpacity(0.1),
@@ -475,28 +574,45 @@ class ControlCenter extends StatelessWidget {
   Widget _buildControlTile(ControlTile tile) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF0A0A1A),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.1),
-          width: 1,
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF0A0A1A).withOpacity(0.9),
+            const Color(0xFF040412).withOpacity(0.9),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: tile.onTap,
-          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            tile.onTap();
+          },
+          borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: tile.accentColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: tile.accentColor.withOpacity(0.3),
+                    ),
                   ),
                   child: Icon(
                     tile.icon,
@@ -511,15 +627,17 @@ class ControlCenter extends StatelessWidget {
                     color: Colors.white,
                     fontSize: 18,
                     fontFamily: 'Orbitron',
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
                 Text(
                   tile.description,
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.5),
                     fontSize: 12,
+                    letterSpacing: 0.3,
                   ),
                   textAlign: TextAlign.center,
                 ),

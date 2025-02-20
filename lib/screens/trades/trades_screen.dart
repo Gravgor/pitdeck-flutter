@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pitdeck/models/trade.dart';
 import 'package:pitdeck/screens/trades/received_offers_screen.dart';
 import 'package:pitdeck/utils/snackbar_utils.dart';
@@ -55,17 +56,17 @@ class _TradesScreenState extends State<TradesScreen>
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 64, 16, 16),
+      padding: const EdgeInsets.fromLTRB(24, 64, 24, 24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E), Color(0xFF0A0A1A)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -76,86 +77,137 @@ class _TradesScreenState extends State<TradesScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Trade Management',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Orbitron',
+              ShaderMask(
+                shaderCallback: (bounds) => const LinearGradient(
+                  colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                ).createShader(bounds),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Trade Management',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Orbitron',
+                        letterSpacing: 1,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Manage your trades and offers',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
-                      fontSize: 14,
-                      fontFamily: 'Orbitron',
+                    const SizedBox(height: 4),
+                    Text(
+                      'Manage your trades and offers',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 13,
+                        fontFamily: 'Orbitron',
+                        letterSpacing: 0.5,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               Row(
                 children: [
-                  IconButton(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SentOffersScreen(),
-                      ),
+                  Container(
+                    height: 40,
+                    width: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    icon: Icon(
-                      Icons.upload,
-                      color: Colors.white.withOpacity(0.5),
+                    child: IconButton(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SentOffersScreen(),
+                          ),
+                        );
+                      },
+                      icon: Icon(
+                        Icons.upload_rounded,
+                        size: 20,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                      padding: EdgeInsets.zero,
                     ),
                   ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(
-                      Icons.close,
-                      color: Colors.white.withOpacity(0.5),
+                  const SizedBox(width: 8),
+                  Container(
+                    height: 40,
+                    width: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: IconButton(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.pop(context);
+                      },
+                      icon: Icon(
+                        Icons.close_rounded,
+                        size: 20,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                      padding: EdgeInsets.zero,
                     ),
                   ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
           Container(
             height: 48,
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: const Color(0xFF0A0A1A),
+              color: Colors.white.withOpacity(0.02),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.white.withOpacity(0.1)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: TabBar(
               controller: _tabController,
               indicator: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF3B82F6).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               dividerColor: Colors.transparent,
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white.withOpacity(0.5),
               labelStyle: const TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Orbitron',
+                letterSpacing: 0.5,
               ),
               tabs: const [
                 Tab(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.list_alt, size: 16),
-                      SizedBox(width: 8),
+                      Icon(Icons.list_alt_rounded, size: 16),
+                      SizedBox(width: 6),
                       Text('MY LISTINGS'),
                     ],
                   ),
@@ -164,8 +216,8 @@ class _TradesScreenState extends State<TradesScreen>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.download, size: 16),
-                      SizedBox(width: 8),
+                      Icon(Icons.download_rounded, size: 16),
+                      SizedBox(width: 6),
                       Text('RECEIVED'),
                     ],
                   ),
@@ -238,7 +290,8 @@ class _TradesScreenState extends State<TradesScreen>
       final tradeProvider = Provider.of<TradeProvider>(context, listen: false);
       await tradeProvider.acceptTrade(tradeId);
     } catch (e) {
-      SnackBarUtils.showError(context, title: 'Error', message: 'Error accepting offer: $e');
+      SnackBarUtils.showError(context,
+          title: 'Error', message: 'Error accepting offer: $e');
     }
   }
 
@@ -247,7 +300,8 @@ class _TradesScreenState extends State<TradesScreen>
       final tradeProvider = Provider.of<TradeProvider>(context, listen: false);
       await tradeProvider.declineTrade(tradeId);
     } catch (e) {
-      SnackBarUtils.showError(context, title: 'Error', message: 'Error declining offer: $e');
+      SnackBarUtils.showError(context,
+          title: 'Error', message: 'Error declining offer: $e');
     }
   }
 

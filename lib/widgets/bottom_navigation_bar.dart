@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/user_provider.dart';
+import 'package:flutter/services.dart';
 
 class GlobalBottomNavigationBar extends StatelessWidget {
   const GlobalBottomNavigationBar({super.key});
@@ -17,8 +18,8 @@ class GlobalBottomNavigationBar extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 12,
             offset: const Offset(0, -2),
           ),
         ],
@@ -31,32 +32,36 @@ class GlobalBottomNavigationBar extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildNavItem(
-                  context,
-                  Icons.map_outlined,
-                  Icons.map,
-                  'Map',
-                  navigation.currentIndex == 0,
+                  context: context,
+                  icon: Icons.map_outlined,
+                  activeIcon: Icons.map,
+                  label: 'Map',
+                  isSelected: navigation.currentIndex == 0,
+                  index: 0,
                 ),
                 _buildNavItem(
-                  context,
-                  Icons.card_membership_outlined,
-                  Icons.card_membership,
-                  'Collection',
-                  navigation.currentIndex == 1,
+                  context: context,
+                  icon: Icons.card_membership_outlined,
+                  activeIcon: Icons.card_membership,
+                  label: 'Collection',
+                  isSelected: navigation.currentIndex == 1,
+                  index: 1,
                 ),
                 _buildNavItem(
-                  context,
-                  Icons.store_outlined,
-                  Icons.store,
-                  'Market',
-                  navigation.currentIndex == 2,
+                  context: context,
+                  icon: Icons.store_outlined,
+                  activeIcon: Icons.store,
+                  label: 'Market',
+                  isSelected: navigation.currentIndex == 2,
+                  index: 2,
                 ),
                 _buildNavItem(
-                  context,
-                  Icons.person_outline,
-                  Icons.person,
-                  'Profile',
-                  navigation.currentIndex == 3,
+                  context: context,
+                  icon: Icons.person_outline,
+                  activeIcon: Icons.person,
+                  label: 'Profile',
+                  isSelected: navigation.currentIndex == 3,
+                  index: 3,
                 ),
               ],
             ),
@@ -66,24 +71,25 @@ class GlobalBottomNavigationBar extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem(BuildContext context, IconData outlinedIcon,
-      IconData filledIcon, String label, bool isSelected) {
+  Widget _buildNavItem({
+    required BuildContext context,
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+    required bool isSelected,
+    required int index,
+  }) {
     return GestureDetector(
       onTap: () {
         if (!isSelected) {
-          final int index = label == 'Collection'
-              ? 1
-              : label == 'Market'
-                  ? 2
-                  : label == 'Profile'
-                      ? 3
-                      : 0;
+          HapticFeedback.lightImpact();
           Provider.of<NavigationProvider>(context, listen: false)
               .changePage(index);
         }
       },
       behavior: HitTestBehavior.opaque,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           gradient: isSelected
@@ -95,14 +101,28 @@ class GlobalBottomNavigationBar extends StatelessWidget {
               : null,
           color: isSelected ? null : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF3B82F6).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              isSelected ? filledIcon : outlinedIcon,
-              color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
-              size: 24,
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                isSelected ? activeIcon : icon,
+                key: ValueKey(isSelected),
+                color:
+                    isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+                size: 24,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
@@ -113,6 +133,7 @@ class GlobalBottomNavigationBar extends StatelessWidget {
                 fontSize: 12,
                 fontFamily: 'Orbitron',
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                letterSpacing: 0.5,
               ),
             ),
           ],

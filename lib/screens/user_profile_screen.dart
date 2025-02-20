@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:pitdeck/models/card.dart';
 import 'package:pitdeck/utils/color_utils.dart';
 import 'package:provider/provider.dart';
@@ -66,8 +68,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     if (_isLoading) {
       return const Scaffold(
         backgroundColor: Color(0xFF040412),
-        body:
-            Center(child: CircularProgressIndicator(color: Color(0xFF3B82F6))),
+        body: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFF3B82F6),
+            strokeWidth: 3,
+          ),
+        ),
       );
     }
 
@@ -75,51 +81,98 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       backgroundColor: const Color(0xFF040412),
       body: Stack(
         children: [
+          // Premium background with gradient overlay
           Positioned.fill(
-            child: Image.network(
-              'https://images.unsplash.com/photo-1494976388531-d1058494cdd8',
-              fit: BoxFit.cover,
+            child: ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [Colors.black, Colors.transparent],
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+              ).createShader(bounds),
+              blendMode: BlendMode.dstIn,
+              child: Image.network(
+                'https://images.unsplash.com/photo-1494976388531-d1058494cdd8',
+                fit: BoxFit.cover,
+              ),
             ),
           ),
+          // Dark gradient overlay
           Positioned.fill(
             child: Container(
-              color: const Color(0xFF040412).withOpacity(0.85),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF040412).withOpacity(0.9),
+                    const Color(0xFF040412).withOpacity(0.85),
+                    const Color(0xFF040412).withOpacity(0.8),
+                  ],
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                ),
+              ),
             ),
           ),
           Column(
             children: [
               Container(
-                color: const Color(0xFF0A0A1A).withOpacity(0.8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF0A0A1A).withOpacity(0.95),
+                      const Color(0xFF0A0A1A).withOpacity(0.9),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
                 child: SafeArea(
                   bottom: false,
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_back,
-                                  color: Colors.white),
-                              onPressed: () => Navigator.pop(context),
+                            Container(
+                              height: 40,
+                              width: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: IconButton(
+                                icon: Icon(
+                                  Icons.arrow_back_rounded,
+                                  color: Colors.white.withOpacity(0.7),
+                                  size: 20,
+                                ),
+                                onPressed: () {
+                                  HapticFeedback.lightImpact();
+                                  Navigator.pop(context);
+                                },
+                                padding: EdgeInsets.zero,
+                              ),
                             ),
                             if (!_isCurrentUser)
                               Row(
                                 children: [
                                   _buildActionButton(
-                                    icon: Icons.person_add,
+                                    icon: Icons.person_add_rounded,
                                     label: 'Add Friend',
                                     onTap: () {
+                                      HapticFeedback.mediumImpact();
                                       // TODO: Implement friend request
                                     },
                                     disabled: true,
                                   ),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: 12),
                                   _buildActionButton(
-                                    icon: Icons.mail_outline,
+                                    icon: Icons.mail_outline_rounded,
                                     label: 'Message',
                                     onTap: () {
+                                      HapticFeedback.mediumImpact();
                                       // TODO: Implement messaging
                                     },
                                     disabled: true,
@@ -128,76 +181,71 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                               ),
                           ],
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        const SizedBox(height: 24),
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 80,
-                                  height: 80,
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: Colors.red.withOpacity(0.5),
-                                      width: 2,
-                                    ),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Image.network(
-                                    _user?.image ??
-                                        'https://via.placeholder.com/150',
-                                    fit: BoxFit.cover,
-                                  ),
+                            Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    const Color(0xFF3B82F6).withOpacity(0.2),
+                                    const Color(0xFF60A5FA).withOpacity(0.2),
+                                  ],
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              padding: const EdgeInsets.all(2),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child: Image.network(
+                                  _user?.image ??
+                                      'https://via.placeholder.com/150',
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 20),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _user?.name ?? 'Unknown User',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'Orbitron',
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
                                     children: [
-                                      Text(
-                                        _user?.name ?? 'Unknown User',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: 'Orbitron',
-                                        ),
+                                      _buildStatChip(
+                                        Icons.military_tech_rounded,
+                                        'LVL ${_user?.level ?? 0}',
+                                        const Color(0xFF3B82F6),
                                       ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          _buildInfoChip(
-                                            icon: Icons.military_tech,
-                                            label: 'LVL ${_user?.level ?? 0}',
-                                            color: const Color(0xFF4B9FFF),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          _buildInfoChip(
-                                            icon: Icons.monetization_on,
-                                            label: '${_user?.coins ?? 0} RC',
-                                            color: const Color(0xFFFFD700),
-                                          ),
-                                        ],
+                                      const SizedBox(width: 12),
+                                      _buildStatChip(
+                                        Icons.monetization_on_rounded,
+                                        '${NumberFormat('#,###').format(_user?.coins ?? 0)} RC',
+                                        const Color(0xFFFFD700),
                                       ),
                                     ],
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                _buildBadges(),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 20),
+                        _buildBadges(),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -217,53 +265,79 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     required VoidCallback onTap,
     required bool disabled,
   }) {
-    return GestureDetector(
-      onTap: disabled ? null : onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFF3B82F6).withOpacity(disabled ? 0.5 : 1),
-          borderRadius: BorderRadius.circular(8),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: disabled
+              ? [Colors.white.withOpacity(0.05), Colors.white.withOpacity(0.02)]
+              : [const Color(0xFF3B82F6), const Color(0xFF2563EB)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.white, size: 16),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Orbitron',
-              ),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: disabled
+            ? []
+            : [
+                BoxShadow(
+                  color: const Color(0xFF3B82F6).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: disabled ? null : onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  color:
+                      disabled ? Colors.white.withOpacity(0.3) : Colors.white,
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color:
+                        disabled ? Colors.white.withOpacity(0.3) : Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Orbitron',
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildInfoChip({
-    required IconData icon,
-    required String label,
-    required Color color,
-  }) {
+  Widget _buildStatChip(IconData icon, String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(4),
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 14),
-          const SizedBox(width: 4),
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
               color: color,
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: FontWeight.bold,
               fontFamily: 'Orbitron',
             ),
@@ -279,18 +353,27 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: Colors.white.withOpacity(0.5),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: Colors.white.withOpacity(0.3),
+              ),
             ),
             const SizedBox(height: 16),
             Text(
               'User not found',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
-                fontSize: 16,
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
                 fontFamily: 'Orbitron',
+                letterSpacing: 0.5,
               ),
             ),
           ],
@@ -299,17 +382,25 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
 
     return CustomScrollView(
+      physics: const BouncingScrollPhysics(),
       slivers: [
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 24),
                 FutureBuilder<Widget>(
                   future: _buildCollection(),
                   builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF3B82F6),
+                          strokeWidth: 3,
+                        ),
+                      );
+                    }
                     if (snapshot.hasData) {
                       return snapshot.data!;
                     }
@@ -332,19 +423,35 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         'Authorization': 'Bearer ${userProvider.user?.token}',
       },
     );
+
     if (response.statusCode == 200) {
-      final recentCards = json.decode(response.body)
+      final recentCards = json
+          .decode(response.body)
           .map((card) => CardModel.fromJson(card))
           .toList()
           .take(10);
-          
-     return Container(
+
+      return Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A2E),
-          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFF1A1A2E).withOpacity(0.9),
+              const Color(0xFF0F0F1E).withOpacity(0.9),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(color: Colors.white.withOpacity(0.1)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -352,44 +459,55 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Recent Collection',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Orbitron',
+                ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                  ).createShader(bounds),
+                  child: const Text(
+                    'Recent Collection',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Orbitron',
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6).withOpacity(0.2),
+                    color: const Color(0xFF3B82F6).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                        color: const Color(0xFF3B82F6).withOpacity(0.3)),
                   ),
                   child: Text(
                     '${recentCards.length} cards',
                     style: const TextStyle(
                       color: Color(0xFF3B82F6),
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
                       fontFamily: 'Orbitron',
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             recentCards.isEmpty
                 ? _buildEmptyState()
                 : GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 0.7, // Adjusted for larger images
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 0.7,
                     ),
                     itemCount: recentCards.length,
                     itemBuilder: (context, index) {
@@ -407,24 +525,38 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Widget _buildCardItem(CardModel card) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF0A0A1A),
-        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF0A0A1A).withOpacity(0.9),
+            const Color(0xFF040412).withOpacity(0.9),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             child: Image.network(
               card.imageUrl,
-              height: 125, // Larger image height
+              height: 140,
               width: double.infinity,
               fit: BoxFit.cover,
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -435,33 +567,42 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Orbitron',
+                    letterSpacing: 0.5,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: ColorUtils.getRarityColor(card.rarity).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
+                    color:
+                        ColorUtils.getRarityColor(card.rarity).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: ColorUtils.getRarityColor(card.rarity)
+                          .withOpacity(0.3),
+                    ),
                   ),
                   child: Text(
                     card.rarity,
                     style: TextStyle(
                       color: ColorUtils.getRarityColor(card.rarity),
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
                 Text(
                   '#${card.serialNumber}',
                   style: TextStyle(
-                    color: Colors.grey.shade400,
-                    fontSize: 10,
+                    color: Colors.white.withOpacity(0.5),
+                    fontSize: 11,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ],
@@ -473,21 +614,31 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 48),
       child: Column(
         children: [
-          Icon(
-            Icons.card_membership_outlined,
-            size: 48,
-            color: Colors.white.withOpacity(0.2),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.card_membership_rounded,
+              size: 48,
+              color: Colors.white.withOpacity(0.3),
+            ),
           ),
           const SizedBox(height: 16),
           Text(
             'No cards to display',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withOpacity(0.7),
               fontSize: 16,
+              fontWeight: FontWeight.bold,
               fontFamily: 'Orbitron',
+              letterSpacing: 0.5,
             ),
           ),
         ],
