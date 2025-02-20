@@ -90,6 +90,7 @@ class GlobalBottomNavigationBar extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           gradient: isSelected
@@ -116,6 +117,17 @@ class GlobalBottomNavigationBar extends StatelessWidget {
           children: [
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(
+                    scale: animation,
+                    child: child,
+                  ),
+                );
+              },
               child: Icon(
                 isSelected ? activeIcon : icon,
                 key: ValueKey(isSelected),
@@ -125,8 +137,9 @@ class GlobalBottomNavigationBar extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              label,
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
               style: TextStyle(
                 color:
                     isSelected ? Colors.white : Colors.white.withOpacity(0.5),
@@ -135,6 +148,7 @@ class GlobalBottomNavigationBar extends StatelessWidget {
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 letterSpacing: 0.5,
               ),
+              child: Text(label),
             ),
           ],
         ),

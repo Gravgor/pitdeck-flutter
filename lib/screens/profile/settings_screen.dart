@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:pitdeck/providers/auth_provider.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -17,37 +19,63 @@ class SettingsScreen extends StatelessWidget {
       body: Column(
         children: [
           Container(
-            color: const Color(0xFF1A1A2E),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
             child: SafeArea(
               bottom: false,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.white,
-                          size: 20,
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.pop(context);
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 16),
-                    const Text(
-                      'Settings',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Orbitron',
+                    ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                      ).createShader(bounds),
+                      child: const Text(
+                        'Settings',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                          letterSpacing: 1,
+                        ),
                       ),
                     ),
                   ],
@@ -57,6 +85,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           Expanded(
             child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -67,23 +96,29 @@ class SettingsScreen extends StatelessWidget {
                       _buildSettingItem(
                         'Profile Picture',
                         Icons.person,
-                        onTap: () {
-                          _updateProfilePicture(context);
-                        },
+                        onTap: () => _updateProfilePicture(context),
                       ),
                       _buildSettingItem(
                         'Background Image',
                         Icons.image,
                         isPremium: true,
                         onTap: () {
+                          HapticFeedback.mediumImpact();
                           showDialog(
                             context: context,
                             builder: (context) => Dialog(
                               backgroundColor: Colors.transparent,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF0A0A1A),
-                                  borderRadius: BorderRadius.circular(8),
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFF1A1A2E),
+                                      Color(0xFF0F0F1E)
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
                                     color: Colors.white.withOpacity(0.1),
                                   ),
@@ -96,7 +131,7 @@ class SettingsScreen extends StatelessWidget {
                                       decoration: BoxDecoration(
                                         borderRadius:
                                             const BorderRadius.vertical(
-                                          top: Radius.circular(8),
+                                          top: Radius.circular(16),
                                         ),
                                         image: const DecorationImage(
                                           image: NetworkImage(
@@ -110,10 +145,11 @@ class SettingsScreen extends StatelessWidget {
                                       padding: const EdgeInsets.all(16),
                                       child: Row(
                                         mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
+                                            MainAxisAlignment.end,
                                         children: [
                                           TextButton(
                                             onPressed: () {
+                                              HapticFeedback.lightImpact();
                                               Navigator.pop(context);
                                             },
                                             child: Text(
@@ -124,21 +160,24 @@ class SettingsScreen extends StatelessWidget {
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.bold,
                                                 fontFamily: 'Orbitron',
+                                                letterSpacing: 0.5,
                                               ),
                                             ),
                                           ),
+                                          const SizedBox(width: 16),
                                           TextButton(
                                             onPressed: () {
-                                              // Handle image selection
+                                              HapticFeedback.lightImpact();
                                               Navigator.pop(context);
                                             },
                                             child: const Text(
                                               'CHANGE',
                                               style: TextStyle(
-                                                color: Color(0xFF4B9FFF),
+                                                color: Color(0xFF3B82F6),
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.bold,
                                                 fontFamily: 'Orbitron',
+                                                letterSpacing: 0.5,
                                               ),
                                             ),
                                           ),
@@ -161,7 +200,7 @@ class SettingsScreen extends StatelessWidget {
                         'Notifications',
                         Icons.notifications,
                         onTap: () {
-                          // Handle notifications settings
+                          HapticFeedback.lightImpact();
                         },
                       ),
                     ],
@@ -173,21 +212,21 @@ class SettingsScreen extends StatelessWidget {
                         'Help Center',
                         Icons.help,
                         onTap: () {
-                          // Navigate to help center
+                          HapticFeedback.lightImpact();
                         },
                       ),
                       _buildSettingItem(
                         'Privacy Policy',
                         Icons.privacy_tip,
                         onTap: () {
-                          // Show privacy policy
+                          HapticFeedback.lightImpact();
                         },
                       ),
                       _buildSettingItem(
                         'Terms of Service',
                         Icons.description,
                         onTap: () {
-                          // Show terms of service
+                          HapticFeedback.lightImpact();
                         },
                       ),
                     ],
@@ -195,28 +234,40 @@ class SettingsScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: GestureDetector(
-                      onTap: () {
-                        Provider.of<AuthProvider>(context, listen: false).logout();
-                      },
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.red.withOpacity(0.3),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          HapticFeedback.mediumImpact();
+                          Provider.of<AuthProvider>(context, listen: false)
+                              .logout();
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.red.withOpacity(0.2),
+                                Colors.red.withOpacity(0.1),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.red.withOpacity(0.3),
+                            ),
                           ),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'LOGOUT',
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Orbitron',
+                          child: const Center(
+                            child: Text(
+                              'LOGOUT',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Orbitron',
+                                letterSpacing: 1,
+                              ),
                             ),
                           ),
                         ),
@@ -373,54 +424,69 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Future<void> _updateProfilePicture(BuildContext context) async {
-  try {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-    
-    if (image == null) return;
-    
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final token = userProvider.user?.token;
-    
-    if (token == null) {
-      throw Exception('Not authenticated');
-    }
-    
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('https://api.pitdeck.app/api/users/profile-picture/update'),
-    );
-    
-    request.headers.addAll({
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'multipart/form-data', // Add content type header
-    });
-    
-    // Change 'file' to 'image' to match the backend endpoint
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        'image', // Changed from 'file' to 'image'
-        image.path,
-        filename: image.name,
-        contentType: MediaType('image', 'jpeg'),
-      ),
-    );
-    
-    final response = await request.send();
-    final responseData = await response.stream.bytesToString();
-    
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      await userProvider.refreshUser();
-    } else {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+      if (image == null) return;
+
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final token = userProvider.user?.token;
+
+      if (token == null) {
+        throw Exception('Not authenticated');
+      }
+
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('https://api.pitdeck.app/api/users/profile-picture/update'),
+      );
+
+      request.headers.addAll({
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'multipart/form-data', // Add content type header
+      });
+
+      // Change 'file' to 'image' to match the backend endpoint
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'image', // Changed from 'file' to 'image'
+          image.path,
+          filename: image.name,
+          contentType: MediaType('image', 'jpeg'),
+        ),
+      );
+
+      final response = await request.send();
+      final responseData = await response.stream.bytesToString();
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await userProvider.refreshUser();
+      } else {
+        if (!context.mounted) return;
+        showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: const Text('Error'),
+            content: Text(
+                // Show the actual error message from the server if available
+                'Failed to update profile picture: $responseData'),
+            actions: [
+              CupertinoDialogAction(
+                child: const Text('OK'),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
       if (!context.mounted) return;
       showCupertinoDialog(
         context: context,
         builder: (context) => CupertinoAlertDialog(
           title: const Text('Error'),
-          content: Text(
-            // Show the actual error message from the server if available
-            'Failed to update profile picture: $responseData'
-          ),
+          content: Text('An unexpected error occurred: ${e.toString()}'),
           actions: [
             CupertinoDialogAction(
               child: const Text('OK'),
@@ -430,21 +496,5 @@ class SettingsScreen extends StatelessWidget {
         ),
       );
     }
-  } catch (e) {
-    if (!context.mounted) return;
-    showCupertinoDialog(
-      context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text('Error'),
-        content: Text('An unexpected error occurred: ${e.toString()}'),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('OK'),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
-      ),
-    );
   }
-}
 }

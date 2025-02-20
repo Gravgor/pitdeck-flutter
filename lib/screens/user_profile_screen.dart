@@ -242,8 +242,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
-                        _buildBadges(),
                       ],
                     ),
                   ),
@@ -349,299 +347,241 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   Widget _buildMainContent() {
     if (_user == null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.error_outline_rounded,
-                size: 48,
-                color: Colors.white.withOpacity(0.3),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'User not found',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Orbitron',
-                letterSpacing: 0.5,
-              ),
-            ),
-          ],
-        ),
-      );
+      return _buildUserNotFound();
     }
 
-    return CustomScrollView(
+    return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                FutureBuilder<Widget>(
-                  future: _buildCollection(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFF3B82F6),
-                          strokeWidth: 3,
-                        ),
-                      );
-                    }
-                    if (snapshot.hasData) {
-                      return snapshot.data!;
-                    }
-                    return const SizedBox.shrink();
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<Widget> _buildCollection() async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final response = await http.get(
-      Uri.parse('https://api.pitdeck.app/api/users/${widget.userId}/cards'),
-      headers: {
-        'Authorization': 'Bearer ${userProvider.user?.token}',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final recentCards = json
-          .decode(response.body)
-          .map((card) => CardModel.fromJson(card))
-          .toList()
-          .take(10);
-
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              const Color(0xFF1A1A2E).withOpacity(0.9),
-              const Color(0xFF0F0F1E).withOpacity(0.9),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ShaderMask(
-                  shaderCallback: (bounds) => const LinearGradient(
-                    colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
-                  ).createShader(bounds),
-                  child: const Text(
-                    'Recent Collection',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Orbitron',
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                        color: const Color(0xFF3B82F6).withOpacity(0.3)),
-                  ),
-                  child: Text(
-                    '${recentCards.length} cards',
-                    style: const TextStyle(
-                      color: Color(0xFF3B82F6),
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Orbitron',
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            recentCards.isEmpty
-                ? _buildEmptyState()
-                : GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 0.7,
-                    ),
-                    itemCount: recentCards.length,
-                    itemBuilder: (context, index) {
-                      final card = recentCards.elementAt(index);
-                      return _buildCardItem(card);
-                    },
-                  ),
-          ],
-        ),
-      );
-    }
-    return const SizedBox.shrink();
-  }
-
-  Widget _buildCardItem(CardModel card) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF0A0A1A).withOpacity(0.9),
-            const Color(0xFF040412).withOpacity(0.9),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Image.network(
-              card.imageUrl,
-              height: 140,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+            child: _buildBadges(),
           ),
           Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  card.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
+                const Text(
+                  'Recent Collection',
+                  style: TextStyle(
+                    color: Color(0xFF3B82F6),
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Orbitron',
-                    letterSpacing: 0.5,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color:
-                        ColorUtils.getRarityColor(card.rarity).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: ColorUtils.getRarityColor(card.rarity)
-                          .withOpacity(0.3),
-                    ),
-                  ),
-                  child: Text(
-                    card.rarity,
-                    style: TextStyle(
-                      color: ColorUtils.getRarityColor(card.rarity),
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
+                    letterSpacing: 1,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  '#${card.serialNumber}',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
+                GestureDetector(
+                  onTap: () {},
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF3B82F6).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                          color: const Color(0xFF3B82F6).withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'See all',
+                          style: TextStyle(
+                            color: Color(0xFF3B82F6),
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Orbitron',
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          color: Color(0xFF3B82F6),
+                          size: 16,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          FutureBuilder<List<CardModel>>(
+            future: _fetchRecentCards(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF3B82F6),
+                    strokeWidth: 3,
+                  ),
+                );
+              }
+
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const SizedBox.shrink();
+              }
+
+              final recentCards = snapshot.data!.take(3).toList();
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                itemCount: recentCards.length,
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 12),
+                itemBuilder: (context, index) =>
+                    _buildCardItem(recentCards[index]),
+              );
+            },
+          ),
+          const SizedBox(height: 32),
+          _buildStatsSection(),
+          const SizedBox(height: 32),
+          _buildAchievementsSection(),
+          const SizedBox(height: 32),
+          _buildTradeHistorySection(),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildBadges() {
+    return Consumer<BadgeProvider>(
+      builder: (context, provider, child) {
+        if (provider.getBadgesForUser(widget.userId).isEmpty) {
+          return const SizedBox.shrink();
+        }
+        final badges =
+            provider.getBadgesForUser(widget.userId).take(5).toList();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Badges',
+              style: TextStyle(
+                color: Color(0xFF3B82F6),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Orbitron',
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: badges.map((badge) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: _buildBadgePreview(badge.imageUrl),
+                );
+              }).toList(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildCardItem(CardModel card) {
+    final rarityColor = ColorUtils.getRarityColor(card.rarity);
+
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.card_membership_rounded,
-              size: 48,
-              color: Colors.white.withOpacity(0.3),
+      height: 72,
+      decoration: BoxDecoration(
+        color: const Color(0xFF0A0A1A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: rarityColor.withOpacity(0.3),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {},
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    image: DecorationImage(
+                      image: NetworkImage(card.imageUrl),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        card.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                          letterSpacing: 0.5,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: rarityColor,
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              card.rarity,
+                              style: TextStyle(
+                                color: rarityColor,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            '#${card.serialNumber}',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-          Text(
-            'No cards to display',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Orbitron',
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -658,23 +598,223 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Widget _buildBadges() {
-    return Consumer<BadgeProvider>(
-      builder: (context, provider, child) {
-        if (provider.getBadgesForUser(widget.userId).isEmpty) {
-          return const SizedBox.shrink();
-        }
-        final badges =
-            provider.getBadgesForUser(widget.userId).take(5).toList();
-        return Row(
-          children: badges.map((badge) {
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: _buildBadgePreview(badge.imageUrl),
-            );
-          }).toList(),
-        );
+  Widget _buildUserNotFound() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.error_outline_rounded,
+              size: 48,
+              color: Colors.white.withOpacity(0.3),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'User not found',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Stats',
+            style: TextStyle(
+              color: Color(0xFF3B82F6),
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'Total Value',
+                  '157,500 RC',
+                  Icons.monetization_on_rounded,
+                  const Color(0xFFFFD700),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  'Cards Owned',
+                  '47',
+                  Icons.style_rounded,
+                  const Color(0xFF3B82F6),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0A0A1A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAchievementsSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0A0A1A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Achievements',
+                style: TextStyle(
+                  color: Color(0xFF3B82F6),
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Orbitron',
+                  letterSpacing: 1,
+                ),
+              ),
+              Text(
+                '7/12',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          LinearProgressIndicator(
+            value: 7 / 12,
+            backgroundColor: Colors.white.withOpacity(0.1),
+            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTradeHistorySection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Trade History',
+            style: TextStyle(
+              color: Color(0xFF3B82F6),
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0A0A1A),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
+            ),
+            child: Center(
+              child: Text(
+                'No recent trades',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<List<CardModel>> _fetchRecentCards() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final response = await http.get(
+      Uri.parse('https://api.pitdeck.app/api/users/${widget.userId}/cards'),
+      headers: {
+        'Authorization': 'Bearer ${userProvider.user?.token}',
       },
     );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((card) => CardModel.fromJson(card)).toList();
+    }
+    return [];
   }
 }
