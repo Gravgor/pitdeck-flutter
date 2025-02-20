@@ -33,6 +33,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
   bool _isCardModalOpen = false;
   late FocusNode _priceFocusNode;
   List<CardModel> _filteredCards = [];
+  bool _isGridView = true;
 
   @override
   void initState() {
@@ -135,29 +136,117 @@ class _CollectionScreenState extends State<CollectionScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
-            ).createShader(bounds),
-            child: const Text(
-              'Collection Overview',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Orbitron',
-                letterSpacing: 1,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Manage and explore your racing cards',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
-              fontSize: 14,
-              letterSpacing: 0.5,
-              fontFamily: 'Orbitron',
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                      ).createShader(bounds),
+                      child: const Text(
+                        'My Collection',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                const Color(0xFF1A1A2E).withOpacity(0.9),
+                                const Color(0xFF0F0F1E).withOpacity(0.9),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFF3B82F6).withOpacity(0.3),
+                            ),
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                setState(() => _isGridView = !_isGridView);
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Icon(
+                                  _isGridView
+                                      ? Icons.view_list_rounded
+                                      : Icons.grid_view_rounded,
+                                  color: const Color(0xFF3B82F6),
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                const Color(0xFF1A1A2E).withOpacity(0.9),
+                                const Color(0xFF0F0F1E).withOpacity(0.9),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFF3B82F6).withOpacity(0.3),
+                            ),
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                _showFilterModal();
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              child: const Padding(
+                                padding: EdgeInsets.all(8),
+                                child: Icon(
+                                  Icons.filter_list_rounded,
+                                  color: Color(0xFF3B82F6),
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Manage and explore your racing cards',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.6),
+                    fontSize: 14,
+                    letterSpacing: 0.5,
+                    fontFamily: 'Orbitron',
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 24),
@@ -211,86 +300,6 @@ class _CollectionScreenState extends State<CollectionScreen> {
                       ),
                     ),
                     onChanged: _handleSearch,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: _showFilterModal,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      gradient: _hasActiveFilters
-                          ? const LinearGradient(
-                              colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            )
-                          : null,
-                      color: _hasActiveFilters ? null : const Color(0xFF0A0A1A),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _hasActiveFilters
-                            ? Colors.transparent
-                            : Colors.white.withOpacity(0.1),
-                      ),
-                      boxShadow: _hasActiveFilters
-                          ? [
-                              BoxShadow(
-                                color: const Color(0xFF3B82F6).withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.filter_list,
-                          color: _hasActiveFilters
-                              ? Colors.white
-                              : Colors.white.withOpacity(0.5),
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Filters',
-                          style: TextStyle(
-                            color: _hasActiveFilters
-                                ? Colors.white
-                                : Colors.white.withOpacity(0.5),
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Orbitron',
-                            fontSize: 14,
-                          ),
-                        ),
-                        if (_hasActiveFilters) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              (_selectedRarities.length + _selectedTypes.length)
-                                  .toString(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Orbitron',
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
                   ),
                 ),
               ),
@@ -662,185 +671,189 @@ class _CollectionScreenState extends State<CollectionScreen> {
       onRefresh: _fetchCards,
       backgroundColor: const Color(0xFF1A1A2E),
       color: const Color(0xFF3B82F6),
-      child: GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.75,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-        ),
-        itemCount: _filteredCards.length,
-        itemBuilder: (context, index) {
-          final card = _filteredCards[index];
-          final isLegendary = card.rarity == 'LEGENDARY';
-          final rarityColor = ColorUtils.getRarityColor(card.rarity);
-
-          return GestureDetector(
-            onTap: () => _showCardDetails(context, card.id),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF1A1A2E),
-                    const Color(0xFF0F0F1E),
-                    if (isLegendary) rarityColor.withOpacity(0.05),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  if (isLegendary) ...[
-                    BoxShadow(
-                      color: rarityColor.withOpacity(0.15),
-                      blurRadius: 20,
-                      spreadRadius: 1,
-                    ),
-                    BoxShadow(
-                      color: rarityColor.withOpacity(0.1),
-                      blurRadius: 30,
-                      spreadRadius: 2,
-                    ),
-                  ] else
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.25),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                ],
+      child: _isGridView
+          ? GridView.builder(
+              padding: const EdgeInsets.all(16),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.75,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(20)),
-                        child: AspectRatio(
-                          aspectRatio: 1.1,
-                          child: ShaderMask(
-                            shaderCallback: (Rect bounds) {
-                              return LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.black.withOpacity(0.3)
-                                ],
-                                stops: const [0.7, 1.0],
-                              ).createShader(bounds);
-                            },
-                            blendMode: BlendMode.darken,
-                            child: Image.network(
-                              card.imageUrl,
-                              fit: BoxFit.cover,
-                              loadingBuilder:
-                                  (context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
-                                return Container(
-                                  color: const Color(0xFF1A1A2E),
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                      color: rarityColor,
-                                      value:
-                                          loadingProgress.expectedTotalBytes !=
-                                                  null
-                                              ? loadingProgress
-                                                      .cumulativeBytesLoaded /
-                                                  loadingProgress
-                                                      .expectedTotalBytes!
-                                              : null,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
+              itemCount: _filteredCards.length,
+              itemBuilder: (context, index) {
+                final card = _filteredCards[index];
+                final isLegendary = card.rarity == 'LEGENDARY';
+                final rarityColor = ColorUtils.getRarityColor(card.rarity);
+
+                return GestureDetector(
+                  onTap: () => _showCardDetails(context, card.id),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFF1A1A2E),
+                          const Color(0xFF0F0F1E),
+                          if (isLegendary) rarityColor.withOpacity(0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      if (isLegendary)
-                        Positioned.fill(
-                          child: ClipRRect(
-                            borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(20)),
-                            child: CustomPaint(
-                              painter: GlowingBorderPainter(
-                                color: rarityColor,
-                                width: 1.5,
-                              ),
-                            ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        if (isLegendary) ...[
+                          BoxShadow(
+                            color: rarityColor.withOpacity(0.15),
+                            blurRadius: 20,
+                            spreadRadius: 1,
                           ),
-                        ),
-                    ],
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                          BoxShadow(
+                            color: rarityColor.withOpacity(0.1),
+                            blurRadius: 30,
+                            spreadRadius: 2,
+                          ),
+                        ] else
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.25),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                      ],
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        Stack(
                           children: [
-                            Expanded(
-                              child: Text(
-                                card.name,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'Orbitron',
-                                  height: 1.2,
+                            ClipRRect(
+                              borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(20)),
+                              child: AspectRatio(
+                                aspectRatio: 1.1,
+                                child: ShaderMask(
+                                  shaderCallback: (Rect bounds) {
+                                    return LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.transparent,
+                                        Colors.black.withOpacity(0.3)
+                                      ],
+                                      stops: const [0.7, 1.0],
+                                    ).createShader(bounds);
+                                  },
+                                  blendMode: BlendMode.darken,
+                                  child: Image.network(
+                                    card.imageUrl,
+                                    fit: BoxFit.cover,
+                                    loadingBuilder:
+                                        (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Container(
+                                        color: const Color(0xFF1A1A2E),
+                                        child: Center(
+                                          child: CircularProgressIndicator(
+                                            color: rarityColor,
+                                            value: loadingProgress
+                                                        .expectedTotalBytes !=
+                                                    null
+                                                ? loadingProgress
+                                                        .cumulativeBytesLoaded /
+                                                    loadingProgress
+                                                        .expectedTotalBytes!
+                                                : null,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            Text(
-                              '#${card.serialNumber}',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.5),
-                                fontSize: 11,
-                                fontFamily: 'Orbitron',
+                            if (isLegendary)
+                              Positioned.fill(
+                                child: ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(20)),
+                                  child: CustomPaint(
+                                    painter: GlowingBorderPainter(
+                                      color: rarityColor,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
                           ],
                         ),
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: rarityColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: isLegendary
-                                ? Border.all(
-                                    color: rarityColor.withOpacity(0.3),
-                                    width: 1,
-                                  )
-                                : null,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (isLegendary) ...[
-                                Icon(
-                                  Icons.auto_awesome,
-                                  color: rarityColor,
-                                  size: 12,
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      card.name,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'Orbitron',
+                                        height: 1.2,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Text(
+                                    '#${card.serialNumber}',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.5),
+                                      fontSize: 11,
+                                      fontFamily: 'Orbitron',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
                                 ),
-                                const SizedBox(width: 4),
-                              ],
-                              Text(
-                                card.rarity,
-                                style: TextStyle(
-                                  color: rarityColor,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'Orbitron',
-                                  letterSpacing: 0.5,
+                                decoration: BoxDecoration(
+                                  color: rarityColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: isLegendary
+                                      ? Border.all(
+                                          color: rarityColor.withOpacity(0.3),
+                                          width: 1,
+                                        )
+                                      : null,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (isLegendary) ...[
+                                      Icon(
+                                        Icons.auto_awesome,
+                                        color: rarityColor,
+                                        size: 12,
+                                      ),
+                                      const SizedBox(width: 4),
+                                    ],
+                                    Text(
+                                      card.rarity,
+                                      style: TextStyle(
+                                        color: rarityColor,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'Orbitron',
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -849,12 +862,116 @@ class _CollectionScreenState extends State<CollectionScreen> {
                       ],
                     ),
                   ),
-                ],
-              ),
+                );
+              },
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              itemCount: _filteredCards.length,
+              itemBuilder: (context, index) {
+                final card = _filteredCards[index];
+                final rarityColor = ColorUtils.getRarityColor(card.rarity);
+                final isLegendary = card.rarity == 'LEGENDARY';
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF1A1A2E).withOpacity(0.9),
+                        const Color(0xFF0F0F1E).withOpacity(0.9),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isLegendary
+                          ? rarityColor.withOpacity(0.3)
+                          : Colors.white.withOpacity(0.1),
+                    ),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _showCardDetails(context, card.id),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            Hero(
+                              tag: 'card_${card.id}',
+                              child: Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  image: DecorationImage(
+                                    image: NetworkImage(card.imageUrl),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    card.name,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'Orbitron',
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: rarityColor.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: rarityColor.withOpacity(0.3),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      card.rarity,
+                                      style: TextStyle(
+                                        color: rarityColor,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    '#${card.serialNumber}',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.5),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
-          );
-        },
-      ),
     );
   }
 
@@ -1670,79 +1787,79 @@ class _CollectionScreenState extends State<CollectionScreen> {
                     end: Alignment.bottomCenter,
                   ),
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () {
-                          HapticFeedback.mediumImpact();
-                          setModalState(() {
-                            _selectedRarities.clear();
-                            _selectedTypes.clear();
-                          });
-                          _applyFilters();
-                          Navigator.pop(context);
-                        },
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: const Color(0xFF3B82F6).withOpacity(0.5),
-                            ),
-                          ),
-                        ),
-                        child: const Text(
-                          'CLEAR ALL',
-                          style: TextStyle(
-                            color: Color(0xFF3B82F6),
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Orbitron',
-                            letterSpacing: 1,
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        setModalState(() {
+                          _selectedRarities.clear();
+                          _selectedTypes.clear();
+                        });
+                        _applyFilters();
+                        Navigator.pop(context);
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: const Color(0xFF3B82F6).withOpacity(0.5),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF3B82F6).withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                      child: const Text(
+                        'CLEAR ALL',
+                        style: TextStyle(
+                          color: Color(0xFF3B82F6),
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                          letterSpacing: 1,
                         ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () {
-                              HapticFeedback.mediumImpact();
-                              _applyFilters();
-                              Navigator.pop(context);
-                            },
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              child: const Center(
-                                child: Text(
-                                  'APPLY FILTERS',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'Orbitron',
-                                    letterSpacing: 1,
-                                  ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF3B82F6).withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            HapticFeedback.mediumImpact();
+                            _applyFilters();
+                            Navigator.pop(context);
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: const Center(
+                              child: Text(
+                                'APPLY FILTERS',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Orbitron',
+                                  letterSpacing: 1,
                                 ),
                               ),
                             ),
@@ -1750,8 +1867,8 @@ class _CollectionScreenState extends State<CollectionScreen> {
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
