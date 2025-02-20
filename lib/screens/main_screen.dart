@@ -343,47 +343,49 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   Future<void> _updateDrops(List<DropModel> drops) async {
     if (!mounted) return;
     try {
-      // Create a map of new drops for faster lookup
-      final Map<String, DropModel> newDropsMap = {
-        for (var drop in drops) drop.id.toString(): drop
-      };
+      for (var drop in drops) {
+        _cachedDrops[drop.id.toString()] = drop;
+      }
 
       if (_isInitialLoad) {
         await _markerManager?.clearAllMarkers();
-        _cachedDrops.clear();
-        _cachedDrops.addAll(newDropsMap);
         for (var drop in _cachedDrops.values) {
           await _markerManager?.addDropMarker(drop);
         }
         _isInitialLoad = false;
         await _cacheService.setInitialLoad(false);
-        return;
-      }
+      } else {
+        final List<String> newDropIds =
+            drops.map((drop) => drop.id.toString()).toList();
+        final List<String> currentDropIds =
+            _markerManager?.getCurrentDropIds() ?? [];
 
-      // Update or add new drops
-      for (var drop in drops) {
-        final dropId = drop.id.toString();
-        if (_cachedDrops[dropId] != null) {
-          await _markerManager?.updateMarker(drop);
-        } else {
-          await _markerManager?.addDropMarker(drop);
+        final Set<String> newDropSet = Set.from(newDropIds);
+        final Set<String> currentDropSet = Set.from(currentDropIds);
+
+        final dropsToRemove = currentDropSet.difference(newDropSet);
+        final dropsToAdd = newDropSet.difference(currentDropSet);
+
+        // Remove old markers
+        for (var dropId in dropsToRemove) {
+          await _markerManager?.removeMarker(dropId);
+          _cachedDrops.remove(dropId);
         }
-        _cachedDrops[dropId] = drop;
-      }
 
-      // Remove drops that no longer exist
-      final dropsToRemove = _cachedDrops.keys
-          .where((id) => !newDropsMap.containsKey(id))
-          .toList();
-
-      for (var dropId in dropsToRemove) {
-        await _markerManager?.removeMarker(dropId);
-        _cachedDrops.remove(dropId);
+        // Add new markers
+        for (var dropId in dropsToAdd) {
+          final drop = _cachedDrops[dropId];
+          if (drop != null) {
+            await _markerManager?.addDropMarker(drop);
+          }
+        }
       }
     } catch (e) {
       print('Error updating drops: $e');
     }
   }
+
+  
 
   Future<void> _enableLocationComponent() async {
     if (_mapboxMap != null) {
