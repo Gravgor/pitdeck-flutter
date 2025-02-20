@@ -22,6 +22,7 @@ import 'package:pitdeck/screens/widgets/main/topbar_widget.dart';
 import 'package:pitdeck/screens/daily_login_rewards.dart';
 import 'package:pitdeck/services/daily_reward_service.dart';
 import 'package:lottie/lottie.dart';
+import 'package:flutter/services.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -1341,29 +1342,65 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A2E),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.1),
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF1A1A2E).withOpacity(0.9),
+                        const Color(0xFF0F0F1E).withOpacity(0.9),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0xFF3B82F6).withOpacity(0.3),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  child: IconButton(
-                    onPressed: _showDailyReward,
-                    icon: const Icon(
-                      Icons.calendar_today_rounded,
-                      color: Color(0xFF3B82F6),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        HapticFeedback.mediumImpact();
+                        _showDailyReward();
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        child: const Icon(
+                          Icons.calendar_today_rounded,
+                          color: Color(0xFF3B82F6),
+                          size: 24,
+                        ),
+                      ),
                     ),
                   ),
                 ),
                 if (_hasUnclaimedReward)
                   Positioned(
-                    right: 0,
-                    top: 0,
+                    right: -2,
+                    top: -2,
                     child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFEF4444),
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                         shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFEF4444).withOpacity(0.25),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: const Text(
                         '1',
@@ -1372,6 +1409,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Orbitron',
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
@@ -1400,97 +1438,143 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          FloatingActionButton.extended(
-            onPressed: () async {
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                barrierColor: Colors.black.withOpacity(0.5),
-                builder: (context) => BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                  child: Center(
-                    child: Container(
-                      width: 200,
-                      height: 200,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1A1A2E),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: const Color(0xFF3B82F6).withOpacity(0.3),
+          Container(
+            decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF3B82F6).withOpacity(0.1),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: FloatingActionButton.extended(
+              onPressed: () async {
+                HapticFeedback.mediumImpact();
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  barrierColor: Colors.black.withOpacity(0.5),
+                  builder: (context) => BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                    child: Center(
+                      child: Container(
+                        width: 200,
+                        height: 200,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              const Color(0xFF1A1A2E).withOpacity(0.95),
+                              const Color(0xFF0F0F1E).withOpacity(0.95),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: const Color(0xFF3B82F6).withOpacity(0.3),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 16,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
                         ),
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          TweenAnimationBuilder<double>(
-                            duration: const Duration(seconds: 2),
-                            tween: Tween(begin: 0, end: 4 * 3.14159),
-                            curve: Curves.linear,
-                            builder: (context, value, child) =>
-                                Transform.rotate(
-                              angle: value,
-                              child: Container(
-                                width: 160,
-                                height: 160,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: const Color(0xFF3B82F6)
-                                        .withOpacity(0.5),
-                                    width: 2,
-                                  ),
-                                  gradient: SweepGradient(
-                                    colors: [
-                                      const Color(0xFF3B82F6).withOpacity(0.1),
-                                      const Color(0xFF3B82F6).withOpacity(0.5),
-                                    ],
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            TweenAnimationBuilder<double>(
+                              duration: const Duration(seconds: 2),
+                              tween: Tween(begin: 0, end: 4 * 3.14159),
+                              curve: Curves.linear,
+                              builder: (context, value, child) =>
+                                  Transform.rotate(
+                                angle: value,
+                                child: Container(
+                                  width: 160,
+                                  height: 160,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: const Color(0xFF3B82F6)
+                                          .withOpacity(0.5),
+                                      width: 2,
+                                    ),
+                                    gradient: SweepGradient(
+                                      colors: [
+                                        const Color(0xFF3B82F6)
+                                            .withOpacity(0.1),
+                                        const Color(0xFF3B82F6)
+                                            .withOpacity(0.5),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                          Container(
-                            width: 10,
-                            height: 10,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF3B82F6),
-                              shape: BoxShape.circle,
+                            Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF3B82F6),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF3B82F6)
+                                        .withOpacity(0.3),
+                                    blurRadius: 8,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
+                );
 
-              await Future.delayed(const Duration(seconds: 2));
-              if (mounted) {
-                Navigator.of(context).pop();
-                _refreshArea();
-              }
-            },
-            backgroundColor: const Color(0xFF1A1A2E),
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(
-                color: const Color(0xFF3B82F6).withOpacity(0.3),
+                await Future.delayed(const Duration(seconds: 2));
+                if (mounted) {
+                  Navigator.of(context).pop();
+                  _refreshArea();
+                }
+              },
+              backgroundColor: const Color(0xFF1A1A2E),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: const Color(0xFF3B82F6).withOpacity(0.3),
+                ),
               ),
-            ),
-            icon: const Icon(
-              Icons.refresh_rounded,
-              color: Color(0xFF3B82F6),
-            ),
-            label: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: const Text(
-                'REFRESH AREA',
-                style: TextStyle(
+              icon: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3B82F6).withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.refresh_rounded,
                   color: Color(0xFF3B82F6),
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Orbitron',
+                  size: 24,
+                ),
+              ),
+              label: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                child: const Text(
+                  'REFRESH AREA',
+                  style: TextStyle(
+                    color: Color(0xFF3B82F6),
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Orbitron',
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
             ),
@@ -1507,35 +1591,58 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   Widget _buildEventBanner() {
     return Positioned(
-      top: 125, // Position above Mapbox attribution
+      top: 125,
       left: 16,
       right: 16,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFFEF4444), Color(0xFF3B82F6)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF3B82F6).withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+              color: const Color(0xFFEF4444).withOpacity(0.2),
+              blurRadius: 12,
+              offset: const Offset(-2, 4),
+            ),
+            BoxShadow(
+              color: const Color(0xFF3B82F6).withOpacity(0.2),
+              blurRadius: 12,
+              offset: const Offset(2, 4),
             ),
           ],
+          border: Border.all(
+            color: Colors.white.withOpacity(0.1),
+          ),
         ),
-        child: const Row(
+        child: Row(
           children: [
-            Icon(Icons.campaign, color: Colors.white),
-            SizedBox(width: 12),
-            Expanded(
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.campaign_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            const Expanded(
               child: Text(
                 'Special Event: Double Drops Weekend!',
                 style: TextStyle(
                   color: Colors.white,
+                  fontSize: 15,
                   fontFamily: 'Orbitron',
                   fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
                 ),
               ),
             ),
@@ -1553,27 +1660,59 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: 12),
-          FloatingActionButton(
-            heroTag: 'controlCenter',
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (context) => TweenAnimationBuilder<double>(
-                  duration: const Duration(milliseconds: 500),
-                  tween: Tween(begin: 1.0, end: 0.0),
-                  curve: Curves.easeOutExpo,
-                  builder: (context, value, child) => Transform.translate(
-                    offset: Offset(0, 100 * value),
-                    child: const ControlCenter(),
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF1A1A2E).withOpacity(0.9),
+                  const Color(0xFF0F0F1E).withOpacity(0.9),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: const Color(0xFF3B82F6).withOpacity(0.3),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  HapticFeedback.mediumImpact();
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => TweenAnimationBuilder<double>(
+                      duration: const Duration(milliseconds: 500),
+                      tween: Tween(begin: 1.0, end: 0.0),
+                      curve: Curves.easeOutExpo,
+                      builder: (context, value, child) => Transform.translate(
+                        offset: Offset(0, 100 * value),
+                        child: const ControlCenter(),
+                      ),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  child: const Icon(
+                    Icons.dashboard_customize_rounded,
+                    color: Color(0xFF3B82F6),
+                    size: 24,
                   ),
                 ),
-              );
-            },
-            backgroundColor: const Color(0xFF1A1A2E),
-            child:
-                const Icon(Icons.dashboard_customize, color: Color(0xFF3B82F6)),
+              ),
+            ),
           ),
         ],
       ),
