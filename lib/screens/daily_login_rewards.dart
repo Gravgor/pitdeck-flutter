@@ -249,8 +249,8 @@ class _RewardView extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _buildHeader(streak),
+        _buildStreakCounter(streak),
         _buildRewardAmount(nextReward),
-        _buildStreakInfo(streak),
         _buildClaimButton(canClaim),
       ],
     );
@@ -258,6 +258,7 @@ class _RewardView extends StatelessWidget {
 
   Widget _buildHeader(int streak) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -274,6 +275,20 @@ class _RewardView extends StatelessWidget {
           Stack(
             alignment: Alignment.center,
             children: [
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF3B82F6).withOpacity(0.3),
+                      blurRadius: 30,
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+              ),
               Container(
                 width: 80,
                 height: 80,
@@ -295,15 +310,32 @@ class _RewardView extends StatelessWidget {
               if (rewardStatus['canClaim'] == true) _buildRotatingRing(),
             ],
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'Daily Streak',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Orbitron',
+          const SizedBox(height: 24),
+          ShaderMask(
+            shaderCallback: (bounds) => const LinearGradient(
+              colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+            ).createShader(bounds),
+            child: const Text(
+              'Daily Streak',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Orbitron',
+                letterSpacing: 1,
+              ),
             ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Keep logging in daily to earn more rewards!',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 14,
+              fontFamily: 'Orbitron',
+              letterSpacing: 0.5,
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -333,64 +365,161 @@ class _RewardView extends StatelessWidget {
     );
   }
 
+  Widget _buildStreakCounter(int streak) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ...List.generate(5, (index) {
+              final dayNumber = streak - 2 + index;
+              final isCurrentDay = index == 2;
+              final isPastDay = index < 2;
+
+              return TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 500),
+                tween: Tween(
+                  begin: 0.8,
+                  end: isCurrentDay ? 1.2 : (isPastDay ? 0.9 : 0.7),
+                ),
+                curve: Curves.elasticOut,
+                builder: (context, scale, child) {
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Transform.scale(
+                      scale: scale,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.local_fire_department_rounded,
+                            color: Color.lerp(
+                              const Color(0xFF3B82F6),
+                              const Color(0xFFEF4444),
+                              isCurrentDay ? 1.0 : (isPastDay ? 0.7 : 0.3),
+                            ),
+                            size: isCurrentDay ? 36 : 24,
+                          ),
+                          const SizedBox(height: 8),
+                          ShaderMask(
+                            shaderCallback: (bounds) => LinearGradient(
+                              colors: [
+                                Color.lerp(
+                                  const Color(0xFF3B82F6),
+                                  const Color(0xFFEF4444),
+                                  isCurrentDay ? 1.0 : (isPastDay ? 0.7 : 0.3),
+                                )!,
+                                Color.lerp(
+                                  const Color(0xFF60A5FA),
+                                  const Color(0xFFFCA5A5),
+                                  isCurrentDay ? 1.0 : (isPastDay ? 0.7 : 0.3),
+                                )!,
+                              ],
+                            ).createShader(bounds),
+                            child: Text(
+                              dayNumber > 0 ? '$dayNumber' : '-',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize:
+                                    isCurrentDay ? 48 : (isPastDay ? 36 : 28),
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Orbitron',
+                                letterSpacing: 1,
+                              ),
+                            ),
+                          ),
+                          if (isCurrentDay) ...[
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEF4444).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color:
+                                      const Color(0xFFEF4444).withOpacity(0.3),
+                                ),
+                              ),
+                              child: const Text(
+                                'TODAY',
+                                style: TextStyle(
+                                  color: Color(0xFFEF4444),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Orbitron',
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildRewardAmount(int amount) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: Column(
         children: [
-          Text(
-            '+$amount',
-            style: const TextStyle(
-              color: Color(0xFF3B82F6),
-              fontSize: 48,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Orbitron',
-            ),
+          TweenAnimationBuilder<double>(
+            duration: const Duration(milliseconds: 500),
+            tween: Tween(begin: 0.0, end: 1.0),
+            curve: Curves.elasticOut,
+            builder: (context, value, child) {
+              return Transform.scale(
+                scale: value,
+                child: ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                  ).createShader(bounds),
+                  child: Text(
+                    '+$amount',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 64,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Orbitron',
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 8),
-          const Text(
-            'RACECOINS',
-            style: TextStyle(
-              color: Color(0xFF3B82F6),
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Orbitron',
-              letterSpacing: 2,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStreakInfo(int streak) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF3B82F6).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF3B82F6).withOpacity(0.3),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.local_fire_department_rounded,
-            color: Color(0xFF3B82F6),
-            size: 24,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '$streak Day${streak == 1 ? '' : 's'} Streak!',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Orbitron',
-            ),
+          TweenAnimationBuilder<double>(
+            duration: const Duration(milliseconds: 500),
+            tween: Tween(begin: 0.0, end: 1.0),
+            curve: Curves.elasticOut,
+            builder: (context, value, child) {
+              return Transform.scale(
+                scale: value,
+                child: const Text(
+                  'RACECOINS',
+                  style: TextStyle(
+                    color: Color(0xFF3B82F6),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Orbitron',
+                    letterSpacing: 2,
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -398,37 +527,31 @@ class _RewardView extends StatelessWidget {
   }
 
   Widget _buildClaimButton(bool canClaim) {
-    return Container(
-      width: double.infinity,
+    return Padding(
       padding: const EdgeInsets.all(24),
-      child: ElevatedButton(
-        onPressed: canClaim ? onCollect : null,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF3B82F6),
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: canClaim ? onCollect : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF3B82F6),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            elevation: 0,
           ),
-          elevation: 0,
+          child: Text(
+            canClaim ? 'CLAIM REWARD' : 'COME BACK TOMORROW',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Orbitron',
+              letterSpacing: 1,
+            ),
+          ),
         ),
-        child: isCollecting
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
-              )
-            : Text(
-                canClaim ? 'CLAIM REWARD' : 'COME BACK TOMORROW',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Orbitron',
-                ),
-              ),
       ),
     );
   }

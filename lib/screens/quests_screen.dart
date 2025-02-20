@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pitdeck/models/quest.dart';
 import 'package:pitdeck/providers/user_provider.dart';
 import 'package:pitdeck/services/quest_service.dart';
@@ -71,92 +72,126 @@ class _QuestsScreenState extends State<QuestsScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF040412),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0A0A1A),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.1),
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      const Text(
-                        'Quests Overview',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Orbitron',
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Complete quests to earn rewards',
-                    style: TextStyle(
-                      color: Color(0xFF9CA3AF),
-                      fontSize: 16,
-                      fontFamily: 'Orbitron',
-                    ),
-                  ),
-                ],
+      body: Stack(
+        children: [
+          // Background gradient
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF040412).withOpacity(0.95),
+                    const Color(0xFF040412).withOpacity(0.9),
+                    const Color(0xFF040412).withOpacity(0.85),
+                  ],
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                ),
               ),
             ),
-            _buildQuestStats(),
-            _buildSearchBar(),
-            _buildCategoryTabs(),
-            Expanded(
-              child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
-                      ),
-                    )
-                  : TabBarView(
-                      controller: _tabController,
-                      children: [
-                        // All quests tab
-                        _QuestList(
-                          key: const ValueKey('all'),
-                          quests: _allQuests ?? [],
-                          onQuestClaimed: _loadInitialData,
+          ),
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(),
+                _buildQuestStats(),
+                _buildSearchBar(),
+                _buildCategoryTabs(),
+                Expanded(
+                  child: _isLoading
+                      ? Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              const Color(0xFF3B82F6).withOpacity(0.7),
+                            ),
+                            strokeWidth: 3,
+                          ),
+                        )
+                      : TabBarView(
+                          controller: _tabController,
+                          children: [
+                            _QuestList(
+                              key: const ValueKey('all'),
+                              quests: _allQuests ?? [],
+                              onQuestClaimed: _loadInitialData,
+                            ),
+                            ..._categories.map((category) {
+                              return _QuestList(
+                                key: ValueKey(category),
+                                quests: _questsCache[category] ?? [],
+                                onQuestClaimed: _loadInitialData,
+                              );
+                            }),
+                          ],
                         ),
-                        // Category tabs
-                        ..._categories.map((category) {
-                          return _QuestList(
-                            key: ValueKey(category),
-                            quests: _questsCache[category] ?? [],
-                            onQuestClaimed: _loadInitialData,
-                          );
-                        }),
-                      ],
-                    ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0A0A1A),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.1),
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.arrow_back_rounded,
+                    color: Colors.white.withOpacity(0.7),
+                    size: 20,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              ShaderMask(
+                shaderCallback: (bounds) => const LinearGradient(
+                  colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                ).createShader(bounds),
+                child: const Text(
+                  'Quests Overview',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Orbitron',
+                    letterSpacing: 1,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Complete quests to earn rewards',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.5),
+              fontSize: 14,
+              fontFamily: 'Orbitron',
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -168,25 +203,28 @@ class _QuestsScreenState extends State<QuestsScreen>
       child: Row(
         children: [
           _buildStatCard(
-            icon: Icons.star_border,
+            icon: Icons.star_rounded,
             label: 'Total',
             value: _allQuests?.length.toString() ?? '0',
+            color: const Color(0xFF3B82F6),
           ),
           const SizedBox(width: 12),
           _buildStatCard(
-            icon: Icons.check_circle_outline,
+            icon: Icons.check_circle_rounded,
             label: 'Completed',
             value: _questsCache.values
                 .fold(0, (sum, quests) => sum + quests.length)
                 .toString(),
+            color: const Color(0xFF10B981),
           ),
           const SizedBox(width: 12),
           _buildStatCard(
-            icon: Icons.trending_up,
+            icon: Icons.trending_up_rounded,
             label: 'Active',
             value: _questsCache.values
                 .fold(0, (sum, quests) => sum + quests.length)
                 .toString(),
+            color: const Color(0xFFF59E0B),
           ),
         ],
       ),
@@ -197,14 +235,15 @@ class _QuestsScreenState extends State<QuestsScreen>
     required IconData icon,
     required String label,
     required String value,
+    required Color color,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF0A0A1A),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withOpacity(0.1),
+          color: color.withOpacity(0.3),
         ),
       ),
       child: Row(
@@ -212,12 +251,12 @@ class _QuestsScreenState extends State<QuestsScreen>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF3B82F6).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               icon,
-              color: const Color(0xFF3B82F6),
+              color: color,
               size: 20,
             ),
           ),
@@ -227,12 +266,14 @@ class _QuestsScreenState extends State<QuestsScreen>
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  color: Color(0xFF9CA3AF),
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
                   fontSize: 12,
                   fontFamily: 'Orbitron',
+                  letterSpacing: 0.5,
                 ),
               ),
+              const SizedBox(height: 4),
               Text(
                 value,
                 style: const TextStyle(
@@ -240,6 +281,7 @@ class _QuestsScreenState extends State<QuestsScreen>
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Orbitron',
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
@@ -255,7 +297,7 @@ class _QuestsScreenState extends State<QuestsScreen>
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: const Color(0xFF0A0A1A),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: Colors.white.withOpacity(0.1),
         ),
@@ -263,8 +305,9 @@ class _QuestsScreenState extends State<QuestsScreen>
       child: Row(
         children: [
           Icon(
-            Icons.search,
+            Icons.search_rounded,
             color: Colors.white.withOpacity(0.5),
+            size: 20,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -276,7 +319,7 @@ class _QuestsScreenState extends State<QuestsScreen>
               decoration: InputDecoration(
                 hintText: 'Search quests...',
                 hintStyle: TextStyle(
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withOpacity(0.3),
                   fontFamily: 'Orbitron',
                 ),
                 border: InputBorder.none,
@@ -287,11 +330,11 @@ class _QuestsScreenState extends State<QuestsScreen>
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: const Color(0xFF3B82F6).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.tune,
-              color: Color(0xFF3B82F6),
+            child: Icon(
+              Icons.tune_rounded,
+              color: const Color(0xFF3B82F6),
               size: 20,
             ),
           ),
@@ -332,14 +375,19 @@ class _QuestsScreenState extends State<QuestsScreen>
     return Container(
       margin: const EdgeInsets.only(right: 12),
       child: Material(
-        color: isSelected ? const Color(0xFF3B82F6) : const Color(0xFF0A0A1A),
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onTap?.call();
+          },
           borderRadius: BorderRadius.circular(20),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
+              color: isSelected
+                  ? const Color(0xFF3B82F6)
+                  : const Color(0xFF0A0A1A),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isSelected
@@ -351,10 +399,11 @@ class _QuestsScreenState extends State<QuestsScreen>
               label,
               style: TextStyle(
                 color:
-                    isSelected ? Colors.white : Colors.white.withOpacity(0.7),
+                    isSelected ? Colors.white : Colors.white.withOpacity(0.5),
                 fontSize: 14,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 fontFamily: 'Orbitron',
+                letterSpacing: 0.5,
               ),
             ),
           ),
@@ -690,11 +739,11 @@ class _QuestCard extends StatelessWidget {
         onClaimed();
       }
 
-      SnackBarUtils.showSuccess(context, title: 'Success', message: 'Quest rewards claimed!');
+      SnackBarUtils.showSuccess(context,
+          title: 'Success', message: 'Quest rewards claimed!');
     } catch (e) {
-      SnackBarUtils.showError(context, title: 'Error', message: 'Error claiming quest rewards: $e');
+      SnackBarUtils.showError(context,
+          title: 'Error', message: 'Error claiming quest rewards: $e');
     }
   }
 }
-
-      

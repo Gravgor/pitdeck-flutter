@@ -1502,27 +1502,51 @@ class _MarketScreenState extends State<MarketScreen>
         height: MediaQuery.of(context).size.height * 0.4,
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A2E),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          gradient: const LinearGradient(
+            colors: [Color(0xFF1A1A2E), Color(0xFF0F0F1E)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Create New Listing',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Orbitron',
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+              ).createShader(bounds),
+              child: const Text(
+                'Create New Listing',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Orbitron',
+                  letterSpacing: 1,
+                ),
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Choose how you want to list your cards',
               style: TextStyle(
-                color: Colors.grey,
+                color: Colors.white.withOpacity(0.5),
                 fontSize: 14,
+                fontFamily: 'Orbitron',
+                letterSpacing: 0.5,
               ),
             ),
             const SizedBox(height: 32),
@@ -1531,6 +1555,7 @@ class _MarketScreenState extends State<MarketScreen>
               title: 'Sell Card',
               subtitle: 'List your card for a fixed price',
               onTap: () {
+                HapticFeedback.mediumImpact();
                 Navigator.pop(context);
                 Navigator.push(
                   context,
@@ -1546,6 +1571,7 @@ class _MarketScreenState extends State<MarketScreen>
               title: 'Create Trade',
               subtitle: 'Offer cards for trade with others',
               onTap: () {
+                HapticFeedback.mediumImpact();
                 Navigator.pop(context);
                 Navigator.push(
                   context,
@@ -1567,63 +1593,102 @@ class _MarketScreenState extends State<MarketScreen>
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF0A0A1A),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: const Color(0xFF3B82F6).withOpacity(0.3),
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                color: const Color(0xFF3B82F6),
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Orbitron',
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: Colors.grey.shade400,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.grey,
-              size: 16,
-            ),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF0A0A1A),
+            const Color(0xFF0A0A1A).withOpacity(0.95),
           ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF3B82F6).withOpacity(0.3),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF3B82F6).withOpacity(0.2),
+                        const Color(0xFF60A5FA).withOpacity(0.2),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: const Color(0xFF3B82F6).withOpacity(0.3),
+                    ),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: const Color(0xFF3B82F6),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Orbitron',
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.5),
+                          fontSize: 13,
+                          fontFamily: 'Orbitron',
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3B82F6).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.arrow_forward_rounded,
+                    color: const Color(0xFF3B82F6).withOpacity(0.7),
+                    size: 20,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
