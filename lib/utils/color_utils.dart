@@ -13,6 +13,14 @@ class ColorUtils {
         return const Color(0xFFE040FB);
       case 'legendary':
         return const Color(0xFFFFD700);
+        case 'mythic':
+      return const Color(0xFFFF4081); // Vibrant pink
+    case 'unique':
+      return const Color(0xFFFFD700); // Gold
+    case 'magic_moment':
+      return const Color(0xFF9C27B0); // Deep purple
+    case 'uncommon':
+      return const Color(0xFF2196F3); // Blue
       default:
         return Colors.grey;
     }
@@ -46,7 +54,8 @@ class ColorUtils {
     }
   }
 
-  static Color getTradeStatusColor(TradeStatus? status, TradeOfferStatus? offerStatus) {
+  static Color getTradeStatusColor(
+      TradeStatus? status, TradeOfferStatus? offerStatus) {
     if (offerStatus != null) {
       return getTradeOfferStatusColor(offerStatus);
     }

@@ -1,6 +1,6 @@
 enum DropType { STANDARD, SPECIAL, EVENT, CARD }
 
-enum DropRarity { COMMON, UNCOMMON, RARE, EPIC, LEGENDARY }
+enum DropRarity { COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, MYTHIC, UNIQUE, MAGIC_MOMENT }
 
 class DropModel {
   final String id;

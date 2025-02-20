@@ -10,6 +10,7 @@ import 'package:pitdeck/config/mapbox_config.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:pitdeck/providers/card_provider.dart';
 import 'package:pitdeck/services/cache_service.dart';
+import 'package:pitdeck/utils/color_utils.dart';
 import 'package:pitdeck/utils/snackbar_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:pitdeck/providers/user_provider.dart';
@@ -437,12 +438,12 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   color: const Color(0xFF040412),
                   borderRadius: BorderRadius.circular(28),
                   border: Border.all(
-                    color: _getRarityColor(newDrop.rarity).withOpacity(0.4),
+                    color: ColorUtils.getRarityColor(newDrop.rarity.name).withOpacity(0.4),
                     width: 2,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: _getRarityColor(newDrop.rarity).withOpacity(0.25),
+                      color: ColorUtils.getRarityColor(newDrop.rarity.name).withOpacity(0.25),
                       blurRadius: 40,
                       spreadRadius: 10,
                     ),
@@ -471,8 +472,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            _getRarityColor(drop.rarity).withOpacity(0.3),
-            _getRarityColor(drop.rarity).withOpacity(0.1),
+            ColorUtils.getRarityColor(drop.rarity.name).withOpacity(0.3),
+            ColorUtils.getRarityColor(drop.rarity.name).withOpacity(0.1),
             Colors.transparent,
           ],
           begin: Alignment.topCenter,
@@ -499,14 +500,14 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: _getRarityColor(drop.rarity).withOpacity(0.15),
+        color: ColorUtils.getRarityColor(drop.rarity.name).withOpacity(0.15),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: _getRarityColor(drop.rarity).withOpacity(0.4),
+          color: ColorUtils.getRarityColor(drop.rarity.name).withOpacity(0.4),
         ),
         boxShadow: [
           BoxShadow(
-            color: _getRarityColor(drop.rarity).withOpacity(0.2),
+            color: ColorUtils.getRarityColor(drop.rarity.name).withOpacity(0.2),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -516,14 +517,14 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         children: [
           Icon(
             Icons.auto_awesome,
-            color: _getRarityColor(drop.rarity),
+            color: ColorUtils.getRarityColor(drop.rarity.name),
             size: 18,
           ),
           const SizedBox(width: 8),
           Text(
             drop.rarity.toString().split('.').last,
             style: TextStyle(
-              color: _getRarityColor(drop.rarity),
+              color: ColorUtils.getRarityColor(drop.rarity.name),
               fontSize: 16,
               fontWeight: FontWeight.bold,
               fontFamily: 'Orbitron',
@@ -631,14 +632,14 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            _getRarityColor(drop.rarity).withOpacity(0.05),
+            ColorUtils.getRarityColor(drop.rarity.name).withOpacity(0.05),
             Colors.transparent,
-            _getRarityColor(drop.rarity).withOpacity(0.05),
+            ColorUtils.getRarityColor(drop.rarity.name).withOpacity(0.05),
           ],
         ),
         border: Border.symmetric(
           horizontal: BorderSide(
-            color: _getRarityColor(drop.rarity).withOpacity(0.1),
+            color: ColorUtils.getRarityColor(drop.rarity.name).withOpacity(0.1),
           ),
         ),
       ),
@@ -652,7 +653,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  _getRarityColor(drop.rarity).withOpacity(0.2),
+                  ColorUtils.getRarityColor(drop.rarity.name).withOpacity(0.2),
                   Colors.transparent,
                 ],
               ),
@@ -660,7 +661,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           ),
           Icon(
             Icons.card_giftcard,
-            color: _getRarityColor(drop.rarity).withOpacity(0.4),
+            color: ColorUtils.getRarityColor(drop.rarity.name).withOpacity(0.4),
             size: 80,
           ),
           if (!isInRange)
@@ -672,7 +673,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
               padding: const EdgeInsets.all(16),
               child: Icon(
                 Icons.lock,
-                color: _getRarityColor(drop.rarity),
+                color: ColorUtils.getRarityColor(drop.rarity.name),
                 size: 40,
               ),
             ),
@@ -690,7 +691,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             onPressed: isInRange ? () => _openDrop(drop) : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: isInRange
-                  ? _getRarityColor(drop.rarity)
+                  ? ColorUtils.getRarityColor(drop.rarity.name)
                   : const Color(0xFF1A1A2E),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
@@ -816,7 +817,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   void _showRewardsDialog(Map<String, dynamic> rewards, DropRarity rarity) {
     final List<dynamic> rewardsList = rewards['rewards'];
-    final rarityColor = _getRarityColor(rarity);
+    final rarityColor = ColorUtils.getRarityColor(rarity.name);
 
     showDialog(
       context: context,
@@ -999,7 +1000,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             center: Alignment.topCenter,
             radius: 2.5,
             colors: [
-              _getRarityColor(rarity).withOpacity(0.2),
+              ColorUtils.getRarityColor(rarity.name).withOpacity(0.2),
               const Color(0xFF040412),
             ],
             stops: const [0.0, 0.8],
@@ -1022,8 +1023,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                             ShaderMask(
                               shaderCallback: (bounds) => LinearGradient(
                                 colors: [
-                                  _getRarityColor(rarity),
-                                  _getRarityColor(rarity).withOpacity(0.7),
+                                  ColorUtils.getRarityColor(rarity.name),
+                                  ColorUtils.getRarityColor(rarity.name).withOpacity(0.7),
                                 ],
                               ).createShader(bounds),
                               child: SizedBox(
@@ -1060,7 +1061,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
                                   color:
-                                      _getRarityColor(rarity).withOpacity(0.3),
+                                      ColorUtils.getRarityColor(rarity.name).withOpacity(0.3),
                                 ),
                               ),
                               child: Column(
@@ -1085,22 +1086,22 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
                                         colors: [
-                                          _getRarityColor(rarity)
+                                          ColorUtils.getRarityColor(rarity.name)
                                               .withOpacity(0.2),
-                                          _getRarityColor(rarity)
+                                          ColorUtils.getRarityColor(rarity.name)
                                               .withOpacity(0.1),
                                         ],
                                       ),
                                       borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
-                                        color: _getRarityColor(rarity)
+                                        color: ColorUtils.getRarityColor(rarity.name)
                                             .withOpacity(0.3),
                                       ),
                                     ),
                                     child: Text(
                                       '#${card['serialNumber']}',
                                       style: TextStyle(
-                                        color: _getRarityColor(rarity),
+                                        color: ColorUtils.getRarityColor(rarity.name),
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                         fontFamily: 'Orbitron',
@@ -1117,7 +1118,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: _getRarityColor(rarity)
+                                    color: ColorUtils.getRarityColor(rarity.name)
                                         .withOpacity(0.2),
                                     blurRadius: 20,
                                     spreadRadius: 5,
@@ -1148,7 +1149,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
                                   color:
-                                      _getRarityColor(rarity).withOpacity(0.3),
+                                      ColorUtils.getRarityColor(rarity.name).withOpacity(0.3),
                                 ),
                               ),
                               child: Row(
@@ -1159,7 +1160,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                                     Icons.calendar_today_rounded,
                                     'Year',
                                     card['year'].toString(),
-                                    color: _getRarityColor(rarity),
+                                    color: ColorUtils.getRarityColor(rarity.name),
                                   ),
                                   Container(
                                     width: 1,
@@ -1170,7 +1171,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                                     Icons.category_rounded,
                                     'Series',
                                     card['series'],
-                                    color: _getRarityColor(rarity),
+                                    color: ColorUtils.getRarityColor(rarity.name),
                                   ),
                                   Container(
                                     width: 1,
@@ -1181,7 +1182,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                                     Icons.auto_awesome_rounded,
                                     'Rarity',
                                     card['rarity'],
-                                    color: _getRarityColor(rarity),
+                                    color: ColorUtils.getRarityColor(rarity.name),
                                   ),
                                 ],
                               ),
@@ -1215,8 +1216,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          _getRarityColor(rarity),
-                          _getRarityColor(rarity).withOpacity(0.8),
+                          ColorUtils.getRarityColor(rarity.name),
+                          ColorUtils.getRarityColor(rarity.name).withOpacity(0.8),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -1224,7 +1225,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: _getRarityColor(rarity).withOpacity(0.3),
+                          color: ColorUtils.getRarityColor(rarity.name).withOpacity(0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -1339,8 +1340,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      _getRarityColor(rarity).withOpacity(0.2),
-                      _getRarityColor(rarity).withOpacity(0.1),
+                      ColorUtils.getRarityColor(rarity.name).withOpacity(0.2),
+                      ColorUtils.getRarityColor(rarity.name).withOpacity(0.1),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -1349,7 +1350,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                 ),
                 child: Icon(
                   icon,
-                  color: _getRarityColor(rarity),
+                  color:  ColorUtils.getRarityColor(rarity.name),
                   size: 24,
                 ),
               ),
@@ -1399,20 +1400,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-  Color _getRarityColor(DropRarity rarity) {
-    switch (rarity) {
-      case DropRarity.COMMON:
-        return Colors.grey;
-      case DropRarity.UNCOMMON:
-        return Colors.green;
-      case DropRarity.RARE:
-        return Colors.blue;
-      case DropRarity.EPIC:
-        return Colors.purple;
-      case DropRarity.LEGENDARY:
-        return Colors.orange;
-    }
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -2002,6 +1990,14 @@ class MarkerManager {
         return 'assets/markers/epic.png';
       case DropRarity.LEGENDARY:
         return 'assets/markers/legendary.png';
+      case DropRarity.MYTHIC:
+        return 'assets/markers/mythic.png';
+      case DropRarity.UNIQUE:
+        return 'assets/markers/unique.png';
+      case DropRarity.MAGIC_MOMENT:
+        return 'assets/markers/magic_moment.png';
+      default:
+        return 'assets/markers/common.png';
     }
   }
 
